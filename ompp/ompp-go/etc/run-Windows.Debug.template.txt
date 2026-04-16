@@ -1,0 +1,33 @@
+{{/*
+oms web-service:
+  Template to run Debug modelNameD.exe on Windows
+
+To use this template rename it into:
+  run.Debug.template.txt
+
+Oms web-service using template for exec.Command(exeName, Args...):
+  - skip empty lines
+  - substitute template arguments
+  - first non-empty line is a name of executable to run
+  - each other line is a command line argument for executable
+
+Arguments of template:
+  ModelName string            // model name
+  ExeStem   string            // base part of model exe name, usually modelName
+  Dir       string            // work directory to run the model
+  BinDir    string            // bin directory where model exe is located
+  DbPath    string            // if not empty then absolute path to sqlite database file
+  MpiNp     int               // number of MPI processes
+  Args      []string          // model command line arguments
+  Env       map[string]string // environment variables to run the model
+
+Example of result:
+  .\modelNameD -OpenM.LogToFile false
+
+*/}}
+
+{{.BinDir}}\{{.ExeStem}}D
+{{range .Args}}
+{{.}}
+{{end}}
+

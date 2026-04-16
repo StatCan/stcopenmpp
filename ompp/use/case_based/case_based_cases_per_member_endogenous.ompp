@@ -1,0 +1,73 @@
+/**
+* @file    case_based_cases_per_member_endogenous.ompp
+* Framework implementation for case-based models - Model determines number of cases using SetSimulationCases()
+*
+*/
+// Copyright (c) 2013-2022 OpenM++ Contributors (see AUTHORS.txt)
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+parameters {
+    //EN Number of cases in each member
+    derived long long CasesPerMember;
+};
+
+#endif // Hide non-C++ syntactic island from IDE
+
+/*NOTE(CasesPerMember, EN)
+`CasesPerMember` is the number of cases in each member of a run.
+If a run has multiple members
+the total number of cases is the product of `CasesPerMember` 
+and the number of members.
+*/
+
+//LABEL(CasesPerMember,FR) Nombre de cas dans chaque membre
+/*NOTE(CasesPerMember, FR)
+`CasesPerMember` est le nombre de cas dans chaque membre d'une exécution.
+Si une exécution comporte plusieurs membres
+le nombre total de cas est le produit de `CasesPerMember`
+et le nombre de membres.
+*/
+
+/**
+* Called by before_presimulation.
+*/
+void before_presimulation_for_framework()
+{
+}
+
+/**
+* Called after model PreSimulation functions.
+*/
+void after_presimulation_for_framework()
+{
+    // Code block for number of cases
+    {
+        // For this style of model, the parameter CasesPerMember
+        // gives the number of cases in each member.
+        // The value of the derived parameter CasesPerMember
+        // must be assigned in a PreSimulation function in model code.
+
+        fmk::member_cases = CasesPerMember;
+
+        fmk::all_cases = fmk::member_cases * fmk::simulation_members;
+
+        if (fmk::SimulationSeed_member_part == 0) {
+            // Normal run, start at member 0
+        }
+        else {
+            // Special run, simulate a single case in the specified member.
+            if (fmk::simulation_member == fmk::SimulationSeed_member_part) {
+                // Simulate one case in the member specified in the combined seed
+                fmk::member_cases = 1;
+            }
+            else {
+                // Ignore all other members
+                fmk::member_cases = 0;
+            }
+        }
+    }
+}

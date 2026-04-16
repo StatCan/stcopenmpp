@@ -1,0 +1,54 @@
+{{/*
+oms web-service:
+  Template to run GMM MPI executable executable on Linux using OpenMPI
+  
+  Important: 
+  GMM is single threaded executable, to run 16 sub-values use:
+    17 processes (root + 16 modelling processes)
+    1 thread each 
+
+It is not recommended to use root process for modelling
+
+Oms web-service using template for exec.Command(exeName, Args...):
+  - skip empty lines
+  - substitute template arguments
+  - first non-empty line is a name of executable to run
+  - each other line is a command line argument for executable
+
+Arguments of template:
+  ModelName string            // model name
+  ExeStem   string            // base part of model exe name, usually modelName
+  Dir       string            // work directory to run the model
+  BinDir    string            // bin directory where model exe is located
+  MpiNp     int               // number of MPI processes
+  Args      []string          // model command line arguments
+  Env       map[string]string // environment variables to run the model
+
+Example of result:
+
+   mpirun --hostfile host.ini --bind-to none --oversubscribe -wdir models/bin -x MODEL_FILES=./MODEL_FILES -x key=value ./GMM_mpi -OpenM.LogToFile false -OpenM.NotOnRoot true
+
+*/}}
+
+mpirun
+--bind-to
+none
+--oversubscribe
+{{with .HostFile}}
+--hostfile
+{{.}}
+{{end}}
+{{with .Dir}}
+-wdir
+{{.}}
+{{end}}
+-x
+MODEL_FILES={{.BinDir}}/MODEL_FILES
+{{range $key, $val := .Env}}
+-x
+{{$key}}={{$val}}
+{{end}}
+{{.BinDir}}/{{.ExeStem}}_mpi
+{{range .Args}}
+{{.}}
+{{end}}

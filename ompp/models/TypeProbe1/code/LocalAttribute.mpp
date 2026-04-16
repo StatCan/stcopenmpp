@@ -1,0 +1,53 @@
+//LABEL(LocalAttribute, EN) Tests of ability to create Attribute a local variable
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if false // hide syntactic island from IDE
+actor Person {
+
+    double my_d = 1.1; // this is an Attribute (identity Attribute)
+double my_q = { 2.2 }; // this is an Attribute (AssignableAttribute)
+
+    void LocalAttributeTests();
+    hook LocalAttributeTests, MortalityEvent, 2;
+};
+#endif // hide syntactic island from IDE
+
+// The implement function of MortalityEvent
+void Person::LocalAttributeTests()
+{
+    // Creation of an Attribute as a local variable is dangerous
+    // because side effects may not affect the 'true' Attribute (the member of an Entity).
+    // Moreover, local Attribute could be in incorrect Entity context.
+    // Design goal is to forbid creation of an Attribute as a local variable.
+    // An Attribute should exist only as a member of an Entity.
+
+    // Use of Attribute should create instance of wrapped type
+
+    // Test AssignableAttribute
+    // The following line generates C++ compile error
+    // (as desired, due to deleted copy assignment operator)
+#if false
+    auto y1a = time;
+#endif
+
+    // The following line declares a local variable as an Attribute.
+    // Model devs shouldn't do this...
+    decltype(my_q) local_q;
+    // ...because the following line triggers side-effects of assignment to my_q
+    // without changing the Attribute my_q in the containing Entity.
+    local_q += 1.0;
+
+    // Test Attribute
+    // following generates C++ compile error (correctly, due to deleted function)
+    //auto y2a = my_d;
+    decltype(my_d) y2b;
+
+    // Obtain singly-wrapped value, type is fixed_precision_float<double>
+    TIME y4 = time;
+
+    // Obtain doubly-wrapped value
+    double y3 = time;
+}
+
+

@@ -1,0 +1,62 @@
+/**
+* @file    case_based_scaling_exogenous.ompp
+* Implementation of population scaling
+*
+*/
+// Copyright (c) 2013-2023 OpenM++ COntributors (see AUTHORS.txt)
+// This code is licensed under the MIT license (see LICENSE.txt)
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+parameters {
+    //EN Real population size
+    double SimulatedPopulation;
+};
+
+#endif // Hide non-C++ syntactic island from IDE
+
+/*NOTE(SimulatedPopulation, EN)
+`SimulatedPopulation` is the size of the real-world population simulated by each member of a run. 
+Table counts and sums are scaled to give a total population count equal to `SimulatedPopulation`, 
+for each member of a run.
+Table counts and sums for a run are normally the average over members, 
+so overall run results are also scaled to `SimulatedPopulation`.
+*/
+
+//LABEL(SimulatedPopulation,FR) Vraie taille de la population
+/*NOTE(SimulatedPopulation, FR)
+`SimulatedPopulation` est la taille de la population réelle simulée par chaque membre d’une exécution.
+Les dénombrements et les sommes des tableaux sont mis à l’échelle pour donner un nombre total de population égal à `SimulatedPopulation`,
+pour chaque membre d’une exécution.
+Les dénombrements et les sommes des tableaux pour l'exécution sont normalement la moyenne des membres,
+alors les résultats globaux de l’exécution sont également mis à l’échelle selon 'SimulatedPopulation'.
+*/
+
+// forward declarations of fmk variables
+namespace fmk {
+    extern thread_local long long member_cases;
+}
+
+/**
+ * The population scaling factor to use for this member of the run.
+ * 
+ * This version scales the population to a value supplied through a parameter.
+ * 
+ * In tables, the size of the population will be the number of cases scaled to the value of
+ * SimulatedPopulation.
+ *
+ * @return A double.
+ */
+double population_scaling_factor()
+{
+    double denom = 0;
+    if constexpr (om_weighted_tabulation_on) {
+        denom = get_sum_weight();
+    }
+    else {
+        denom = (double)fmk::member_cases;
+    }
+    return (double) SimulatedPopulation / denom;
+}

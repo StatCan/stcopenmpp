@@ -1,0 +1,22 @@
+// Copyright (c) 2013-2014 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(ompp_framework, EN) OpenM++ simulation framework
+
+/* NOTE(ompp_framework, EN)
+    This module specifies the simulation framework
+    and supplies function definitions required by the framework.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide from IDE
+// The following modules will be compiled and assembled in this order
+// after all model-specific modules.
+use "common.ompp";                              // Required
+use "random/random_lcg41.ompp";                 // Other choices available for random number generation
+use "time_based/time_based_core.ompp";          // Required
+use "time_based/time_based_scaling_none.ompp";  // Other choices available for population scaling
+use "common_modgen.ompp";                       // Modgen API for x-compatible models
+use "time_based/time_based_modgen.ompp";        // Modgen API for time-based x-compatible models
+#endif

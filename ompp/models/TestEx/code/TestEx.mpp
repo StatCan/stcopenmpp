@@ -1,0 +1,79 @@
+// Copyright (c) 2013-2014 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(TestEx, EN) Core simulation functions
+
+/* NOTE(TestEx, EN)
+	This module contains core simulation functions and definitions.
+*/
+
+// The model version number
+version 1, 0, 0, 0;
+
+// The model type
+model_type case_based;
+
+// The data type used to represent time
+time_type double;
+
+// Supported languages
+languages {
+	EN, // English
+	FR	// Français
+};
+
+void PreSimulation()
+{
+    SetMaxTime(2048.0);
+}
+
+
+/**
+ * Simulates a single case.
+ * 
+ * Called by code in a simulation framework module.
+ */
+void CaseSimulation(case_info &ci)
+{
+    extern void SimulateEvents(); // defined in a simulation framework module
+
+    long lCase = 0;
+	int nCloneNumber = 0;
+	int nClonesRequested = 0;
+	logical bDominant = TRUE;
+	SEX eSex = FEMALE;
+	TIME tBirth = 1971.5;
+	TIME tDeath = 1978.5;
+
+	// -----------------------------------
+	// For Test06.mpp -- create other actor to test links
+	// -----------------------------------
+	auto prDominant = new Person();
+	auto prTestAct = new TestActor06();
+	prDominant->Start( lCase, bDominant, tBirth, tDeath, tBirth, eSex, nCloneNumber, nClonesRequested );
+	prTestAct->Start( tBirth, tBirth, TRUE );
+	prDominant->ltestactor = prTestAct; // establish the 1 to 1 link
+
+	// Simulate events until there are no more.
+    SimulateEvents();
+}
+
+/**
+ * Invoked at the beginning of the Simulation function.
+ *
+ * @param [in,out] ci Additional information related to the case.
+ */
+void Simulation_start(case_info &ci)
+{
+    // Initialize case information in ci (if used).
+}
+
+/**
+ * Invoked at the end of the Simulation function.
+ *
+ * @param [in,out] ci Additional information related to the case.
+ */
+void Simulation_end(case_info &ci)
+{
+    // Finalize case information in ci (if used).
+}

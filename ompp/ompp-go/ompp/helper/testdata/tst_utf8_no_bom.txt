@@ -1,0 +1,7 @@
+code_page(1252)
+"grüßEN";
+'FR', 'Français';
+
+code_page(1251)
+"О программе Dsm"
+"Copyright © AMC 1997"

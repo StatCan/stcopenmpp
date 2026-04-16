@@ -1,0 +1,3 @@
+code_page(1252)
+"grüßEN";
+'FR', 'Français';

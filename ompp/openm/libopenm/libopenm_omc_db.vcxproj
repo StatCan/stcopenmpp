@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)openm.0.version.props" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{8D0AE5FC-090B-437F-800E-6B24288C23C0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libopenm_omc_db</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- Import openM common project settings -->
+  <Import Project="$(SolutionDir)openm.build.props" />
+  <PropertyGroup>
+    <OutDir>$(OM_LIB_DIR)/</OutDir>
+    <TargetName>$(ProjectName)$(BUILD_SUFFIX)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>$(OM_DB_DEF);$(OM_UCVT_DEF);_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OM_DB_INC);$(OM_INC_DIR);$(SolutionDir)libopenm/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>$(OM_DB_DEF);$(OM_UCVT_DEF);_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OM_DB_INC);$(OM_INC_DIR);$(SolutionDir)libopenm/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>$(OM_DB_DEF);$(OM_UCVT_DEF);_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OM_DB_INC);$(OM_INC_DIR);$(SolutionDir)libopenm/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>$(OM_DB_DEF);$(OM_UCVT_DEF);_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OM_DB_INC);$(OM_INC_DIR);$(SolutionDir)libopenm/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\libopenm\common\argReader.h" />
+    <ClInclude Include="..\..\include\libopenm\common\iniReader.h" />
+    <ClInclude Include="..\..\include\libopenm\common\omFile.h" />
+    <ClInclude Include="..\..\include\libopenm\common\omHelper.h" />
+    <ClInclude Include="..\..\include\libopenm\common\omOS.h" />
+    <ClInclude Include="..\..\include\libopenm\db\dbCommon.h" />
+    <ClInclude Include="..\..\include\libopenm\db\dbMetaRow.h" />
+    <ClInclude Include="..\..\include\libopenm\db\metaModelHolder.h" />
+    <ClInclude Include="..\..\include\libopenm\db\metaSetHolder.h" />
+    <ClInclude Include="..\..\include\libopenm\db\modelBuilder.h" />
+    <ClInclude Include="common\log.h" />
+    <ClInclude Include="db\dbExecBase.h" />
+    <ClInclude Include="db\dbExecSqlite.h" />
+    <ClInclude Include="db\dbValue.h" />
+    <ClInclude Include="db\omc\modelExpressionSql.h" />
+    <ClInclude Include="db\omc\modelInsertSql.h" />
+    <ClInclude Include="db\omc\modelSqlBuilder.h" />
+    <ClInclude Include="db\omc\modelSqlWriter.h" />
+    <ClInclude Include="include\crc32.h" />
+    <ClInclude Include="include\dbMetaTable.h" />
+    <ClInclude Include="include\helper.h" />
+    <ClInclude Include="include\md5.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="common\argReader.cpp" />
+    <ClCompile Include="common\crc32.cpp" />
+    <ClCompile Include="common\file.cpp" />
+    <ClCompile Include="common\helper.cpp" />
+    <ClCompile Include="common\iniReader.cpp" />
+    <ClCompile Include="common\log.cpp" />
+    <ClCompile Include="common\md5.cpp" />
+    <ClCompile Include="common\os.cpp" />
+    <ClCompile Include="common\splitCsv.cpp" />
+    <ClCompile Include="common\utf8Convert.cpp" />
+    <ClCompile Include="db\dbExec.cpp" />
+    <ClCompile Include="db\dbExecBase.cpp" />
+    <ClCompile Include="db\dbExecProvider.cpp" />
+    <ClCompile Include="db\dbExecSqlite.cpp" />
+    <ClCompile Include="db\dbMetaRow.cpp" />
+    <ClCompile Include="db\dbValue.cpp" />
+    <ClCompile Include="db\entityAttrTable.cpp" />
+    <ClCompile Include="db\entityAttrTxtTable.cpp" />
+    <ClCompile Include="db\entityDicTable.cpp" />
+    <ClCompile Include="db\entityDicTxtTable.cpp" />
+    <ClCompile Include="db\entityGroupLstTable.cpp" />
+    <ClCompile Include="db\entityGroupPcTable.cpp" />
+    <ClCompile Include="db\entityGroupTxtTable.cpp" />
+    <ClCompile Include="db\groupLstTable.cpp" />
+    <ClCompile Include="db\groupPcTable.cpp" />
+    <ClCompile Include="db\groupTxtTable.cpp" />
+    <ClCompile Include="db\langLstTable.cpp" />
+    <ClCompile Include="db\langWordTable.cpp" />
+    <ClCompile Include="db\modelDicTable.cpp" />
+    <ClCompile Include="db\modelDicTxtTable.cpp" />
+    <ClCompile Include="db\modelWordTable.cpp" />
+    <ClCompile Include="db\omc\modelExpressionSql.cpp" />
+    <ClCompile Include="db\omc\modelInsertSql.cpp" />
+    <ClCompile Include="db\omc\modelSqlBuilder.cpp" />
+    <ClCompile Include="db\omc\modelSqlBuilderPrepare.cpp" />
+    <ClCompile Include="db\omc\modelSqlWriter.cpp" />
+    <ClCompile Include="db\outputTableWriter.cpp" />
+    <ClCompile Include="db\paramDicTable.cpp" />
+    <ClCompile Include="db\paramDicTxtTable.cpp" />
+    <ClCompile Include="db\paramDimsTable.cpp" />
+    <ClCompile Include="db\paramDimsTxtTable.cpp" />
+    <ClCompile Include="db\parameterReader.cpp" />
+    <ClCompile Include="db\parameterWriter.cpp" />
+    <ClCompile Include="db\paramImportTable.cpp" />
+    <ClCompile Include="db\profileLstTable.cpp" />
+    <ClCompile Include="db\profileOptionTable.cpp" />
+    <ClCompile Include="db\runLstTable.cpp" />
+    <ClCompile Include="db\runOptionTable.cpp" />
+    <ClCompile Include="db\tableAccTable.cpp" />
+    <ClCompile Include="db\tableAccTxtTable.cpp" />
+    <ClCompile Include="db\tableDicTable.cpp" />
+    <ClCompile Include="db\tableDicTxtTable.cpp" />
+    <ClCompile Include="db\tableDimsTable.cpp" />
+    <ClCompile Include="db\tableDimsTxtTable.cpp" />
+    <ClCompile Include="db\tableExprTable.cpp" />
+    <ClCompile Include="db\tableExprTxtTable.cpp" />
+    <ClCompile Include="db\taskLstTable.cpp" />
+    <ClCompile Include="db\taskRunLstTable.cpp" />
+    <ClCompile Include="db\taskRunSetTable.cpp" />
+    <ClCompile Include="db\taskSetTable.cpp" />
+    <ClCompile Include="db\taskTxtTable.cpp" />
+    <ClCompile Include="db\typeDicTable.cpp" />
+    <ClCompile Include="db\typeDicTxtTable.cpp" />
+    <ClCompile Include="db\typeEnumLstTable.cpp" />
+    <ClCompile Include="db\typeEnumTxtTable.cpp" />
+    <ClCompile Include="db\worksetLstTable.cpp" />
+    <ClCompile Include="db\worksetParamTable.cpp" />
+    <ClCompile Include="db\worksetParamTxtTable.cpp" />
+    <ClCompile Include="db\worksetTxtTable.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

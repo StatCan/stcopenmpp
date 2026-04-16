@@ -1,0 +1,111 @@
+// app global css in SCSS form
+
+// monospace font
+.mono {
+  font-family: Roboto Mono, Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+}
+
+$om-secondary-text-color: #616161; // grey-8
+
+.om-text-secondary {
+  color: $om-secondary-text-color;
+      // @extend .text-body1;
+  font-size:      map-get($body1, "size");
+  line-height:    map-get($body1, "line-height");
+  letter-spacing: map-get($body1, "letter-spacing");
+  font-weight:    map-get($body1, "weight");
+}
+.om-text-body2 {
+    // @extend .text-body2;
+  font-size:      map-get($body2, "size");
+  line-height:    map-get($body2, "line-height");
+  letter-spacing: map-get($body2, "letter-spacing");
+  font-weight:    map-get($body2, "weight");
+}
+.om-text-descr-title {
+  color: $om-secondary-text-color;
+}
+.om-text-descr {
+  color: $om-secondary-text-color;
+  @extend .om-text-body2;
+}
+.om-text-descr-selected {
+  color: primary;
+  @extend .om-text-body2;
+}
+.om-text-medium {
+  font-weight: map-get($text-weights, "medium");
+}
+
+.om-tree-control-button {
+  height: 2.5rem;
+}
+.om-tree-leaf {
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+.om-tree-leaf-link {
+  color: black;
+  text-decoration: none;
+}
+.om-tree-found-node {
+  // background-color: whitesmoke;
+  border: 1px solid lightgrey;
+}
+
+.om-bg-active {
+  opacity: 1;
+}
+.om-bg-inactive {
+  opacity: 0.6;
+}
+
+.om-tooltip {
+  font-size: 0.75rem;
+}
+
+.om-p-table {
+  text-align: left;
+  border-collapse: collapse;
+}
+.om-p-cell {
+  padding: 0.25rem;
+  border: 1px solid lightgrey;
+  font-size: 0.875rem;
+}
+.om-p-head {
+  @extend .om-p-cell;
+  background-color: whitesmoke;
+}
+.om-p-head-center {
+  @extend .om-p-head;
+  text-align: center;
+}
+.om-p-head-left {
+  @extend .om-p-head;
+  text-align: left;
+}
+.om-p-head-right {
+  @extend .om-p-head;
+  text-align: right;
+}
+.om-p-title {
+  @extend .om-p-cell;
+  text-align: center;
+  font-size: 1rem;
+  color: white;
+  background-color: $primary;
+}
+.om-p-cell-left {
+  @extend .om-p-cell;
+  text-align: left;
+}
+.om-p-cell-right {
+  @extend .om-p-cell;
+  text-align: right;
+}
+.om-p-cell-center {
+  @extend .om-p-cell;
+  text-align: center;
+}

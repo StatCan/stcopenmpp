@@ -1,0 +1,179 @@
+// Copyright (c) 2013-2014 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(ModelErrors, EN) Some tests to identify model build and runtime errors
+
+//
+// Preliminaries
+//
+
+actor Person
+{
+    // workaround to Modgen issue which requires 1+ hooks to use hook function
+    void do_nothing();
+    hook do_nothing, HappinessReversalEvent;
+};
+
+// workaround to Modgen issue which requires 1+ hooks to use hook function
+void Person::do_nothing(void)
+{
+}
+
+
+
+//
+// BEGIN Null pointer deference (write)
+//
+// Attempt to assign value to null pointer should cause runtime exception.
+
+actor Person
+{
+    int chess_wins;
+    void lose_chess_game();
+
+    // If the following line is uncommented, a run-time error will occur
+    //hook lose_chess_game, Start;
+
+    // If the following line is uncommented, a run-time error will occur
+    //hook lose_chess_game, HappinessReversalEvent;
+};
+
+link Person.bff;
+
+void Person::lose_chess_game(void)
+{
+    chess_wins--;
+    bff->chess_wins++; // null dereference here
+}
+
+//
+// END Null pointer deference (write)
+//
+
+
+
+//
+// BEGIN Attribute modification in event time function
+//
+// Attempt to modify attribute in event time function should cause exception by default.
+
+// Uncomment the following line to test disabling runtime attribute assignment check
+//options verify_attribute_modification = off;
+
+actor Person            //EN Individual
+{
+    //EN Over one year old
+    logical over_1 = { FALSE };
+
+    //EN Blow horns instantaneously
+    logical blow_horns_now = trigger_changes(over_1);
+
+    //EN Horns blew
+    logical horns_blew = { FALSE };
+
+    //EN Don't touch this
+    logical dont_touch_this = { TRUE };
+
+    //EN First birthday event
+    event timeFirstBirthdayEvent, FirstBirthdayEvent;
+
+    //EN Blow horn event
+    event timeBlowHornEvent, BlowHornEvent;
+};
+TIME Person::timeFirstBirthdayEvent()
+{
+    TIME event_time = TIME_INFINITE;
+    if (!over_1) {
+        event_time = WAIT(1.0);
+    }
+    return event_time;
+}
+void Person::FirstBirthdayEvent()
+{
+    over_1 = true;
+}
+TIME Person::timeBlowHornEvent()
+{
+    TIME event_time = TIME_INFINITE;
+    if (blow_horns_now) {
+        event_time = WAIT(0);
+        // Uncommenting the following line will cause a runtime error
+        // because of attempt to modify attribute in event time function
+        //dont_touch_this = true;
+    }
+    return event_time;
+}
+void Person::BlowHornEvent()
+{
+    horns_blew = true;
+}
+
+//
+// END Attribute modification in event time function
+//
+
+
+
+//
+// BEGIN Invalid arguments to derived table API
+//
+
+user_table ErrorTest1
+{
+    RNG_0_19
+    * { VALUE }
+};
+
+void UserTables(void)
+{
+    //int index = 20;
+    //double value = 1.0;
+
+    // The following line, if uncommented, will give a run-time warning about invalid name
+    //value = GetTableValue("ErrorTest1.Value", index);
+
+    // The following line, if uncommented, will give a run-time exception about rank violation
+    //value = GetTableValue("ErrorTest1.VALUE", index, index);
+
+    // The following line, if uncommented, will give a run-time exception about invalid index
+    //value = GetTableValue("ErrorTest1.VALUE", index);
+}
+
+//
+// END Invalid arguments to derived table API
+//
+
+
+
+//
+// BEGIN Out of bounds assignment to range/classification/partition
+//
+
+actor Person
+{
+    RNG_0_19 my_bad1;
+    SEX my_bad2 = { MALE };
+
+    // uncomment the following to test partition (cannot declare variable as partition in Modgen)
+    //AGE_GROUP my_bad3;
+
+    void bad_assignment();
+
+    // If the following line is uncommented, a run-time error will occur
+    //hook bad_assignment, Start;
+
+    // If the following line is uncommented, a run-time error will occur
+    //hook bad_assignment, HappinessReversalEvent;
+};
+
+void Person::bad_assignment(void)
+{
+    // uncomment to select error
+    my_bad1 = MAX(RNG_0_19) + 1; // range
+    //my_bad2 += 3;                // classification
+    //my_bad3--;                     // partition
+}
+
+//
+// END Out of bounds assignment to range/classification/partition
+//

@@ -1,0 +1,18 @@
+{
+  "Text": [{
+      "LangCode": "EN",
+      "ShortLabel": "Use GMM Options",
+      "Descr": "GMM model run: use back-end MPI Cluster"
+    }, {
+      "LangCode": "FR",
+      "ShortLabel": "Utiliser les options GMM",
+      "Descr": "GMM exécution de modèle : utilisez le cluster MPI back-end"
+    }
+  ],
+  "subCount": 16,
+  "threadCount": 1,
+  "mpiNpCount": 17,
+  "mpiUseJobs": true,
+  "mpiOnRoot": false,
+  "mpiTmpl": "mpi.GMM.template.txt"
+}

@@ -1,0 +1,567 @@
+// Copyright (c) 2013-2014 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(SyntaxProbes, EN) Probes for omc development and tssting
+
+
+classification SEX //EN Sex
+{
+    //EN Female
+    FEMALE,
+
+    //EN Male
+    MALE
+};
+
+classification REGION //EN Region
+{
+    //EN East
+    EAST,
+
+    //EN West
+    WEST
+};
+
+partition AGE_GROUP //EN Age group
+{
+    0.5,
+    10,
+    20,
+    30
+};
+
+
+range YEAR //EN Year
+{
+    -3,
+     4
+};
+
+parameters
+{
+    //EN a long
+    long a_long;
+
+    //EN a float
+    float a_float;
+
+    //EN a double
+    double a_double;
+
+    //EN a switch (bool)
+    logical a_switch;
+
+    //EN a SEX (classification)
+    SEX a_sex;
+
+    //EN a YEARS (range)
+    YEAR a_years;
+
+    //EN a AGE_GROUP (partition)
+    // supported in ompp, unsupported in Modgen
+    //AGE_GROUP a_age_group;
+
+    //EN my first multi-dimensional parameter
+    // 'real' is supported in ompp, not supported in Modgen
+    double Something[SEX][AGE_GROUP];
+
+};
+
+parameter_group PG_some {
+    a_long,
+    a_float
+};
+
+parameter_group PG_more {
+    PG_some,
+    a_double,
+    a_switch
+};
+
+parameter_group PG_yet_more {
+    PG_more,
+    //PG_yet_more2, // test to trigger circular error
+    a_sex
+};
+
+parameter_group PG_yet_more2 {
+    PG_yet_more,
+    a_years
+};
+
+actor Person            //EN Individual
+{
+    uint my_uint = { 0 };
+
+    YEAR year;
+
+    EDUCATION_LEVEL edlev;
+
+};
+
+// deliberately declared after use in agent statement above.
+classification EDUCATION_LEVEL
+{
+    RL_PRESCHOOL,
+    RL_PRIMARY,
+    RL_SECONDARY,
+    RL_POST_SECONDARY
+};
+
+
+classification EYE_COLOUR
+{
+    EC_BLUE,
+    EC_BROWN
+};
+
+actor Person            //EN Individual
+{
+    //EN Eye colour
+    EYE_COLOUR eye_colour = { EC_BLUE };
+
+    logical eye_colour_definitive = { FALSE };
+
+    event timeEyeColourChangeEvent, EyeColourChangeEvent;
+
+};
+
+TIME Person::timeEyeColourChangeEvent()
+{
+    TIME event_time = TIME_INFINITE;
+
+    if (!eye_colour_definitive) {
+        // eye colour becomes definitive at six months of age
+        event_time = WAIT(0.5);
+    }
+
+    return event_time;
+}
+
+void Person::EyeColourChangeEvent()
+{
+    // 70% of babies change eye colour to brown by 6 months of age
+    if (RandUniform(7) < 0.7) {
+        eye_colour = EC_BLUE;
+    }
+    else {
+        eye_colour = EC_BROWN;
+    }
+    eye_colour_definitive = true;
+}
+
+
+/*NOTE(ProbeOfHappiness2, EN)
+	This table contains statistics related to happiness (#2).
+*/
+table Person ProbeOfHappiness2 //EN Probe of happiness #2
+{
+	{
+		value_in(alive),				   //EN Population size
+		value_out(happy),             //EN Happy at death
+		duration(playing, TRUE) / value_in(alive), //EN Average years playing in lifetime decimals=4
+		- 0.5 * duration(happy, TRUE) / value_in(alive) //EN happiness-adjusted life-years decimals=4
+	} //EN Quantity
+};
+
+/*NOTE(ProbeOfHappiness3, EN)
+    This table contains statistics related to happiness (#3).
+*/
+table Person ProbeOfHappiness3 //EN Probe of happiness #3
+{
+    {
+        sqrt(duration(playing, TRUE) / value_in(alive)) //EN Square root of average years playing in lifetime decimals=4
+    } //EN Quantity
+};
+
+parameters {
+    logical i_bool;
+    SEX i_sex;
+	// parameters of type partition not supported in Modgen
+    //AGE_GROUP i_age_group = { 2 };
+    YEAR i_year;
+
+    logical j_bool[REGION];
+    SEX j_sex[REGION];
+	// parameters of type partition not supported in Modgen
+    //AGE_GROUP j_age_group[REGION] = { 2, 3 };
+    YEAR j_year[REGION];
+
+    logical k_bool[REGION][REGION];
+    SEX k_sex[REGION][REGION];
+	// parameters of type partition not supported in Modgen
+    //AGE_GROUP k_age_group[REGION][REGION] = { 2, 3, 3, 2 };
+    YEAR k_year[REGION][REGION];
+
+};
+
+void PreSimulation()
+{
+    assert(i_year == -2); // Parameter i_year is not -2 (value in SyntaxProbes.dat)
+}
+
+range RNG_0_19 { 0, 19 };
+range RNG_0_20 { 0, 20 };
+range RNG_0_30 { 0, 30 };
+range RNG_0_100 { 0, 100 };
+range RNG_0_200 { 0, 200 };
+
+parameters
+{
+     int z20[RNG_0_19];
+};
+
+table Person MultiDimTest
+{
+    {
+        duration()
+    }
+    * happy
+    * playing
+};
+
+actor Person
+{
+    real d = happy ? 0.5 : -0.5;
+    real q = duration(happy, TRUE) / duration();
+};
+
+table Person qTest
+{
+    {
+        value_out(q)
+    }
+};
+
+table Person FilterTest
+[ happy == TRUE ]
+{
+    {
+        duration()
+    }
+    * playing
+};
+
+
+table Person MarginTest //EN Test of table margins
+{
+    self_scheduling_split(age, AGE_GROUP)+
+    * eye_colour+
+    * {
+        duration(), //EN PY's
+        duration(happy, TRUE) //EN Happy PY's
+    }
+};
+
+
+actor Person
+{
+    RNG_0_20 first_20_agent_ids = COERCE(RNG_0_20, actor_id);
+    RNG_0_30 first_30_agent_ids = COERCE(RNG_0_30, actor_id);
+    RNG_0_100 first_100_agent_ids = COERCE(RNG_0_100, actor_id);
+    RNG_0_200 first_200_agent_ids = COERCE(RNG_0_200, actor_id);
+};
+actor Thing
+{
+    RNG_0_20 first_20_agent_ids = COERCE(RNG_0_20, actor_id);
+    RNG_0_30 first_30_agent_ids = COERCE(RNG_0_30, actor_id);
+    RNG_0_100 first_100_agent_ids = COERCE(RNG_0_100, actor_id);
+    RNG_0_200 first_200_agent_ids = COERCE(RNG_0_200, actor_id);
+};
+actor Toy
+{
+    RNG_0_20 first_20_agent_ids = COERCE(RNG_0_20, actor_id);
+    RNG_0_30 first_30_agent_ids = COERCE(RNG_0_30, actor_id);
+    RNG_0_100 first_100_agent_ids = COERCE(RNG_0_100, actor_id);
+    RNG_0_200 first_200_agent_ids = COERCE(RNG_0_200, actor_id);
+};
+
+table Person AgentIdTest_Person
+[WITHIN(RNG_0_30, actor_id)]
+{
+    first_30_agent_ids
+    * {
+        value_out(actor_id)
+    }
+};
+
+table Thing AgentIdTest_Thing
+[WITHIN(RNG_0_30, actor_id)]
+{
+    first_30_agent_ids
+    * {
+        value_out(actor_id)
+    }
+};
+
+table Toy AgentIdTest_Toy
+[WITHIN(RNG_0_30, actor_id)]
+{
+    first_30_agent_ids
+    * {
+        value_out(actor_id)
+    }
+};
+
+
+partition P_AGE_GROUP5 //EN Five-year age group
+{
+    5,
+    10,
+    15,
+    20,
+    25,
+    30
+};
+
+classification C_AGE_GROUP5 // Five-year age group
+{
+    AG_0_5,   //EN 0-5
+    AG_5_10,  //EN 5-10
+    AG_10_15, //EN 10-15
+    AG_15_20, //EN 15-20
+    AG_20_25, //EN 20-25
+    AG_25_30, //EN 25-30
+    AG_30_99 //EN 30+
+};
+
+actor Person
+{
+    //EN Integer age
+    int curtate_age = self_scheduling_int(age);
+
+    // The following does not work in Modgen, because Modgen does not support attributes of type partition
+    //EN 5-year age group
+    //P_AGE_GROUP5 age_group5 = split(curtate_age, P_AGE_GROUP5);
+
+    //EN 5-year age group
+    C_AGE_GROUP5 age_group5 = C_AGE_GROUP5(split(curtate_age, P_AGE_GROUP5));
+
+    //EN count of birthdays
+    int birthdays = changes(curtate_age);
+};
+
+actor Thing
+{
+    int spawner_birthdays1 = spawner->birthdays;
+    int spawner_birthdays2 = changes(spawner->curtate_age);
+    int spawner_age = split(spawner->curtate_age, P_AGE_GROUP5);
+};
+
+table Thing derived_probe1 //EN Table probing derived attributes and linked attributes
+{
+    split(spawner->birthdays, P_AGE_GROUP5)
+    * {
+        spawner_birthdays1,
+        spawner_birthdays2,
+        spawner_age
+    }
+};
+
+table Person split_probe1 //EN Table using split as classification dimension
+{
+    split(curtate_age, P_AGE_GROUP5)
+    * { duration() }
+};
+
+table Thing link_probe2 //EN Table using linked attribute as classification dimension
+{
+    spawner->age_group5
+    * { duration() }
+};
+
+table Thing link_probe3 //EN Table using linked attribute as classification dimension
+{
+    split(spawner->curtate_age, P_AGE_GROUP5)
+    * { duration() }
+};
+
+table Person ut1_feeder //EN Feeder table for ut1
+{
+    self_scheduling_split(age, AGE_GROUP) 
+    * eye_colour
+    * { duration() }
+};
+
+user_table ut1 //EN User table #1
+{
+      AGE_GROUP
+    * EYE_COLOUR
+    * {
+          ANALYSIS1,
+          ANALYSIS2,
+          ANALYSIS3 //EN scale=-3 decimals=3
+    }
+};
+
+dependency(ut1, ut1_feeder);
+
+void UserTables()
+{
+    if (!TablePresent("ut1")) return;
+
+    const int nAgeGroups = SIZE(AGE_GROUP);
+    const int nEyeColours = SIZE(EYE_COLOUR);
+    for (int nA = 0; nA < nAgeGroups; ++nA) {
+        for (int nC = 0; nC < nEyeColours; ++nC) {
+            double dValue = FixedGetTableValue("ut1_feeder.Expr0", nA, nC);
+            double dValue1 = 1.0 + dValue;
+            double dValue2 = 2.0 + dValue;
+            double dValue3 = 3.0 + dValue;
+            FixedSetTableValue("ut1.ANALYSIS1", dValue1, nA, nC);
+            FixedSetTableValue("ut1.ANALYSIS2", dValue2, nA, nC);
+            FixedSetTableValue("ut1.ANALYSIS3", dValue3, nA, nC);
+        }
+    }
+}
+
+
+user_table ut2 //EN User table #2
+{
+    {
+          ANALYSIS1 // Deliberately left empty
+    }
+};
+
+void PreSimulation()
+{
+    int a = 5;
+    WriteLogEntry("My favourite number is %d!", a);
+    a = 42;
+    WriteDebugLogEntry("The answer is  %d!", a);
+//    WarningMsg("This is an empty warning %d %d", a, a);
+}
+
+
+
+// tests of entity functions arguments (Modgen 12 compatible)
+actor Person
+{
+	void SomeThingThatTakesAPointer(CString* thing);
+	void SomeThingThatTakesAConstPointer(const CString* thing);
+	void SomeThingThatTakesAConstDoublePointer(const double* thing);
+	void SomeThingThatTakesARef(std::vector<double>& thing);
+	void SomeThingThatTakesAConstRef(const CString& thing);
+	void SomeThingThatTakesANamespaceQualifiedConstRef(const std::basic_string<char, std::char_traits<char>, std::allocator<char>>& thing);
+	void SomeReallyLongName(const Some::Really::Long::Thingee& thing);
+	void SomeReallyLongModifiableName(Some::Really::Long::Thingee& thing);
+	void GlobalNamespaceRef(::GlobalThing& thing);
+    void SomethingWithDefaultArguments(int a, int b = -1);
+    // The following are not Modgen 12 compatible, and are tested in Extensions.ompp
+    //void SomethingVariadic(const char *fmt, ...);
+    //void SomethingStringee(int a, std::string s);
+    //void SomethingStringee2(std::string s);
+};
+
+// supply definitions to avoid C++ compiler warnings
+void Person::SomeThingThatTakesAPointer(CString* thing) {}
+void Person::SomeThingThatTakesAConstPointer(const CString* thing) {}
+void Person::SomeThingThatTakesAConstDoublePointer(const double* thing) {}
+void Person::SomeThingThatTakesARef(std::vector<double>& thing) {}
+void Person::SomeThingThatTakesAConstRef(const CString& thing) {}
+void Person::SomeThingThatTakesANamespaceQualifiedConstRef(const std::basic_string<char, std::char_traits<char>, std::allocator<char>>& thing) {}
+void Person::SomeReallyLongName(const Some::Really::Long::Thingee& thing) {}
+void Person::SomeReallyLongModifiableName(Some::Really::Long::Thingee& thing) {}
+void Person::GlobalNamespaceRef(::GlobalThing& thing) {}
+void Person::SomethingWithDefaultArguments(int a, int b) {}
+
+// Tests of haz1rate parameters
+parameters {
+    haz1rate z_haz1rate_scalar; //EN haz1rate scalar
+    haz1rate z_haz1rate_array[SEX]; //EN haz1rate array
+};
+
+void PreSimulation()
+{
+    double d1 = z_haz1rate_scalar;
+    // value in SyntaxProbes.dat is 0.90
+    double d2 = - log(1.0 - 0.90);
+    
+    double diff = d1 - d2;
+    if (diff < 0) diff = -diff;
+    assert(diff < 1e-15); // should be the same to nuemrical precision
+}
+
+
+
+// Tests of derived (aka model_generated) parameters
+parameters{
+    model_generated YEAR mg_year1;
+    model_generated YEAR mg_year2;
+    model_generated YEAR mg_year_array[SEX];
+    model_generated SEX mg_sex_array[YEAR];
+    model_generated int mg_int;
+    model_generated double mg_double;
+    model_generated int mg_int_array[SEX];
+    model_generated int mg_int_array2[SEX][YEAR];
+    model_generated double mg_double_array[SEX];
+};
+
+void PreSimulation()
+{
+    //assert(mg_year1 == MIN(YEAR)); // default value of range is lower bound
+
+    mg_year2 = mg_year1;
+    mg_year2++;
+    //assert(mg_year2 == 1 + MIN(YEAR)); // derived parameter value persists
+
+    assert(mg_int == 0); // default value of int is zero
+    mg_int = 42;
+    assert(mg_int == 42); // derived parameter value persists
+
+    assert(mg_double == 0.0); // default value of double is zero
+    mg_double = 42.0;
+    assert(mg_double == 42.0); // derived parameter value persists
+
+    //assert(mg_year_array[MALE] == MIN(YEAR));  // default value of range is lower bound
+    //assert(mg_year_array[FEMALE] == MIN(YEAR));  // default value of range is lower bound
+
+    mg_year_array[MALE]++;
+    //assert(mg_year_array[MALE] == 1 + MIN(YEAR));  // derived parameter value persists
+
+    assert(mg_int_array[FEMALE] == 0); // default value of int is zero
+    assert(mg_int_array[MALE] == 0); // default value of int is zero
+    mg_int_array[FEMALE] = 7;
+    mg_int_array[MALE] = 9;
+    assert(mg_int_array[FEMALE] == 7); // derived parameter value persists
+    assert(mg_int_array[MALE] == 9); // derived parameter value persists
+
+    assert(mg_double_array[FEMALE] == 0); // default value of double is zero
+    assert(mg_double_array[MALE] == 0); // default value of double is zero
+    mg_double_array[FEMALE] = 7;
+    mg_double_array[MALE] = 9;
+    assert(mg_double_array[FEMALE] == 7); // derived parameter value persists
+    assert(mg_double_array[MALE] == 9); // derived parameter value persists
+
+    for (int k = 0; k < SIZE(YEAR); ++k) {
+        mg_sex_array[k] = (k % 2) ? MALE : FEMALE;
+    }
+
+
+
+    for (int j = 0; j < SIZE(SEX); ++j) {
+        for (int k = 0; k < SIZE(YEAR); ++k) {
+            mg_int_array2[j][k] = (j+1) * (k+1);
+        }
+    }
+
+
+}
+
+// Test of event table keyword
+table Person EyeColourToBrown
+{
+    self_scheduling_split(age, AGE_GROUP)+
+    * { event(entrances(eye_colour, EC_BROWN)) }
+};
+
+
+actor Person {
+    int compute_stuff(int arg);
+    int stuff = compute_stuff(4);
+};
+
+int Person::compute_stuff(int arg)
+{
+    return arg;
+}

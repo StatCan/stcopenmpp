@@ -1,0 +1,47 @@
+// Copyright (c) 2024-2024 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+//LABEL(ompp_options.ompp, EN) OpenM++ model options
+//LABEL(ompp_options.ompp, FR) Options de modèle d'OpenM++
+
+/* NOTE(ompp_options.ompp, EN)
+    This module contains some commonly modified OpenM++ model options.
+*/
+/* NOTE(ompp_options.ompp, FR)
+    Ce module contient des options de modèle d'OpenM++ souvent modifiées.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+//
+// General options
+//
+
+options bounds_errors = on; // out-of-bounds assignment to an enumeration is an error
+//options bounds_errors = off; // assignment to an enumeration is clamped to allowed values
+
+//options index_errors = on; // mark-up model code to detect out-of-bounds enumeration indices at runtime
+
+options lifecycle_attributes = Ticker; // Create lifecycle_event and lifecycle_counter for Ticker entity
+options lifecycle_attributes = Person; // Create lifecycle_event and lifecycle_counter for Person entities
+
+
+// 
+// Model Documentation options:
+//  (These have no effect if Model Documentation is disabled in build settings.)
+//
+
+//options authored_documentation = off;    // Uncomment to suppress the autonomous authored component.
+//options generated_documentation = off;   // Uncomment to suppress the generated Symbol Reference component.
+
+// 
+// Selected Symbol Reference options:
+//
+
+options symref_developer_edition = on;       // Uncomment to produce the Developer Edition instead of the User Edition.
+options symref_parameter_major_groups = off; // Uncomment for models with small parameter hierarchies.
+options symref_table_major_groups = off;     // Uncomment for models with small table hierarchies.
+
+#endif // Hide non-C++ syntactic island from IDE

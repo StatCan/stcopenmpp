@@ -1,0 +1,70 @@
+//LABEL(model_core, EN) Core simulation functions
+
+/* NOTE(model_core, EN)
+	This module contains core simulation functions and definitions.
+*/
+
+// The model version number
+version 1, 0, 0, 0;
+
+// The model type
+model_type time_based, just_in_time;
+
+// The data type used to represent time
+time_type double;
+
+// Other data types
+real_type		float;
+counter_type	ushort;
+integer_type	short;
+
+// The following option reduces memory use at the expense of speed
+options packing_level=2;
+
+// Supported languages
+languages 
+{
+	EN // English
+};
+
+// This function is called by the simulation framework to simulate a replicate.
+void Simulation()
+{
+    extern void LogSimulationStart(); // defined elsewhere
+    extern void SimulateEvents(); // defined elsewhere
+
+    // Write simulation start message to log
+    LogSimulationStart();
+
+    in_csv.open(PersonMicroDataFile);
+    // input csv file does not have a header
+    //std_string hdr = in_csv.read_header();
+    if (WriteMicrodata) {
+        out_csv.open(MicroRecordFileName);
+        // Set precision to 7 to obtain 3 digits after the decimal point for YoB.
+        out_csv.precision(7);
+        out_csv.write_header("time_of_birth,sex");
+    }
+
+    // Create the single Ticker entity.
+	auto paTicker = new Ticker();
+	// Enter it into the the simulation.
+	paTicker->Start();
+
+	// The initial population
+	for ( int nJ = 0; nJ < StartingPopulationSize; nJ++ )
+	{
+    	// Create a Person entity.
+		auto paPerson = new Person();
+    	// Enter it into the simulation.
+        paPerson->Start(nJ, NULL);
+    }
+
+    // Simulate events until there are no more.
+    SimulateEvents();
+
+    in_csv.close();
+    if (WriteMicrodata) {
+        out_csv.close();
+    }
+}

@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+#
+# Create zip archive of stcopenmpp build from ompp sub-directory: stcopenmpp-debian-YYYYMMDD.tar.xz
+
+if [ -n "$OM_MSG_USE" ] && [ "$OM_MSG_USE" != 'EMPTY' ] && [ "$OM_MSG_USE" != 'MPI' ]; then
+  echo Error: incorrect value: $OM_MSG_USE, must be one of: MPI or EMPTY
+  exit 1
+fi
+
+[ "$OM_MSG_USE" = 'MPI' ] && OM_SFX_MPI=_mpi || OM_SFX_MPI=
+
+[ -n "$MODEL_DIRS" ] && \
+  OM_BLD_MDLS=${MODEL_DIRS//,/ } || \
+  OM_BLD_MDLS="modelOne NewCaseBased NewTimeBased NewCaseBased_bilingual IDMM RiskPaths OzProjX OzProjGenX SM1"
+
+# push into ompp root and make log directory if not exist
+
+if [ ! -d ompp ]; then
+  echo ERROR: missing source code directory: ompp
+  exit 1
+fi
+
+pushd ompp
+OM_ROOT=$PWD
+
+if [ ! -d log ]; then mkdir log; fi
+
+# Get current date, UTC time zone and set archive name
+[ -n "$OM_DATE_STAMP" ] || OM_DATE_STAMP=`date +%Y%m%d`
+
+DEPLOY_NAME=${OMPP_DEPLOY_NAME:-stcopenmpp-debian${OM_SFX_MPI}-${OM_DATE_STAMP}}
+DEPLOY_DIR=../$DEPLOY_NAME
+DEPLOY_GZ=$DEPLOY_NAME.tar.xz
+
+# Log build environment
+echo Log file: log/build-tar-xz.log
+echo `date` Pack openM++ build | tee log/build-tar-xz.log
+echo Environment: | tee -a log/build-tar-xz.log
+echo " OM_MSG_USE    = $OM_MSG_USE" | tee -a log/build-tar-xz.log
+echo " OM_ROOT       = $OM_ROOT" | tee -a log/build-tar-xz.log
+echo " MODEL_DIRS    = $MODEL_DIRS" | tee -a log/build-tar-xz.log
+echo " OM_DATE_STAMP = $OM_DATE_STAMP" | tee -a log/build-tar-xz.log
+echo " DEPLOY_DIR    = $DEPLOY_DIR" | tee -a log/build-tar-xz.log
+echo Pack into: $DEPLOY_GZ | tee -a log/build-tar-xz.log
+
+# Execute command, log results and exit on errors
+do_cmd()
+{
+  echo $@ | tee -a log/build-tar-xz.log
+
+  if ! $@ >> log/build-tar-xz.log 2>&1;
+  then
+    echo FAILED. | tee -a log/build-tar-xz.log
+    exit 1
+  fi
+}
+
+# Set dotglob to copy all files from source to destination directory
+do_cp_all()
+{
+  (
+    shopt -s dotglob
+    for f in $1/*; do
+      if [ -f $f ]; then do_cmd cp -p $f $2/ || exit 1; fi
+    done
+  )
+  if [ $? -ne 0 ]; then
+    echo FAILED on file copy.
+    exit 1
+  fi
+}
+
+# Delete existing pack directory and zip file
+
+if [ -e $DEPLOY_DIR ]; then do_cmd rm -rf $DEPLOY_DIR; fi
+if [ -e ../$DEPLOY_GZ ];  then do_cmd rm -rf ../$DEPLOY_GZ; fi
+
+# Create new deploy directory
+# Copy top level sub-directories and files
+do_cmd mkdir $DEPLOY_DIR
+do_cmd mkdir $DEPLOY_DIR/log
+
+echo Copy files: | tee -a log/build-tar-xz.log
+
+do_cp_all . $DEPLOY_DIR
+
+do_cmd cp -pr Excel    $DEPLOY_DIR
+do_cmd cp -pr include  $DEPLOY_DIR
+do_cmd cp -pr licenses $DEPLOY_DIR
+do_cmd cp -pr openm    $DEPLOY_DIR
+do_cmd cp -pr Perl     $DEPLOY_DIR
+do_cmd cp -pr plugins  $DEPLOY_DIR
+do_cmd cp -pr props    $DEPLOY_DIR
+do_cmd cp -pr sql      $DEPLOY_DIR
+do_cmd cp -pr use      $DEPLOY_DIR
+do_cmd cp -pr Xcode    $DEPLOY_DIR
+
+# Copy openm bin directory
+do_cmd cp -pr bin $DEPLOY_DIR
+[ -e $DEPLOY_DIR/bin/omcD ] && do_cmd rm -v $DEPLOY_DIR/bin/omcD
+
+# Copy openm runtime libraries
+do_cmd mkdir $DEPLOY_DIR/lib
+
+do_cmd cp -p lib/libopenm${OM_SFX_MPI}.a lib/libsqlite.a $DEPLOY_DIR/lib
+[ -e lib/libopenmD${OM_SFX_MPI}.a ] && do_cmd cp -p lib/libopenmD${OM_SFX_MPI}.a $DEPLOY_DIR/lib
+[ -e lib/libsqliteD.a ] &&             do_cmd cp -p lib/libsqliteD.a             $DEPLOY_DIR/lib
+
+# Copy ompp-go bin executables and source code
+do_cmd cp -p bin/dbcopy $DEPLOY_DIR/bin
+do_cmd cp -p bin/dbget  $DEPLOY_DIR/bin
+do_cmd cp -p bin/oms    $DEPLOY_DIR/bin
+do_cmd cp -p ompp-go/*.message.ini $DEPLOY_DIR/bin
+
+# Copy ompp-go source code
+do_cmd cp -pr ompp-go    $DEPLOY_DIR
+
+# Copy template files to run models
+do_cmd mkdir $DEPLOY_DIR/etc
+do_cmd cp -p ompp-go/etc/run-Linux-MacOS.Debug.template.txt        $DEPLOY_DIR/etc/run.Debug.template.txt
+do_cmd cp -p ompp-go/etc/mpi-Linux-openMPI.ModelRun.template.txt   $DEPLOY_DIR/etc/mpi.ModelRun.template.txt
+do_cmd cp -p ompp-go/etc/disk_linux.ini                            $DEPLOY_DIR/etc/disk.ini
+do_cmd cp -p ompp-go/etc/db-cleanup_linux.sh                       $DEPLOY_DIR/etc/
+do_cmd cp -p ompp-go/etc/ui.extra.json                             $DEPLOY_DIR/etc/
+do_cmd cp -p ompp-go/etc/run-options.any_model.1.Use_Defaults.json $DEPLOY_DIR/etc/
+
+# Copy ompp-docker source code
+do_cmd cp -pr ompp-docker    $DEPLOY_DIR
+
+# Copy ompp-r source code
+do_cmd cp -pr ompp-r    $DEPLOY_DIR
+
+# Copy ompp-python source code
+do_cmd cp -pr ompp-python    $DEPLOY_DIR
+
+# Copy ompp-other source code
+do_cmd cp -pr ompp-other    $DEPLOY_DIR
+
+# Copy UI html build and source code
+do_cmd cp -pr ompp-ui/dist/spa   $DEPLOY_DIR/html
+do_cmd mkdir $DEPLOY_DIR/ompp-ui
+do_cp_all ompp-ui $DEPLOY_DIR/ompp-ui
+do_cmd cp -pr ompp-ui/.vscode  $DEPLOY_DIR/ompp-ui/.vscode
+do_cmd cp -pr ompp-ui/licenses $DEPLOY_DIR/ompp-ui/licenses
+do_cmd cp -pr ompp-ui/public   $DEPLOY_DIR/ompp-ui/public
+do_cmd cp -pr ompp-ui/src      $DEPLOY_DIR/ompp-ui/src
+
+# Copy models
+do_cmd mkdir -p $DEPLOY_DIR/models/bin
+do_cmd mkdir -p $DEPLOY_DIR/models/sql
+do_cmd mkdir -p $DEPLOY_DIR/models/log
+do_cmd mkdir -p $DEPLOY_DIR/models/doc
+do_cmd mkdir -p $DEPLOY_DIR/models/home/io/download
+do_cmd mkdir -p $DEPLOY_DIR/models/home/io/upload
+do_cp_all models $DEPLOY_DIR/models
+do_cmd cp -pr models/bin/*      $DEPLOY_DIR/models/bin
+do_cmd cp -p  models/sql/*      $DEPLOY_DIR/models/sql
+do_cmd cp -p  models/log/*.log  $DEPLOY_DIR/models/log
+do_cmd cp -p  models/doc/*.*    $DEPLOY_DIR/models/doc
+
+for M in $OM_BLD_MDLS; do
+
+  do_cmd cp -pr models/$M $DEPLOY_DIR/models/$M
+
+  do_cmd rm -rf $DEPLOY_DIR/models/$M/ompp-linux
+  do_cmd rm -rf $DEPLOY_DIR/models/$M/ompp-mac
+
+done
+
+# Copy additional models source code
+for M in Align1 Alpha1 Alpha2 CellMM CloneProbe1 DependencyProbe1 DependencyProbe2 GiniProbe NewCaseBased_weighted PA1 THIM TableProbe1 TableProbe2 TestEx TypeProbe1; do
+  if [ ! -d $DEPLOY_DIR/models/$M ]; then
+
+    do_cmd cp -pr models/$M $DEPLOY_DIR/models/
+
+    do_cmd rm -rf $DEPLOY_DIR/models/$M/ompp-linux
+    do_cmd rm -rf $DEPLOY_DIR/models/$M/ompp-mac
+  fi
+done
+
+# Build completed
+echo Build completed on:  `date` > $DEPLOY_DIR/build_date.txt
+
+popd
+
+# Create tar.xz archive from deployment directory
+echo Create $DEPLOY_GZ | tee -a ompp/log/build-tar-xz.log
+echo tar cJf $DEPLOY_GZ $DEPLOY_NAME | tee -a ompp/log/build-tar-xz.log
+
+if ! tar cJf $DEPLOY_GZ $DEPLOY_NAME >> ompp/log/build-tar-xz.log 2>&1;
+then
+  echo FAILED. | tee -a ompp/log/build-tar-xz.log
+  exit 1
+fi
+
+echo `date` Done. | tee -a ompp/log/build-tar-xz.log

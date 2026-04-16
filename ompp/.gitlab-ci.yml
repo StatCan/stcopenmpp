@@ -1,0 +1,85 @@
+stages:
+  - release
+
+variables:
+  GITLAB_URL: "$GITLAB_URL"
+  GITLAB_TOKEN: "$GITLAB_TOKEN"
+  ARTIFACTORY_URL: "$ARTIFACTORY_URL"
+  ARTIFACTORY_TOKEN: "$ARTIFACTORY_TOKEN"
+  PACKAGE_NAME: "openmpp"
+
+release_artifacts:
+  stage: release
+  image: python:3.12-alpine
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - |
+      set -euo pipefail
+
+      # Sanitize tag/version for Generic Package Registry and release assets
+      VERSION=$(echo "$CI_COMMIT_TAG" | sed 's/[^a-zA-Z0-9._-]/-/g')
+      echo "Using sanitized version: $VERSION"
+
+      # Define artifact filenames using the tag (sh-compatible)
+      ARTIFACTORY_FILES="openmpp-windows-mpi-${VERSION}.zip openmpp-windows-${VERSION}.zip openmpp-ubuntu-mpi-${VERSION}.tar.gz openmpp-debian-mpi-${VERSION}.tar.gz openmpp-debian-${VERSION}.tar.gz openmpp-debian12-mpi-${VERSION}.tar.gz openmpp-debian12-${VERSION}.tar.gz"
+
+
+      # Install curl silently
+      apk add --no-cache curl > /dev/null 2>&1
+
+      echo "Downloading artifacts from Artifactory..."
+      for file in $ARTIFACTORY_FILES; do
+        # Determine OS folder based on filename
+        case "$file" in
+          *windows*) folder="windows" ;;
+          *) folder="linux" ;;
+        esac
+
+        curl --fail -H "Authorization: Bearer $ARTIFACTORY_TOKEN" -L "$ARTIFACTORY_URL/$folder/$file" -o "$file"
+        echo "Downloaded $file"
+      done
+
+      echo "Uploading artifacts to GitLab Generic Package Registry..."
+      upload_package() {
+        file=$1
+        echo "Uploading $file..."
+        curl --fail -i \
+          -X PUT \
+          -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --upload-file "$file" \
+          "$GITLAB_URL/api/v4/projects/$CI_PROJECT_ID/packages/generic/$PACKAGE_NAME/$VERSION/$file"
+
+        echo "Uploaded $file as Generic Package"
+        echo "Direct download link:"
+        echo "$GITLAB_URL/api/v4/projects/$CI_PROJECT_ID/packages/generic/$PACKAGE_NAME/$VERSION/$file"
+        echo ""
+      }
+
+      for file in $ARTIFACTORY_FILES; do
+        upload_package "$file"
+      done
+
+      echo "Creating GitLab release if it does not exist..."
+      curl --fail -s -X POST \
+           -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+           -H "Content-Type: application/json" \
+           -d "{\"name\":\"$CI_COMMIT_TAG\",\"tag_name\":\"$CI_COMMIT_TAG\"}" \
+           "$GITLAB_URL/api/v4/projects/$CI_PROJECT_ID/releases" \
+      || echo "Release exists"
+
+      echo "Attaching release assets..."
+      attach_release_asset() {
+        file=$1
+        url="$GITLAB_URL/api/v4/projects/$CI_PROJECT_ID/packages/generic/$PACKAGE_NAME/$VERSION/$file"
+        curl --fail -s -X POST \
+          -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"name\":\"$file\",\"url\":\"$url\"}" \
+          "$GITLAB_URL/api/v4/projects/$CI_PROJECT_ID/releases/$CI_COMMIT_TAG/assets/links"
+        echo "Attached $file to release: $url"
+      }
+
+      for file in $ARTIFACTORY_FILES; do
+        attach_release_asset "$file"
+      done

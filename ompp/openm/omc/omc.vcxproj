@@ -1,0 +1,386 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- 
+    AdditionalIncludeDirectories:
+      OM_INC_DIR
+      
+    AdditionalDependencies:
+      OM_DB_LIB 
+      libopenm_omc_db.lib
+      
+    AdditionalLibraryDirectories:
+      OM_DB_LIB_DIR
+      OM_LIB_DIR
+  -->
+  <Import Project="$(SolutionDir)openm.0.version.props" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5F4BEA41-A06D-4677-B4FE-9F1B5DE0BAB1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>omc_nobison</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- Import openM common project settings -->
+  <Import Project="$(SolutionDir)openm.build.props" />
+  <PropertyGroup>
+    <BUILD_OMC_SRC_DIR>$(BUILD_DIR)/$(ProjectName)/src_windows</BUILD_OMC_SRC_DIR>
+    <OutDir>$(OM_BIN_DIR)/</OutDir>
+    <TargetName>$(ProjectName)$(BUILD_SUFFIX)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OM_INC_DIR);$(SolutionDir)include;$(ProjectDir);$(BUILD_OMC_SRC_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(OM_DB_LIB_DIR);$(OM_LIB_DIR);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OM_DB_LIB);libopenm_omc_db$(BUILD_SUFFIX).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OM_INC_DIR);$(SolutionDir)include;$(ProjectDir);$(BUILD_OMC_SRC_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(OM_DB_LIB_DIR);$(OM_LIB_DIR);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OM_DB_LIB);libopenm_omc_db$(BUILD_SUFFIX).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OM_INC_DIR);$(SolutionDir)include;$(ProjectDir);$(BUILD_OMC_SRC_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(OM_DB_LIB_DIR);$(OM_LIB_DIR);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OM_DB_LIB);libopenm_omc_db$(BUILD_SUFFIX).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OM_INC_DIR);$(SolutionDir)include;$(ProjectDir);$(BUILD_OMC_SRC_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(OM_DB_LIB_DIR);$(OM_LIB_DIR);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OM_DB_LIB);libopenm_omc_db$(BUILD_SUFFIX).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="$(OM_INC_DIR)/libopenm/db/metaModelHolder.h" />
+    <ClInclude Include="$(OM_INC_DIR)/libopenm/db/modelBuilder.h" />
+    <ClInclude Include="AggregationSymbol.h" />
+    <ClInclude Include="AnonGroupSymbol.h" />
+    <ClInclude Include="ast.h" />
+    <ClInclude Include="AttributeGroupSymbol.h" />
+    <ClInclude Include="AttributeSymbol.h" />
+    <ClInclude Include="BoolEnumeratorSymbol.h" />
+    <ClInclude Include="BoolSymbol.h" />
+    <ClInclude Include="BuiltinAttributeSymbol.h" />
+    <ClInclude Include="ClassificationEnumeratorSymbol.h" />
+    <ClInclude Include="ClassificationSymbol.h" />
+    <ClInclude Include="CodeBlock.h" />
+    <ClInclude Include="CodeGen.h" />
+    <ClInclude Include="Constant.h" />
+    <ClInclude Include="ConstantSymbol.h" />
+    <ClInclude Include="DependencyGroupSymbol.h" />
+    <ClInclude Include="DerivedAttributeSymbol.h" />
+    <ClInclude Include="DerivedTableSymbol.h" />
+    <ClInclude Include="DimensionSymbol.h" />
+    <ClInclude Include="disable_selected_warnings.h" />
+    <ClInclude Include="Driver.h" />
+    <ClInclude Include="EntityArrayMemberSymbol.h" />
+    <ClInclude Include="EntityDataMemberSymbol.h" />
+    <ClInclude Include="EntityEventSymbol.h" />
+    <ClInclude Include="EntityForeignMemberSymbol.h" />
+    <ClInclude Include="EntityFuncSymbol.h" />
+    <ClInclude Include="EntityHookSymbol.h" />
+    <ClInclude Include="EntityIncrementSymbol.h" />
+    <ClInclude Include="EntityInternalSymbol.h" />
+    <ClInclude Include="EntityMemberSymbol.h" />
+    <ClInclude Include="EntityMultilinkSymbol.h" />
+    <ClInclude Include="EntitySetSymbol.h" />
+    <ClInclude Include="EntitySymbol.h" />
+    <ClInclude Include="EntityTableAccumulatorSymbol.h" />
+    <ClInclude Include="EntityTableMeasureAttributeSymbol.h" />
+    <ClInclude Include="EntityTableMeasureSymbol.h" />
+    <ClInclude Include="EntityTableSymbol.h" />
+    <ClInclude Include="EnumerationSymbol.h" />
+    <ClInclude Include="EnumerationWithEnumeratorsSymbol.h" />
+    <ClInclude Include="EnumeratorSymbol.h" />
+    <ClInclude Include="ExprForAttribute.h" />
+    <ClInclude Include="ExprForTable.h" />
+    <ClInclude Include="ExtendParameterSymbol.h" />
+    <ClInclude Include="GlobalFuncSymbol.h" />
+    <ClInclude Include="GroupSymbol.h" />
+    <ClInclude Include="IdentityAttributeSymbol.h" />
+    <ClInclude Include="ImportSymbol.h" />
+    <ClInclude Include="LanguageSymbol.h" />
+    <ClInclude Include="LinkAttributeSymbol.h" />
+    <ClInclude Include="LinkToAttributeSymbol.h" />
+    <ClInclude Include="Literal.h" />
+    <ClInclude Include="$(BUILD_OMC_SRC_DIR)/parser.hpp" />
+    <ClInclude Include="MaintainedAttributeSymbol.h" />
+    <ClInclude Include="MeasureDimensionSymbol.h" />
+    <ClInclude Include="ModelSymbol.h" />
+    <ClInclude Include="ModelTypeSymbol.h" />
+    <ClInclude Include="ModuleSymbol.h" />
+    <ClInclude Include="MultilinkAttributeSymbol.h" />
+    <ClInclude Include="NumericSymbol.h" />
+    <ClInclude Include="omc_common.h" />
+    <ClInclude Include="omc_csv.h" />
+    <ClInclude Include="omc_file.h" />
+    <ClInclude Include="omc_location.hh" />
+    <ClInclude Include="omc_markup.h" />
+    <ClInclude Include="omc_missing_documentation.h" />
+    <ClInclude Include="omc_model_doc.h" />
+    <ClInclude Include="omc_model_metrics.h" />
+    <ClInclude Include="ParameterGroupSymbol.h" />
+    <ClInclude Include="ParameterSymbol.h" />
+    <ClInclude Include="ParseContext.h" />
+    <ClInclude Include="PartitionEnumeratorSymbol.h" />
+    <ClInclude Include="PartitionSymbol.h" />
+    <ClInclude Include="RangeSymbol.h" />
+    <ClInclude Include="RealSymbol.h" />
+    <ClInclude Include="ScenarioSymbol.h" />
+    <ClInclude Include="SimpleAttributeEnumSymbol.h" />
+    <ClInclude Include="SimpleAttributeSymbol.h" />
+    <ClInclude Include="SpecialGlobal.h" />
+    <ClInclude Include="StringSymbol.h" />
+    <ClInclude Include="StringTypeSymbol.h" />
+    <ClInclude Include="Symbol.h" />
+    <ClInclude Include="TableGroupSymbol.h" />
+    <ClInclude Include="TableMeasureSymbol.h" />
+    <ClInclude Include="TableSymbol.h" />
+    <ClInclude Include="TimeSymbol.h" />
+    <ClInclude Include="TypeOfLinkSymbol.h" />
+    <ClInclude Include="TypeSymbol.h" />
+    <ClInclude Include="UnknownTypeSymbol.h" />
+    <ClInclude Include="VersionSymbol.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(BUILD_OMC_SRC_DIR)/location.hh" />
+    <ClInclude Include="$(BUILD_OMC_SRC_DIR)/position.hh" />
+    <ClInclude Include="$(BUILD_OMC_SRC_DIR)/stack.hh" />
+    <ClInclude Include="parser.y" />
+    <ClInclude Include="scanner.l" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AggregationSymbol.cpp" />
+    <ClCompile Include="AnonGroupSymbol.cpp" />
+    <ClCompile Include="AttributeGroupSymbol.cpp" />
+    <ClCompile Include="AttributeSymbol.cpp" />
+    <ClCompile Include="BoolSymbol.cpp" />
+    <ClCompile Include="BuiltinAttributeSymbol.cpp" />
+    <ClCompile Include="ClassificationSymbol.cpp" />
+    <ClCompile Include="CodeBlock.cpp" />
+    <ClCompile Include="CodeGen.cpp" />
+    <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="ConstantSymbol.cpp" />
+    <ClCompile Include="DependencyGroupSymbol.cpp" />
+    <ClCompile Include="DerivedAttributeSymbol.cpp" />
+    <ClCompile Include="DerivedTableSymbol.cpp" />
+    <ClCompile Include="DimensionSymbol.cpp" />
+    <ClCompile Include="Driver.cpp" />
+    <ClCompile Include="EntityArrayMemberSymbol.cpp" />
+    <ClCompile Include="EntityDataMemberSymbol.cpp" />
+    <ClCompile Include="EntityEventSymbol.cpp" />
+    <ClCompile Include="EntityForeignMemberSymbol.cpp" />
+    <ClCompile Include="EntityFuncSymbol.cpp" />
+    <ClCompile Include="EntityHookSymbol.cpp" />
+    <ClCompile Include="EntityIncrementSymbol.cpp" />
+    <ClCompile Include="EntityInternalSymbol.cpp" />
+    <ClCompile Include="EntityMemberSymbol.cpp" />
+    <ClCompile Include="EntityMultilinkSymbol.cpp" />
+    <ClCompile Include="EntitySetSymbol.cpp" />
+    <ClCompile Include="EntitySymbol.cpp" />
+    <ClCompile Include="EntityTableAccumulatorSymbol.cpp" />
+    <ClCompile Include="EntityTableMeasureAttributeSymbol.cpp" />
+    <ClCompile Include="EntityTableMeasureSymbol.cpp" />
+    <ClCompile Include="EntityTableSymbol.cpp" />
+    <ClCompile Include="EnumerationSymbol.cpp" />
+    <ClCompile Include="EnumerationWithEnumeratorsSymbol.cpp" />
+    <ClCompile Include="EnumeratorSymbol.cpp" />
+    <ClCompile Include="ExtendParameterSymbol.cpp" />
+    <ClCompile Include="GlobalFuncSymbol.cpp" />
+    <ClCompile Include="GroupSymbol.cpp" />
+    <ClCompile Include="HeaderCheck.cpp" />
+    <ClCompile Include="IdentityAttributeSymbol.cpp" />
+    <ClCompile Include="ImportSymbol.cpp" />
+    <ClCompile Include="LanguageSymbol.cpp" />
+    <ClCompile Include="LinkAttributeSymbol.cpp" />
+    <ClCompile Include="LinkToAttributeSymbol.cpp" />
+    <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="MaintainedAttributeSymbol.cpp" />
+    <ClCompile Include="MeasureDimensionSymbol.cpp" />
+    <ClCompile Include="ModelSymbol.cpp" />
+    <ClCompile Include="ModelTypeSymbol.cpp" />
+    <ClCompile Include="ModuleSymbol.cpp" />
+    <ClCompile Include="MultilinkAttributeSymbol.cpp" />
+    <ClCompile Include="NumericSymbol.cpp" />
+    <ClCompile Include="omc.cpp" />
+    <ClCompile Include="$(BUILD_OMC_SRC_DIR)/parser.cpp" />
+    <ClCompile Include="$(BUILD_OMC_SRC_DIR)/scanner.cpp" />
+    <ClCompile Include="omc_csv.cpp" />
+    <ClCompile Include="omc_file.cpp" />
+    <ClCompile Include="omc_markup.cpp" />
+    <ClCompile Include="omc_missing_documentation.cpp" />
+    <ClCompile Include="omc_model_doc.cpp" />
+    <ClCompile Include="omc_model_metrics.cpp" />
+    <ClCompile Include="ParameterGroupSymbol.cpp" />
+    <ClCompile Include="ParameterSymbol.cpp" />
+    <ClCompile Include="ParseContext.cpp" />
+    <ClCompile Include="PartitionSymbol.cpp" />
+    <ClCompile Include="RangeSymbol.cpp" />
+    <ClCompile Include="RealSymbol.cpp" />
+    <ClCompile Include="ScenarioSymbol.cpp" />
+    <ClCompile Include="SimpleAttributeEnumSymbol.cpp" />
+    <ClCompile Include="SimpleAttributeSymbol.cpp" />
+    <ClCompile Include="StringSymbol.cpp" />
+    <ClCompile Include="StringTypeSymbol.cpp" />
+    <ClCompile Include="Symbol.cpp" />
+    <ClCompile Include="Symbol_options.cpp" />
+    <ClCompile Include="TableGroupSymbol.cpp" />
+    <ClCompile Include="TableMeasureSymbol.cpp" />
+    <ClCompile Include="TableSymbol.cpp" />
+    <ClCompile Include="TimeSymbol.cpp" />
+    <ClCompile Include="TypeOfLinkSymbol.cpp" />
+    <ClCompile Include="TypeSymbol.cpp" />
+    <ClCompile Include="UnknownTypeSymbol.cpp" />
+    <ClCompile Include="VersionSymbol.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="CleanBisonFlex" BeforeTargets="PrepareForClean">
+    <Message Text="Delete flex and bison output" />
+    <RemoveDir Directories="$(BUILD_OMC_SRC_DIR)" />
+  </Target>
+  <Target Name="MakeDirBisonFlex">
+    <MakeDir Directories="$(BUILD_OMC_SRC_DIR)" />
+  </Target>
+  <Target Name="DoFlex" DependsOnTargets="MakeDirBisonFlex" Inputs="scanner.l" Outputs="$(BUILD_OMC_SRC_DIR)/scanner.cpp">
+    <Message Text="$(BISON_FLEX_DIR)/$(FLEX_EXE) scanner.l" />
+    <Exec Command="$(BISON_FLEX_DIR)/$(FLEX_EXE) -Cem --wincompat -o $(BUILD_OMC_SRC_DIR)/scanner.cpp scanner.l" />
+  </Target>
+  <Target Name="DoBison" DependsOnTargets="MakeDirBisonFlex" Inputs="parser.y" Outputs="$(BUILD_OMC_SRC_DIR)/location.hh;$(BUILD_OMC_SRC_DIR)/parser.cpp;$(BUILD_OMC_SRC_DIR)/parser.hpp;$(BUILD_OMC_SRC_DIR)/position.hh;$(BUILD_OMC_SRC_DIR)/stack.hh">
+    <Message Text="$(BISON_FLEX_DIR)/$(BISON_EXE) parser.y" />
+    <Exec Command="$(BISON_FLEX_DIR)/$(BISON_EXE) --warnings=error -Wcounterexamples -v -b parser -o $(BUILD_OMC_SRC_DIR)/parser.cpp parser.y" />
+  </Target>
+  <Target Name="BisonFlex" BeforeTargets="BeforeClCompile" DependsOnTargets="DoFlex;DoBison" />
+  <ItemGroup>
+    <OmcIni Include="omc.ini" />
+    <OmcIni Include="omc.message.ini" />
+  </ItemGroup>
+  <Target Name="CopyIni" AfterTargets="link">
+    <Copy SourceFiles="@(OmcIni)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
+  </Target>
+</Project>

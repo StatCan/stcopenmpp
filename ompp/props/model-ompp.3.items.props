@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <ItemGroup>
+
+    <OMC_INPUTS Include="$(MODEL_CODE_DIR)/*.mpp" />
+    <OMC_INPUTS Include="$(MODEL_CODE_DIR)/*.ompp" />
+    <OMC_INPUTS Include="$(OMC_IN_SCENARIO_DIR)/*.dat" />
+    <OMC_INPUTS Include="$(OMC_IN_SCENARIO_DIR)/*.odat" />
+    <OMC_INPUTS Include="$(OMC_IN_FIXED_DIR)/*.dat" Condition="'$(ENABLE_FIXED_PARAMETERS)'=='true'" />
+    <OMC_INPUTS Include="$(OMC_IN_FIXED_DIR)/*.odat" Condition="'$(ENABLE_FIXED_PARAMETERS)'=='true'" />
+    <OMC_INPUTS Include="Model.props" Condition="Exists('Model.props')"/>
+  
+    <OMC_H_OUTPUTS Include="$(OMC_OUT_DIR)/om_types0.h" />
+    <OMC_H_OUTPUTS Include="$(OMC_OUT_DIR)/om_types1.h" />
+    <OMC_H_OUTPUTS Include="$(OMC_OUT_DIR)/om_declarations.h" />
+
+    <OMC_CPP_OUTPUTS Include="$(OMC_OUT_DIR)/om_definitions.cpp" />
+    <OMC_CPP_OUTPUTS Include="$(OMC_OUT_DIR)/om_developer.cpp" />
+    <OMC_CPP_OUTPUTS Include="$(OMC_OUT_DIR)/om_fixed_parms.cpp" />
+
+    <OMC_SQL_OUTPUTS Include="$(OMC_OUT_DIR)/$(MODEL_NAME)_create_sqlite.sql" />
+    <OMC_SQL_OUTPUTS Include="$(OMC_OUT_DIR)/$(MODEL_NAME)_optional_views_sqlite.sql" />
+    
+    <OMC_MSG_INI_OUTPUT Include="$(OMC_OUT_DIR)/$(MODEL_MSG_INI)" />
+    <!--
+    drop sql-scripts created by omc and it is for dba use only:
+    
+    <OMC_SQL_OUTPUTS Include="$(OMC_OUT_DIR)/$(MODEL_NAME)_drop.sql" />
+    <OMC_SQL_OUTPUTS Include="$(OMC_OUT_DIR)/$(MODEL_NAME)_optional_views.sql" />
+    -->
+    <!--
+    <OMC_SQL_OUTPUTS Include="$(PUBLISH_SQLITE)" />
+    -->
+    
+    <OMC_OUTPUTS Include="@(OMC_H_OUTPUTS)" />
+    <OMC_OUTPUTS Include="@(OMC_CPP_OUTPUTS)" />
+    <OMC_OUTPUTS Include="@(OMC_SQL_OUTPUTS)" />
+    
+    <!--  Create @(SCENARIO_NAMES_COLLECTION) from $(SCENARIO_NAMES) (can be ; delimited list) -->
+    <SCENARIO_NAMES_COLLECTION Include="$(SCENARIO_NAMES.Split(';'))" />
+    <!--  Create @(SCENARIO_FOLDERS_COLLECTION) of corresponding directory names -->
+    <SCENARIO_FOLDERS_COLLECTION Include="$(SCENARIO_FOLDERS.Split(';'))" />
+
+  </ItemGroup>
+
+  <!-- 
+    Some property groups are coded below using relative path to fixed sister directories
+    rather than using symbolic properties assigned earlier.
+    This approach is used pending bug fix of VS vcxproj.filters issue. 
+    (Solution Explorer nodes not populated if filters refer to files
+    with slightly complex Include property)
+  -->
+  <ItemGroup>
+    <ClCompile Include="$(PCH_CXX)" Condition="'$(USE_PCH)'=='true'">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src/om_definitions.cpp" />
+    <ClCompile Include="src/om_developer.cpp" />
+    <ClCompile Include="src/om_fixed_parms.cpp" >
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../code/custom.cpp" Condition="Exists('../code/custom.cpp')">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
+    <ClInclude Include="src/om_types0.h" />
+    <ClInclude Include="src/om_types1.h" />
+    <ClInclude Include="src/om_declarations.h" />
+    <ClInclude Include="../code/custom_early.h" />
+    <ClInclude Include="../code/custom.h" />
+    
+  </ItemGroup>
+
+</Project>

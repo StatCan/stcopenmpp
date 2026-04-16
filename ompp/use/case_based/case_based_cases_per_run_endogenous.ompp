@@ -1,0 +1,77 @@
+/**
+* @file    case_based_cases_per_run_endogenous.ompp
+* Framework implementation for case-based models - SimulationCases gives number of cases for run (total over all members)
+*
+*/
+// Copyright (c) 2013-2022 OpenM++ Contributors (see AUTHORS.txt)
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+parameters {
+    //EN Number of cases in run (over all members)
+    derived long long SimulationCases;
+};
+
+#endif // Hide non-C++ syntactic island from IDE
+
+/*NOTE(SimulationCases, EN)
+`SimulationCases` is the total number of cases in a run.
+If a run has multiple members,
+the cases are divided among the members
+as equally as possible.
+*/
+
+//LABEL(SimulationCases,FR) Nombre de cas dans tous les membres
+/*NOTE(SimulationCases, FR)
+`SimulationCases` est le nombre total de cas dans une exécution.
+Si une exécution a plusieurs membres,
+les cas sont répartis entre les membres
+le plus également que possible.
+*/
+
+/**
+* Called by before_presimulation.
+*/
+void before_presimulation_for_framework(void)
+{
+}
+
+
+/**
+* Called by after_presimulation.
+*/
+void after_presimulation_for_framework(void)
+{
+    // For this style of model, the derived parameter SimulationCases
+    // gives the number of cases in the run (over all members).
+    // The value of the derived parameter SimulationCases
+    // must be assigned in a PreSimulation function in model code.
+
+    fmk::all_cases = SimulationCases;
+
+    if (fmk::SimulationSeed_member_part == 0) {
+        // Normal run, start at member 0
+
+        // The number of cases to simulate for this member.
+        // Divide the total cases for the entire run by the number of members
+        // and spread any cases in the remainder among the first members (one extra case each)
+        fmk::member_cases = fmk::all_cases / fmk::simulation_members;
+        if (fmk::simulation_member < (fmk::all_cases % fmk::simulation_members)) {
+            fmk::member_cases++;
+        };
+    }
+    else {
+        // Special run, simulate a single case in the specified member.
+        if (fmk::simulation_member == fmk::SimulationSeed_member_part) {
+            // Simulate one case in the member specified in the combined seed
+            fmk::member_cases = 1;
+        }
+        else {
+            // Ignore all other members
+            fmk::member_cases = 0;
+        }
+    }
+}

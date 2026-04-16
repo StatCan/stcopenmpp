@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# stop computational server
+#
+# below is a dummy test script, it does nothing but return OK or error
+# please see production examples at:
+# https://github.com/openmpp/other/tree/master/azure_cloud
+# https://github.com/openmpp/other/tree/master/google_cloud
+#
+
+set -e 
+
+srv_name="$1"
+
+if [ -z "$srv_name" ] ;
+then
+  echo "ERROR: invalid (empty) server name"
+  exit 1
+fi
+
+sleep 2
+
+echo "Server stopped: $srv_name"

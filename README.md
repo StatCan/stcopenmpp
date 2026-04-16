@@ -1,93 +1,219 @@
 # stcopenmpp
 
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+
+<details open>
+
+<summary>English</summary>
+
+`stcopenmpp` is a **fork** of [OpenM++](https://github.com/openmpp/main), released for Statistics Canada’s internal microsimulation modellers as well as external government and academic partners.
+
+**OpenM++** is an open-source framework designed for building and running complex microsimulation models, developed and maintained by **Steve Gribble** and **Anatoly Cherkassky**. 
+OpenM++, inspired by its predecessor Modgen, offers a modern, portable, scalable, and cross-platform product that supports dynamic microsimulation, allowing users to model life events such as aging, employment, or health transitions. 
+With the core functionality written in C++, OpenM++ includes a compiler, runtime engine, and user interface, and integrates with languages like R and Python for data analysis and visualization through OpenM++ API endpoints. 
+The API is part of the OpenM++ Web Service (OMS) and is designed to support tasks such as configuring models, running simulations, and retrieving results. 
+The modular design of OpenM++ enables flexible model development, and it can be deployed on desktops or in cloud environments. 
+
+## Orientation to this repo
+
+The `stcopenmpp` repo contains three folders: **ompp**, **plugins** and **docs**. The **ompp** folder contains the main body of the code. The **plugins** folder contains open-source tools developed to make testing and interacting with `stcopenmpp` easier. 
+The **docs** folder brings forward and curates useful documentation for model developers and other interested readers.
+
+## What is microsimulation?
+
+**Microsimulation** is a technique to model how individual people or households might be affected by changes in factors like taxes, health policies, or social policies and programs. 
+Instead of looking at averages or population groups, it uses detailed data about individuals—like age, income, or health—to simulate what could happen to each person under different scenarios. 
+For example, if the government changes a health policy, microsimulation can estimate how that change would affect individuals across the country. It can be used to look at one moment in time or to project changes over many years. 
+This technique can help policymakers understand the real-life impact of decisions and design fairer, more effective policies. 
+Please see the following links for a more comprehensive overview of the technique prepared by **Martin Spielauer** and [linked here](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/docs/a-discussion-of-microsimulation-by-the-author-of-riskpaths). Interested readers should also explore the International Microsimulation Association website and journal [International Microsimulation Association](https://www.microsimulation.org/).
+
+## Applications of microsimulation modelling at Statistics Canada
+
+Starting in the 1990s, Statistics Canada has developed microsimulation models of health, demography and retirement income. 
+These models have been used by decision makes in federal and provincial governments, as well as academics, to investigate the future characteristics of the Canadian population and explore the impacts of policy or program directions. 
+If you would like to know more about microsimulation applications developed at Statistics Canada, please check out the following [website](https://www.statcan.gc.ca/en/microsimulation/index) or send us an email at: **microsimulation@statcan.gc.ca**
+
+## Download and install
+
+To install `stcopenmpp`, download the zip file and extract the source code and binaries, appropriate for your operating system, to the location of your choice. The latest release of `stcopenmpp` can be found [here](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/releases). **Pre-compiled binaries** are available for Windows and Linux (Debian and Ubuntu).
+
+**Important note**: Pre-compiled binaries for MacOS will no longer be released as part of `stcopenmpp`. [OpenM++](https://github.com/openmpp/main) provides pre-compiled binaries for MacOS.
+
+## Steps for running `stcopenmpp` in Windows
+
+1. Using Windows File Explorer, enter or browse to the `stcopenmpp` directory location and navigate to the bin folder. 
+
+2. Double-click the launch-ui-windows.bat file (ompp_ui.bat also works). This will start the process responsible for running the OMS. Note that the local host address — including the port number— will be printed in the console. 
+
+3. Click on the address to open the web-based user interface (UI). Any models located in models/bin will be listed in the UI.
+
+4. Select your model and set up a run. 
+
+**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the .cmd window-
+**setx OM_ROOT “C:/path/to/your/current/stcopenmpp/instance”**
 
 
-## Getting started
+## Steps for running `stcopenmpp` in Linux
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+1. If using Linux in a desktop environment (e.g., Debian GNU/Linux 13 “Trixie” with GNOME), enter the `stcopenmpp` directory location using Files and navigate to the bin folder. 
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+2. Right click start_oms.sh and select the Run as a Program option. This will start the process responsible for running the OMS. Note that the local host address — including the port number— will be printed in the console. 
 
-## Add your files
+3. Click on the address to open the web-based user interface (UI). Any models located in models/bin will be listed in the UI.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+4. Select your model and set up a run. 
 
-```
-cd existing_repo
-git remote add origin https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp.git
-git branch -M main
-git push -uf origin main
-```
+**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the Linux console: **export OM_ROOT=“/home/path/to/your/current/stcopenmpp/instance”**
 
-## Integrate with your tools
+## Using `stcopenmpp` with built-in models
 
-- [ ] [Set up project integrations](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/settings/integrations)
+`stcopenmpp` is bundled with several test/toy models, contained in the ‘models’ folder of the downloaded file. One such model is [RiskPaths](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/ompp/models/RiskPaths). RiskPaths is a simple, competing risk, case-based continuous time microsimulation model. Its main use is as a teaching tool, introducing microsimulation to practitioners and demonstrating how dynamic microsimulation models can be efficiently programmed using OpenM++. 
+RiskPaths has been extensively documented and using this model is a great way to get started with microsimulation modelling. 
+We recommend you check out the following links within the repo and the wiki for more information on getting started with RiskPaths.
 
-## Collaborate with your team
+- **Repo:** https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/ompp/models/RiskPaths/doc
+- **Wiki:** github.com/openmpp/openmpp.github.io/wiki
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## Using `stcopenmpp` with your existing models  
 
-## Test and Deploy
+If you are a model developer at Statistics Canada or in one of our partner organizations, you likely already have a model you are working on. To get started with `stcopenmpp`:  
 
-Use the built-in continuous integration in GitLab.
+1. Download the software to the location of your choice, as described [above](#download-and-install). 
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+2. Then open the exisitng model solution file (e.g., RiskPaths-ompp.sln) in Visual Studio Community or Professional. and 
 
-***
+3. “Rebuild Solution” from the “Build” menu option. 
 
-# Editing this README
+4. After the model has been successfully built, if the OMS does not start automatically, double-click the “start-ompp-ui.bat” file to launch the service and the UI. 
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**Important notes:** If you use an IDE to compile, we recommend using Visual Studio Community or Professional 2022 or 2026. Additionally, tt is important to note that the model should be compiled in the same version of Visual Studio in which it is built, otherwise additional set-up steps will be required: instructions are [linked here](https://github.com/openmpp/openmpp.github.io/wiki/Windows-Quick-Start-Developer#using-older-versions-of-visual-studio).
+ 
+## Running your existing models with `stcopenmpp`
 
-## Suggestions for a good README
+There are a couple of ways to run existing microsimulation models developed with `stcopenmpp`. 
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+**If you like using a UI-**
+- Use the built-in user interface (UI) that comes with `stcopenmpp`. See the [section above](#running-stcopenmpp-in-windows) to learn how to get the webservice started and open the UI. The UI is documented extensively [here](https://github.com/openmpp/openmpp.github.io/wiki/).
 
-## Name
-Choose a self-explaining name for your project.
+**If you like running your models programmatically-**
+- We recommend using the `openmpp` R package developed by **Matt Warkentin** that comes bundled with `stcopenmpp`, see the [plugins](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/plugins/openmpp) folder. 
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Developing new models with `stcopenmpp`
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Developing new microsimulation or agent-based models with `stcopenmpp` is beyond the scope of this readme. However, the RiskPaths documentation, [linked above](#using-stcopenmpp-with-built-in-models), provides an excellent introduction to model development. 
+More detailed information on model development topics can be found on the [OpenM++ wiki](https://github.com/openmpp/openmpp.github.io/wiki/Model-Development-Topics). In addition, the Modgen (the predecessor of OpenM++) developers guide remains an important resource for developing OpenM++- based models. We have [linked](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/docs/modgen-developers-guide) it in the repo for your convenience.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Documentation
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+**Steve Gribble** and **Anatoly Cherkassky** have developed comprehensive documentation for OpenM++ that is available [here](https://github.com/openmpp/openmpp.github.io/wiki).
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+`stcopenmpp` will be documented in this readme and through release notes on this repo.  
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Contributor Guidelines
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Contributions to this package are welcome, however contributions and issues from Statistics Canada modellers and collaborators will be given priority. The preferred method of contribution is through a pull request. 
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Before contributing, please create an issue to alert the project team. More details on contributing can be found in the CONTRIBUTING document.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+</details>
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
-## License
-For open source projects, say how it is licensed.
+<hr style="border: 3px solid grey; height: 4px">
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+<details open>
+
+<summary>Français</summary>
+
+Le logiciel `stcopenmpp` est un **embranchement** de [OpenM++](https://github.com/openmpp/main); il a été conçu pour les concepteurs de modèles de microsimulation de Statistique Canada et les partenaires gouvernementaux et universitaires externes. 
+
+**OpenM++** est un cadre à code source ouvert conçu pour l’élaboration et l’exécution de modèles de microsimulation complexes; son développement et sa maintenance sont assurés par **Steve Gribble** et **Anatoly Cherkassky**. 
+OpenM++, qui s’inspire de son prédécesseur Modgen, est un produit moderne, portable, évolutif et multiplateforme qui supporte la microsimulation dynamique et permet aux utilisateurs de modéliser des événements de vie tels que le vieillissement, l’emploi ou les changements à l’échelle de la santé. Doté d’une fonctionnalité de base écrite en C++, OpenM++ comprend un compilateur, un moteur d’exécution et une interface utilisateur, le tout s’intégrant avec des langages comme R et Python pour faciliter l’analyse et la visualisation de données grâce à ses points de terminaison API. L’interface API fait partie du service Web OpenM++ (OMS) et est conçue pour réaliser des tâches telles que la configuration de modèles, l’exécution de simulations et la récupération de résultats. La conception modulaire d’OpenM++ permet un développement de modèles flexible et la plateforme peut être déployée dans les ordinateurs de bureau ou dans des environnements infonuagiques. 
+
+## Orientation du présent dépôt 
+
+Ce dépôt contient trois dossiers : **ompp**, **plugins** et **docs**. Le dossier ompp présente les éléments essentiels du code. Le dossier **plugins** contient des logiciels ouverts développés pour faciliter les tests et l’interaction avec `stcopenmpp`. Le dossier **docs** présente et maintient la documentation utile pour les développeurs de modèles et les autres lecteurs intéressés. 
+
+## Qu’est-ce que la microsimulation? 
+
+La **microsimulation** est une technique permettant de modéliser la manière dont les personnes ou les ménages pourraient être touchés par des changements dans des facteurs tels que les impôts, les politiques de santé ou les programmes sociaux. Au lieu d’examiner les moyennes ou les groupes de population, elle utilise des données détaillées sur les personnes — comme l’âge, le revenu ou l’état de santé — pour simuler ce qui pourrait arriver à chaque cas dans différents scénarios. Si, par exemple, le gouvernement modifie une politique de santé, la microsimulation peut estimer comment ce changement toucherait les citoyens du pays tout entier. On peut aussi l’utiliser pour visualiser la situation à un moment donné ou suivre des changements sur plusieurs années. Cette technique peut aider les décisionnaires à comprendre l’impact réel des décisions et à concevoir des politiques plus justes et efficaces. Pour obtenir un aperçu plus complet préparé par **Martin Spielauer**, veuillez cliquer sur [les liens suivants](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/docs/a-discussion-of-microsimulation-by-the-author-of-riskpaths). Les lecteurs intéressés devraient également consulter le site Web et la revue de l’[International Microsimulation Association](https://www.microsimulation.org/). 
+
+## Applications de la modélisation par microsimulation à Statistique Canada
+
+Depuis les années 1990, Statistique Canada a développé des modèles de microsimulation en matière de santé, de démographie et de revenus de retraite (lien vers le nouveau site Web). Ils ont été utilisés par les décisionnaires des gouvernements fédéral et provinciaux, ainsi que par le milieu universitaire, pour étudier les caractéristiques futures de la population canadienne et mieux connaître les répercussions des politiques ou des programmes. Si vous souhaitez en savoir plus sur les applications de microsimulation développées à Statistique Canada, veuillez consulter le [site Web](https://www.statcan.gc.ca/fr/microsimulation/index) suivant ou nous envoyer un courriel à l’adresse : [microsimulation@statcan.gc.ca](mailto:microsimulation@statcan.gc.ca). 
+
+## Téléchargement et installation
+
+Pour installer `stcopenmpp`, téléchargez le fichier compressé et extrayez le code source et les jeux de binaires appropriés selon votre système d’exploitation, en vue de les enregistrer à l’emplacement de votre choix. La dernière version de `stcopenmpp` est disponible [ici](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/releases). Des **jeux de binaires précompilés** sont disponibles pour Windows et Linux (Debian et Ubuntu). **Note importante:** Veuillez noter que les jeux de binaires précompilés pour MacOS ne seront pas disponibles dans `stcopenmpp`. [OpenM++](https://github.com/openmpp/main) fournit des jeux de binaires précompilés pour MacOS.
+
+## Étapes pour exécuter `stcopenmpp` dans Windows
+
+1. Entrez l’emplacement du répertoire `stcopenmpp` dans l’Explorateur de fichiers de Windows et naviguez jusqu’au dossier « bin ».
+
+2. Double-cliquez sur launch-ui-windows.bat (ompp_ui.bat fonctionne aussi), ce qui lancera le processus d’exécution du service OMS. Notez que l’adresse locale de l’hôte — y compris le numéro de port — sera imprimée dans la console. 
+
+3. Cliquez sur l’adresse pour ouvrir l’interface utilisateur Web. Tous les modèles figurant dans les dossiers modèles ou « bin » seront énumérés dans l’interface utilisateur. 
+
+4. Sélectionnez votre modèle et lancez une simulation. 
+
+**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : **export OM_ROOT=“/home/path/to/your/current/stcopenmpp/instance”**.
+
+## Étapes pour exécuter `stcopenmpp` dans Linux
+
+1. Si vous utilisez Linux dans un environnement de bureau (par exemple Debian GNU/Linux 13 « Trixie » avec GNOME), entrez l’emplacement du répertoire `stcopenmpp` dans Fichiers et naviguez jusqu’au dossier « bin ». 
+
+2. Faites un clic droit sur start_oms.sh et sélectionnez l’option Exécuter en tant que programme, ce qui lancera le processus d’exécution du service OMS. Notez que l’adresse locale de l’hôte — y compris le numéro de port — sera imprimée dans la console. 
+
+3. Cliquez sur l’adresse pour ouvrir l’interface utilisateur Web. Tous les modèles figurant dans les dossiers modèles ou « bin » seront énumérés dans l’interface utilisateur. 
+
+4. Sélectionnez votre modèle et lancez une simulation. 
+
+**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : **export OM_ROOT
+
+## Utilisation de `stcopenmpp` avec des modèles intégrés
+
+Le logiciel `stcopenmpp` comprend plusieurs modèles d’essai et modèles-jouets, que l’on retrouve dans le dossier « models » du fichier téléchargé. [RiskPaths](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/ompp/models/RiskPaths) figure parmi ces modèles. 
+RiskPaths est un modèle de microsimulation simple en temps continu, basé sur les cas et sur le risque concurrentiel. Il constitue principalement un outil pédagogique, présentant la microsimulation aux praticiens et démontrant comment les modèles dynamiques de microsimulation peuvent être programmés efficacement à l’aide d’OpenM++. RiskPaths représente une excellente façon de se lancer dans la modélisation par microsimulation. Nous vous recommandons de consulter les liens suivants, figurant dans le dépôt et dans le wiki, pour en savoir plus sur le démarrage dans RiskPaths. 
+
+- **Dépôt:** https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/ompp/models/RiskPaths/doc 
+- **Wiki:** github.com/openmpp/openmpp.github.io/wiki 
+
+## Utilisation de `stcopenmpp` dans vos modèles existants
+
+En votre qualité de développeur de modèles à Statistique Canada ou dans l’une de nos organisations partenaires, il est probable que vous travailliez déjà sur un modèle. Pour commencer à utiliser `stcopenmpp` :   
+
+1. Téléchargez le logiciel à l'emplacement de votre choix, comme décrit [ci-dessus](#téléchargement-et-installation). 
+
+2. Il faut ensuite ouvrir le fichier de la solution modèle (par exemple, RiskPaths-ompp.sln) dans Visual Studio Community ou Professional. 
+
+3. Dans l’option de menu « Build », sélectionner « Rebuild Solution ». 
+
+4. Une fois le modèle construit avec succès, si le service OMS ne démarre pas automatiquement, double-cliquez sur le fichier « start-ompp-ui.bat » pour lancer le service et l’interface utilisateur. 
+
+**Notes importantes :** Si vous utilisez un environnement de développement intégré pour la compilation, nous recommandons d’utiliser Visual Studio Community ou Professional 2022 ou 2026. Il est important de noter que le modèle doit être compilé dans la même version de Visual Studio qui a été utilisée pour le construire, sinon des étapes de configuration supplémentaires seront nécessaires; les instructions sont accessibles [ici](https://github.com/openmpp/openmpp.github.io/wiki/Windows-Quick-Start-Developer#using-older-versions-of-visual-studio). 
+
+## Traitement de modèles existants dans `stcopenmpp`
+
+Les modèles de microsimulation existants développés avec `stcopenmpp` peuvent être exécutés de différentes manières. 
+
+**Si vous aimez travailler avec une interface utilisateur-**
+- utilisez l’interface utilisateur intégrée fournie avec `stcopenmpp`. Consultez la [section ci-dessus](#exécution-de-stcopenmpp-dans-windows) pour savoir comment lancer le service Web et ouvrir l’interface utilisateur. L’interface utilisateur est présentée [en détail ici](https://github.com/openmpp/openmpp.github.io/wiki/). 
+
+**Si vous aimez exécuter vos modèles comme dans un programme-**
+- nous vous recommandons d’utiliser l’ensemble openmpp pour R développé par **Matt Warkentin** qui est fourni avec `stcopenmpp`; voir le dossier [plugins](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/plugins/openmpp). 
+
+## Élaboration de nouveaux modèles avec `stcopenmpp`
+
+L’élaboration de nouveaux modèles de microsimulation ou de modèles orientés agent avec `stcopenmpp` dépasse le cadre de notre présentation. La documentation RiskPaths, ([lien ci-dessus](#si-vous-aimez-exécuter-vos-modèles-comme-dans-un-programme)) contient une excellente introduction au développement de modèles. Pour en savoir plus sur le développement de modèles, veuillez consulter la page [wiki d’OpenM++](https://github.com/openmpp/openmpp.github.io/wiki/Model-Development-Topics). De plus, le guide pour développeurs Modgen (prédécesseur d’OpenM++) demeure une ressource importante pour l’élaboration de modèles basés sur OpenM++. Nous avons prévu des [liens](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/docs/modgen-developers-guide) dans ce document, pour faciliter la recherche. 
+
+## Documentation
+
+**Steve Gribble** et **Anatoly Cherkassky** ont rassemblé une documentation complète sur OpenM++ (cliquez [ici](https://github.com/openmpp/openmpp.github.io/wiki)). Le logiciel `stcopenmpp` fera l’objet d’une documentation dans le présent document et dans les notes de version du dépôt. 
+
+## Lignes directrices pour les contributeurs
+
+Vous pouvez en tout temps ajouter une contribution à l’ensemble ou poser des questions à ce sujet, mais celles qui proviennent de modélisateurs et de collaborateurs de Statistique Canada sont prioritaires. La méthode préférée, pour les contributions, consiste en une demande de fusion. Au préalable, veuillez créer un problème pour alerter l’équipe du projet. On trouvera plus de précisions à ce sujet dans le document intitulé « CONTRIBUTIONS ». 
+
+</details>

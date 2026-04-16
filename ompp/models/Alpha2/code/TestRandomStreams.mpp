@@ -1,0 +1,41 @@
+// Copyright (c) 2013-2023 OpenM++ Contributors
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(TestRandomStreams, EN) Test random stream clashes
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+actor Person
+{
+    void test_random_streams();
+
+    hook test_random_streams, HappinessReversalEvent, 44;
+};
+
+#endif
+
+void Person::test_random_streams()
+{
+    double x = 1.0;
+
+    //// duplicate stream tests
+    //x = RandUniform(15);
+    //x = RandUniform(15);
+    //x = RandNormal(15);
+
+    //x = RandUniform(16);
+    //x = RandLogistic(16);
+
+    //// missing stream tests
+    //x = RandUniform();
+    //x = RandUniform();
+
+    //// invalid stream tests
+    //int j = 2;
+    //x = RandUniform(j);
+    //x = RandUniform(0);
+    //x = RandUniform(-1);
+}
+

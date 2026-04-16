@@ -1,0 +1,6 @@
+build/
+dist/
+.vs/
+/PohemX-python.spec
+Model_Outputs/
+Functions/__pycache__

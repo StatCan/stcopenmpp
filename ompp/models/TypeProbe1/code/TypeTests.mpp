@@ -1,0 +1,118 @@
+//LABEL(TypeTests, EN) Various tests of types - classifications, ranges, partitions
+
+/* NOTE(TypeTests, EN)
+	This module contains various tests.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if false // hide syntactic island from IDE
+classification EMOTION
+{
+    HAPPY,
+    SAD
+};
+
+classification EMOTION3
+{
+    E3_NEUTRAL,
+    E3_HAPPY,
+    E3_SAD
+};
+
+parameters {
+	//EN Default emotion
+	EMOTION DefaultEmotion;
+
+	//EN Wellness weights
+	double WellnessWeights[EMOTION];
+
+	//EN Wellness weights (derived)
+	model_generated double WellnessWeights2[EMOTION];
+};
+
+actor Person
+{
+    logical is_birthday;
+    logical is_morning;
+    logical is_night;
+    EMOTION morning_emotion;
+    EMOTION afternoon_emotion;
+
+    logical is_happy_morning = ( morning_emotion == HAPPY );
+    logical is_consistent = ( morning_emotion == afternoon_emotion );
+    int daily_difference = afternoon_emotion - morning_emotion;
+    EMOTION z01 = HAPPY;
+    EMOTION z02 = { HAPPY };
+    EMOTION z03 = morning_emotion;
+    EMOTION z04 = EMOTION_t(morning_emotion);
+    EMOTION z05 = is_birthday ? HAPPY : SAD;
+    EMOTION z06 = is_birthday ? HAPPY : EMOTION_t(morning_emotion);
+    EMOTION z07 = is_morning ? EMOTION_t(morning_emotion) : afternoon_emotion;
+    EMOTION z08 = is_morning ? EMOTION_t(morning_emotion) : EMOTION_t(afternoon_emotion);
+    EMOTION z09 = is_birthday ? HAPPY :
+                 is_morning ? EMOTION_t(morning_emotion) : afternoon_emotion;
+    EMOTION z10 = is_birthday ? HAPPY :
+                 is_morning ? EMOTION_t(morning_emotion) : EMOTION_t(afternoon_emotion);
+
+    // In ompp MSVC, the following results in VC error C2446
+    // In ompp gcc, no error
+    // gcc appears to be using the 'cast to T2' (integer) overload 
+    //EMOTION z11 = is_morning ? morning_emotion : afternoon_emotion;
+
+    // Same behaviour as z11 (as expected, since min uses std::common_type.
+    //EMOTION z12 = min(morning_emotion, afternoon_emotion);
+
+    // Following fails in ompp
+    //EMOTION z13 = is_birthday ? morning_emotion : HAPPY;
+
+    // The following does not work, due to ambiguous constructor - Classification(int val) or Classification(T val)
+    //EMOTION z13 = EMOTION(morning_emotion);
+
+    // The following does not work (like z12 above)
+    //EMOTION z14 = is_birthday ? HAPPY :
+    //             is_morning ? EMOTION(morning_emotion) : EMOTION(afternoon_emotion);
+
+    TIME my_happy_time;
+    TIME my_sad_time;
+
+    TIME my_worst_time = my_sad_time;
+    TIME my_later_time = my_happy_time + 1;
+    TIME my_best_time = TIME_t(my_happy_time);
+    TIME my_delta_time = my_later_time - my_happy_time;
+    TIME my_movie_time = 1942;
+
+    //TIME my_time = is_birthday ? my_happy_time : my_sad_time;
+    TIME my_time = is_birthday ? TIME_t(my_happy_time) : TIME_t(my_sad_time);
+
+    void helper();
+};
+#endif // hide syntactic island from IDE
+
+void Person::helper()
+{
+    EMOTION emot1;
+    emot1 = EMOTION_t(morning_emotion);
+
+    EMOTION emot2;
+    emot2 = morning_emotion;
+
+//    TIME forever = TIME_INFINITE;
+    TIME forever = {TIME_INFINITE};
+    TIME any_time = my_time;
+    TIME the_time = WAIT(my_time);
+    TIME the_time2 = WAIT(TIME_t(my_time));
+    TIME wait_time = min((TIME_t)my_happy_time, (TIME_t)my_sad_time);
+
+	double wellness = WellnessWeights[DefaultEmotion];
+
+	double wellness2 = WellnessWeights2[DefaultEmotion];
+
+	// sidestep g++ warnings on unused local variables
+    forever++;
+    any_time++;
+    the_time++;
+    the_time2++;
+    wait_time++;
+}
+

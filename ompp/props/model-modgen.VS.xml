@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+  <!-- 
+  Integrates Modgen configurable build options into the Visual Studio IDE.
+  Incorporated into VS using a PropertyPageSchema tag in a .props or .targets file included in the vcxproj file.
+  -->
+<Rule Name="OmppCompile" PageTemplate="generic" DisplayName="Modgen" Order="9" xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.DataSource>
+    <DataSource Persistence="ProjectFile" />
+  </Rule.DataSource>
+  
+  <Rule.Categories>	
+    <Category Name="Names"        DisplayName="1. Names" />
+    <Category Name="BuildOptions" DisplayName="2. Build Options" />
+    <Category Name="RunOptions"   DisplayName="3. Run Options" />
+  </Rule.Categories>
+  
+  <!-- Names -->
+  <StringProperty Category="Names"
+                  Name="MODEL_NAME"
+                  DisplayName="Model Name"
+                  Description="The name of the model published in the database, also the name of the executable (possibly with an appended suffix). The default is the name of the grandparent folder of the project file."
+                  />
+  <StringProperty Category="Names"
+                  Name="SCENARIO_NAME"
+                  DisplayName="Scenario Name"
+                  Description="The name of the default scenario published in the database. The default is Default."
+                  />
+  <StringProperty Category="Names"
+                  Name="FIXED_NAME"
+                  DisplayName="Fixed Name"
+                  Description="The name of a folder in parameters which contains values of fixed (invariant) parameters (in OpenM++)."
+                  />
+  
+  <!-- Build Options -->
+  <BoolProperty Category="BuildOptions"
+                Name="GENERATE_HELP"
+                DisplayName="Generate model help after build"
+                Description="Generate model encyclopedic help files after build.  A compiled chm for the 0model is also generated if the required Microsoft components have been installed."
+                />
+  <StringProperty Category="BuildOptions"
+                Name="MODEL_INI"
+                DisplayName="Model ini file"
+                Description="The name of an ini file located in the model root folder containing model run options. The default is MODEL_NAME.ini, if present.  Values are propagated to the Modgen scex file.  Note that overrides to parameter values in the model ini file are not propagated."
+                />
+  <BoolProperty Category="BuildOptions"
+                Name="SCEX_COPY_PARAMETERS"
+                DisplayName="Copy all parameters to output DB"
+                Description="Indicate to copy all input parameters to the MS Access output database in the published Modgen scexfile.  This is required to publish a model to Modgen Web."
+                />
+  <BoolProperty Category="BuildOptions"
+                Name="GENERATE_DOCDB"
+                DisplayName="Generate model documentation DB"
+                Description="Create the MS Access model documentation database after build.  This database is required to publish a model to Modgen Web."
+                />
+  
+  <!-- Run Options -->
+  <BoolProperty Category="RunOptions"
+                Name="RUN_SCENARIO"
+                DisplayName="Run the scenario after build"
+                Description="Run the scenario after building and publishing the model and scenario."
+                />
+                  
+</Rule>

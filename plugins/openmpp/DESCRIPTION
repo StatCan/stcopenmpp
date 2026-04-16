@@ -1,0 +1,43 @@
+Package: openmpp
+Title: Programmatic Interface to 'OpenM++'
+Version: 0.0.1
+Authors@R: c(
+    person("Matthew T.", "Warkentin", , "matthew.warkentin@ucalgary.ca", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-8730-3511")),
+    person("John M.", "Hutchinson", , "john.hutchinson@ucalgary.ca", role = c("ctb"))
+  )
+Description: A programmatic interface to the 'OpenM++' microsimulation platform (<https://openmpp.org>).
+    The primary goal of this package is to wrap the 'OpenM++' Web Service (OMS) to
+    provide 'OpenM++' users a programmatic interface for the R language.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.2.9000
+Depends: R (>= 4.1.0)
+Imports: cli, curl, glue, httr2, jsonlite, purrr, R6, readr, rlang,
+        tibble, tidyr, tidyselect
+URL: https://github.com/mattwarkentin/openmpp,
+        https://mattwarkentin.github.io/openmpp/
+BugReports: https://github.com/mattwarkentin/openmpp/issues
+Collate: 'API-CPAC.R' 'API-Local.R' 'API-Remote.R' 'Utils.R'
+        'ClassModel.R' 'ClassModelRun.R' 'ClassModelRunSet.R'
+        'ClassWorkset.R' 'RunOptions.R' 'Scenario.R'
+        'oms-Administrative.R' 'oms-DownloadModels.R'
+        'oms-ModelExtras.R' 'oms-ModelMetadata.R'
+        'oms-ModelRunResults.R' 'oms-ModelWorksetMetadata.R'
+        'oms-ModelingTaskMetadata.R' 'oms-ReadMicrodata.R'
+        'oms-ReadOutputTables.R' 'oms-ReadParameters.R'
+        'oms-RunModels.R' 'oms-Services.R' 'oms-UpdateModelProfile.R'
+        'oms-UpdateModelRuns.R' 'oms-UpdateModelWorkset.R'
+        'oms-UpdateModelingTasks.R' 'oms-UploadModels.R'
+        'oms-UserFiles.R' 'oms-UserSettings.R' 'openmpp-package.R'
+        'zzz.R'
+Suggests: gh, pingr, sys, testthat (>= 3.0.0), withr
+Config/testthat/edition: 3
+NeedsCompilation: no
+Packaged: 2025-07-16 21:34:48 UTC; matt
+Author: Matthew T. Warkentin [aut, cre, cph] (ORCID:
+    <https://orcid.org/0000-0001-8730-3511>),
+  John M. Hutchinson [ctb]
+Maintainer: Matthew T. Warkentin <matthew.warkentin@ucalgary.ca>
+Repository: CRAN
+Date/Publication: 2025-07-19 09:20:02 UTC

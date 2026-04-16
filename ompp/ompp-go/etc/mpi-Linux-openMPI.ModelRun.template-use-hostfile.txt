@@ -1,0 +1,49 @@
+{{/*
+oms web-service:
+  Template to run modelName_mpi executable on Linux OpenMPI using hostfile
+
+To use this template rename it into:
+  mpi.ModelRun.template.txt
+
+Oms web-service using template for exec.Command(exeName, Args...):
+  - skip empty lines
+  - substitute template arguments
+  - first non-empty line is a name of executable to run
+  - each other line is a command line argument for executable
+
+Arguments of template:
+  ModelName string            // model name
+  ExeStem   string            // base part of model exe name, usually modelName
+  Dir       string            // work directory to run the model
+  BinDir    string            // bin directory where model exe is located
+  DbPath    string            // absolute path to sqlite database file: models/bin/model.sqlite
+  MpiNp     int               // number of MPI processes
+  HostFile  string            // if not empty then path to hostfile
+  Args      []string          // model command line arguments
+  Env       map[string]string // environment variables to run the model
+
+Example of result:
+  mpirun -hostfile hosts.ini --bind-to none -oversubscribe -wdir models/bin -x key=value ./modelName_mpi -OpenM.LogToFile false
+
+*/}}
+
+mpirun
+{{with .HostFile}}
+--hostfile
+{{.}}
+{{end}}
+--bind-to
+none
+-oversubscribe
+{{with .Dir}}
+-wdir
+{{.}}
+{{end}}
+{{range $key, $val := .Env}}
+-x
+{{$key}}={{$val}}
+{{end}}
+{{.BinDir}}/{{.ExeStem}}_mpi
+{{range .Args}}
+{{.}}
+{{end}}

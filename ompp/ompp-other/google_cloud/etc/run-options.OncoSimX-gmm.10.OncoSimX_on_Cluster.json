@@ -1,0 +1,18 @@
+{
+  "Text": [{
+      "LangCode": "EN",
+      "ShortLabel": "Use OncoSimX-GMM Options",
+      "Descr": "OncoSimX-GMM model run: use back-end MPI Cluster"
+    }, {
+      "LangCode": "FR",
+      "ShortLabel": "Utiliser les options OncoSimX-GMM",
+      "Descr": "OncoSimX-GMM exécution de modèle : utilisez le cluster MPI back-end"
+    }
+  ],
+  "subCount": 16,
+  "threadCount": 4,
+  "mpiNpCount": 5,
+  "mpiUseJobs": true,
+  "mpiOnRoot": false,
+  "mpiTmpl": "mpi.OncoSimX.template.txt"
+}

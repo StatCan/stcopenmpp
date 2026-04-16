@@ -1,0 +1,31 @@
+Package: auditr
+Title: R6 methods for auditing two releases of stcopenmpp
+Version: 0.31
+Authors@R: 
+    person("Joel", "Barnes", , "joel.barnes@statcan.gc.ca", role = c("aut", "cre"))
+Description: This package provides R6 methods for auditing two releases of
+    stcopenmpp.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    archive,
+    cli,
+    DBI,
+    dplyr,
+    jsonlite,
+    knitr,
+    quarto,
+    R6,
+    readr,
+    rlang,
+    RSQLite,
+    sodium,
+    stringr,
+    styler,
+    tidyr,
+    utils,
+    withr
+Suggests: 
+    kableExtra

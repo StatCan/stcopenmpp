@@ -1,0 +1,14 @@
+/*/modgen/bin/
+/*/modgen/build/
+/*/modgen/src/
+/*/ompp/bin/
+/*/ompp/build/
+/*/ompp/src/
+/*/ompp-linux/
+/*/ompp-mac/
+/*/test_models/
+*.vcxproj.user
+*.suo
+*.sdf
+*.opensdf
+*.log

@@ -1,0 +1,386 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project InitialTargets="Validate;Diagnostics" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- 
+  Override default VStudio cpp project settings
+
+  If this is F5 Debug or Ctrl-F5 model run under Visual Studio then
+    PUBLISH_DIR, MODEL_BIN_DIR, TargetDir, LocalDebuggerWorkingDirectory
+  must be identical
+  otherwise model.exe always fail to run because there is no model.sqlite in current directory.
+  -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+
+  <!-- 
+  FixModgen11
+  -->
+  
+
+  <Target Name="FixModgen11" BeforeTargets="OmcCompile">
+    <Exec
+      WorkingDirectory="$(OM_ROOT)/props"
+      Command="powershell.exe -NonInteractive -ExecutionPolicy Bypass -File DetectAndFixModgen11Issue.ps1 $(ModgenLanguage)"
+      IgnoreExitCode="true"
+    >
+      <Output TaskParameter="ExitCode" PropertyName="Modgen11FixDone"/>
+    </Exec>
+    <Error 
+      Condition="'$(Modgen11FixDone)' != 0 And '$(ModgenLanguage)' == 'EN'" 
+      Text="Modgen 11 configuration issue found and repaired. Please build your model again." 
+    />
+	<Error 
+      Condition="'$(Modgen11FixDone)' != 0 And '$(ModgenLanguage)' == 'FR'" 
+      Text="Un problème de configuration de Modgen 11 a été corrigé. Veuillez relancer la compilation." 
+    />
+  </Target>
+
+  
+  <!-- 
+  Validate
+  -->
+
+
+  <Target Name="Validate">
+
+    <Error
+	    Text="SCENARIO_NAMES cannot be empty"
+        Condition=" ( '$(SCENARIO_NAMES)' == '' )" />
+  <!-- SFG commented pending repair, does not work for Item collection
+    <Error
+	    Text="SCENARIO_FOLDERS does not exist. Value is %(SCENARIO_FOLDERS_COLLECTION.Identity)"
+        Condition=" ( ! Exists('%(SCENARIO_FOLDERS_COLLECTION.Identity)') )" />
+  -->
+    <Error
+	    Text="FIXED_PARAMETERS_FOLDER does not exist. Value is $(FIXED_PARAMETERS_FOLDER)"
+        Condition=" ( '$(ENABLE_FIXED_PARAMETERS)' == 'true' And ! Exists('$(FIXED_PARAMETERS_FOLDER)') )" />
+    <Error
+	    Text="GRID_COMPUTING must be either EMPTY or MPI. Value is $(GRID_COMPUTING)"
+        Condition=" ! ( '$(GRID_COMPUTING)' == 'EMPTY' Or '$(GRID_COMPUTING)' == 'MPI' )" />
+    <Error
+	    Text="Microsoft MPI must be installed if GRID_COMPUTING is set to MPI."
+        Condition=" ( '$(GRID_COMPUTING)' == 'MPI' And '$(MSMPI_BIN)' == '' )" />
+    <Error
+	    Text="Microsoft MPI SDK must be installed if GRID_COMPUTING is set to MPI."
+        Condition=" ( '$(GRID_COMPUTING)' == 'MPI' And '$(MSMPI_INC)' == '' )" />
+    <Error
+	    Text="DB_PROVIDER must be set to SQLITE. Value is $(DB_PROVIDER)"
+        Condition=" ! ( '$(DB_PROVIDER)' == 'SQLITE' )" />
+    <Error
+	    Text="RUN_SCENARIO must be either true or false. Value is $(RUN_SCENARIO)"
+        Condition=" ! ( '$(RUN_SCENARIO)' == 'true' Or '$(RUN_SCENARIO)' == 'false' )" />
+    <Error
+	    Text="MODEL_INI does not exist. Value is $(MODEL_INI)"
+        Condition=" ! ( '$(MODEL_INI)' == '' Or Exists('../$(MODEL_INI)') )" />
+    <Error
+	    Text="DBCOPY_EXPORT_CSV must be either true or false. Value is $(DBCOPY_EXPORT_CSV)"
+        Condition=" ! ( '$(DBCOPY_EXPORT_CSV)' == 'true' Or '$(DBCOPY_EXPORT_CSV)' == 'false' )" />
+  </Target>
+
+
+  <!-- 
+  Clean
+  -->
+  
+  <Target Name="OmcClean">
+    <Message Text="Delete omc compiler output" />
+    <RemoveDir Directories="$(OMC_OUT_DIR)" />
+  </Target>
+
+  <PropertyGroup>
+    <CleanDependsOn>OmcClean;$(CleanDependsOn)</CleanDependsOn>
+  </PropertyGroup>
+
+
+  <!-- 
+  Build
+  -->
+  
+  <Target Name="OmcCompile"
+          Inputs="@(OMC_INPUTS)"
+          Outputs="@(OMC_OUTPUTS)"
+          >
+    <MakeDir Directories="$(OMC_OUT_DIR)" />
+    <MakeDir Directories="$(PUBLISH_DIR)" />
+    <MakeDir Directories="$(OUT_DOC_DIR)" Condition="'$(MODEL_DOC)'=='true'" />
+
+    <PropertyGroup>
+      <START_TIME>$([System.DateTime]::Now)</START_TIME>
+      <PUBLISH_DIR_REL>$([MSBuild]::MakeRelative($(ProjectDir), $(PUBLISH_DIR)))</PUBLISH_DIR_REL>
+      <OMC_OUT_DIR_REL>$([MSBuild]::MakeRelative($(ProjectDir), $(OMC_OUT_DIR)))</OMC_OUT_DIR_REL>
+    </PropertyGroup>
+    <Exec Command="$(COMPLETE_OMC_EXE) -m $(MODEL_NAME) -s @(SCENARIO_NAMES_COLLECTION) -p @(SCENARIO_FOLDERS_COLLECTION) -i $(OMC_IN_DIR) -d $(IN_DOC_DIR) -o $(OMC_OUT_DIR_REL) -u $(OMC_USE_DIR) $(OMC_IN_FIXED_OPT) $(OMC_MODEL_DOC_OPT) $(OMC_OUT_DOC_OPT) $(OMC_NO_METADATA_OPT) $(OMC_NO_LINE_DIRECTIVES_OPT) -Omc.SqliteDir $(PUBLISH_DIR_REL)" />
+    <Message Text="omc elapsed time: $([System.DateTime]::Now.Subtract($(START_TIME)))"
+             Condition="'$(OM_ELAPSED_TIME_INFO)'=='1'"
+    />
+    <!-- The following stops subsequent build steps, while trying to avoid raising an error condition. -->
+    <Error Condition="'$(NO_CPP_BUILD)'=='true'"
+           Text="Suppressing subsequent build steps because NO_CPP_BUILD is true."
+           Code="0"
+    />
+    <WriteLinesToFile 
+        Condition="'$(USE_PCH)'=='true' And !Exists('$(PCH_CXX)')"
+        File="$(PCH_CXX)"
+        Lines="#include &quot;omc/omPch.h&quot;"
+        Overwrite="true"
+        Encoding="Unicode"
+    />
+  </Target>
+
+  <!--
+  Copy additional model documentation files into documentation output directory
+  -->
+  <Target Name="ModelDocCopy"
+          AfterTargets="OmcCompile"
+          Condition="'$(MODEL_DOC)'=='true' And Exists('$(IN_DOC_DIR)') And Exists('$(OUT_DOC_DIR)')"
+          >
+    <Message Text="Copy $(IN_DOC_DIR)/*.pdf to $(OUT_DOC_DIR)" />
+
+    <ItemGroup>
+      <ExtraModelDocFiles Include="$(IN_DOC_DIR)/*.pdf" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(ExtraModelDocFiles)"
+      DestinationFolder="$(OUT_DOC_DIR)"
+    />
+  </Target>
+
+  <!-- -->
+  <PropertyGroup>
+    <BuildDependsOn>OmcCompile;$(BuildDependsOn)</BuildDependsOn>
+  </PropertyGroup>
+
+  <!--
+  ModelIniPublish: copy model ini file into model bin diretcory
+  -->
+  <Target Name="ModelIniPublish" 
+          Inputs="$(MODEL_INI_PATH)"
+          Outputs="$(MODEL_BIN_DIR)/$(MODEL_INI)"
+          BeforeTargets="ModelPublish"
+          >
+    <!--  Skip copy if $(MODEL_INI) is empty or absent. -->
+    <Message Text="Copy $(MODEL_INI) to $(MODEL_BIN_DIR)" Condition="'$(MODEL_INI)'!='' And Exists('$(MODEL_INI_PATH)')" />
+    <Copy 
+      SourceFiles="$(MODEL_INI_PATH)" 
+      DestinationFolder="$(MODEL_BIN_DIR)" 
+      SkipUnchangedFiles="true" 
+      Condition="'$(MODEL_INI)'!='' And Exists('$(MODEL_INI_PATH)')"
+    />
+  </Target>
+
+  <!--
+  ModelMessageIniPublish: copy model translated messages ini file into model bin diretcory
+  -->
+  <Target Name="ModelMessageIniPublish" 
+          Inputs="$(MODEL_MSG_INI_OMC_OUT)"
+          Outputs="$(MODEL_BIN_DIR)/$(MODEL_MSG_INI)"
+          BeforeTargets="ModelPublish"
+          >
+    <!--  Skip copy if $(MODEL_MSG_INI) is absent. -->
+    <Message Text="Copy $(MODEL_MSG_INI) to $(MODEL_BIN_DIR)" Condition="Exists('$(MODEL_MSG_INI_OMC_OUT)')" />
+    <Copy 
+      SourceFiles="$(MODEL_MSG_INI_OMC_OUT)" 
+      DestinationFolder="$(MODEL_BIN_DIR)" 
+      SkipUnchangedFiles="true" 
+      Condition="Exists('$(MODEL_MSG_INI_OMC_OUT)')"
+    />
+  </Target>
+  
+  <!--
+  ModelPublish
+  -->
+
+  <!-- The following properties help make the ModelPublish target and output more readable. -->
+  <PropertyGroup>
+    <PUBLISH_TICKLE>$(MODEL_BIN_DIR)/$(MODEL_NAME).publish.tickle</PUBLISH_TICKLE>
+    <PUBLISH_SQLITE_REL>$([MSBuild]::MakeRelative($(ProjectDir),$(PUBLISH_SQLITE)))</PUBLISH_SQLITE_REL>
+    <OM_SQL_DIR_REL>$([MSBuild]::MakeRelative($(ProjectDir),$(OM_SQL_DIR)))</OM_SQL_DIR_REL>
+    <!--  Replace back slash by forward slash. -->
+    <OM_SQL_DIR_REL>$(OM_SQL_DIR_REL.Replace(&quot;\&quot;,&quot;/&quot;))</OM_SQL_DIR_REL>
+  </PropertyGroup>
+
+  <Target Name="ModelPublish"
+          Inputs="@(OMC_SQL_OUTPUTS)"
+          Outputs="$(PUBLISH_TICKLE)"
+          AfterTargets="link"
+          >
+    <Message Text="$(SQLITE_EXE) $(PUBLISH_SQLITE_REL) &lt; $(OM_SQL_DIR_REL)/sqlite/optional_meta_views_sqlite.sql" />
+    <Exec Command="$(COMPLETE_SQLITE_EXE) $(PUBLISH_SQLITE_REL) &lt; $(OM_SQL_DIR_REL)/sqlite/optional_meta_views_sqlite.sql" />
+
+    <Message Text="$(SQLITE_EXE) $(PUBLISH_SQLITE_REL) &lt; src/$(MODEL_NAME)_optional_views_sqlite.sql" />
+    <Exec Command="$(COMPLETE_SQLITE_EXE) $(PUBLISH_SQLITE_REL) &lt; src/$(MODEL_NAME)_optional_views_sqlite.sql" />
+
+    <Touch  Files="$(PUBLISH_TICKLE)"
+            AlwaysCreate="true"
+            />
+  </Target>
+
+  <!--
+  RunModel
+  -->
+
+  <PropertyGroup>
+    <!-- The following property prepares arguments to the model executable. -->
+    <MODEL_RUN_STAMP>$([System.DateTime]::Now.ToString(yyyy_MM_dd_HH_mm_ss_fff))</MODEL_RUN_STAMP>
+    <PUBLISH_DIR_REL>$([MSBuild]::MakeRelative($(TargetDir),$(PUBLISH_DIR)))</PUBLISH_DIR_REL>
+    <MODEL_INI_PATH_REL Condition="'$(MODEL_INI)' != ''">$([MSBuild]::MakeRelative($(TargetDir), $(MODEL_INI_PATH)))</MODEL_INI_PATH_REL>
+    <FIRST_SCENARIO_NAME>$(SCENARIO_NAMES.Split(';')[0])</FIRST_SCENARIO_NAME>
+    <MODEL_OPTS>$(MODEL_OPTS) -s $(FIRST_SCENARIO_NAME)</MODEL_OPTS>
+    <MODEL_OPTS>$(MODEL_OPTS) -OpenM.RunName $(FIRST_SCENARIO_NAME)</MODEL_OPTS>
+    <MODEL_OPTS Condition="'$(MODEL_INI)' != ''">$(MODEL_OPTS) -ini $(MODEL_INI_PATH_REL)</MODEL_OPTS>
+    <MODEL_OPTS>$(MODEL_OPTS) -OpenM.RunStamp $(MODEL_RUN_STAMP)</MODEL_OPTS>
+    <MODEL_OPTS>$(MODEL_OPTS) -OpenM.LogToFile true</MODEL_OPTS>
+    <MODEL_OPTS>$(MODEL_OPTS) -OpenM.LogFilePath $(PUBLISH_DIR_REL)/$(MODEL_NAME).$(MODEL_RUN_STAMP).log</MODEL_OPTS>
+    <RUN_MODEL_TICKLE>$(PUBLISH_DIR)/$(MODEL_NAME)_$(FIRST_SCENARIO_NAME).run.tickle</RUN_MODEL_TICKLE>
+    <MPIEXEC_OPTS Condition="'$(PROCESSES)' != ''">-n $(PROCESSES)</MPIEXEC_OPTS>
+  </PropertyGroup>
+
+  <Target Name="RunModel"
+          Condition="'$(RUN_SCENARIO)'=='true' And '$(GRID_COMPUTING)' == 'EMPTY'" 
+          Outputs="$(RUN_MODEL_TICKLE)"
+          AfterTargets="ModelPublish"
+          >
+    <Message Text="Running scenario $(FIRST_SCENARIO_NAME) using $(MODEL_NAME)..." />
+    <Message Text="$(TargetName) $(MODEL_OPTS)" />
+    <Exec EnvironmentVariables="OM_ROOT=$(OM_ROOT);$(MODEL_ROOT_ENV)"
+          WorkingDirectory="$(TargetDir)"
+          Command="$(TargetName) $(MODEL_OPTS)"
+          />
+    <Touch  Files="$(RUN_MODEL_TICKLE)"
+            AlwaysCreate="true"
+            />
+  </Target>
+
+  <Target Name="RunModel_mpi"
+          Condition="'$(RUN_SCENARIO)'=='true' And '$(GRID_COMPUTING)' == 'MPI'" 
+          Outputs="$(RUN_MODEL_TICKLE)"
+          AfterTargets="ModelPublish"
+          >
+    <Message Text="Running scenario $(FIRST_SCENARIO_NAME) using $(MODEL_NAME)..." />
+    <Message Text="mpiexec $(MPIEXEC_OPTS) $(TargetName) $(MODEL_OPTS)" />
+    <Exec EnvironmentVariables="OM_ROOT=$(OM_ROOT);$(MODEL_ROOT_ENV)"
+          WorkingDirectory="$(TargetDir)"
+          Command="$(COMPLETE_MPIEXEC_EXE) $(MPIEXEC_OPTS) $(TargetName) $(MODEL_OPTS)"
+          />
+    <Touch  Files="$(RUN_MODEL_TICKLE)"
+            AlwaysCreate="true"
+            />
+  </Target>
+  
+  <!--
+  DbcopyExportCsv
+  -->
+  
+  <PropertyGroup>
+    <!-- dbcopy work dir is PUBLISH_DIR, make absolute path to $OM_ROOT/bin -->
+    <ABS_OM_BIN_DIR Condition="'$(OM_ROOT)'!=''">$([System.IO.Path]::GetFullPath('$(OM_ROOT)\bin'))</ABS_OM_BIN_DIR>
+    <!-- bug: System.IO.Path::GetFullPath('../../..') return: C:\Program Files (x86)\Microsoft Visual Studio\2019 -->
+    <ABS_OM_BIN_DIR Condition="'$(OM_ROOT)'=='../../..'">$([System.IO.Path]::GetFullPath('$(ProjectDir)..\..\..\bin'))</ABS_OM_BIN_DIR>
+    <COMPLETE_DBCOPY_EXE>&quot;$(ABS_OM_BIN_DIR)\$(DBCOPY_EXE)&quot;</COMPLETE_DBCOPY_EXE>
+    <DBCOPY_CSV_OUTPUT_DIR>$(MODEL_NAME).last.run</DBCOPY_CSV_OUTPUT_DIR>
+  </PropertyGroup>
+
+  <Target Name="DbcopyExportCsv"
+          Condition="'$(DBCOPY_EXPORT_CSV)'=='true'"
+          AfterTargets="RunModel"
+          >
+    <Message Text="Exporting model run results into csv..." />
+    <RemoveDir Directories="$(DBCOPY_CSV_OUTPUT_DIR)" />
+
+    <!-- dbcopy -m RiskPaths -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.IdCsv -->
+    <Message Text="$(COMPLETE_DBCOPY_EXE) -m $(MODEL_NAME) -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.IdCsv"/>
+    <Exec 
+      WorkingDirectory="$(PUBLISH_DIR)"
+      Command="$(COMPLETE_DBCOPY_EXE) -m $(MODEL_NAME) -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.IdCsv"
+      ContinueOnError="true"/>
+
+    <!-- dbcopy -m RiskPaths -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.KeepOutputDir -->
+    <Message Text="$(COMPLETE_DBCOPY_EXE) -m $(MODEL_NAME) -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.KeepOutputDir"/>
+    <Exec 
+      WorkingDirectory="$(PUBLISH_DIR)"
+      Command="$(COMPLETE_DBCOPY_EXE) -m $(MODEL_NAME) -dbcopy.LastRun -dbcopy.IdOutputNames=false -dbcopy.Utf8BomIntoCsv -dbcopy.KeepOutputDir"
+      ContinueOnError="true"/>
+  </Target>
+
+  <!--
+  StartOmppUI
+  -->
+
+  <PropertyGroup>
+    <OMS_URL_TICKLE>$(PUBLISH_DIR)/$(MODEL_NAME).oms_url.tickle</OMS_URL_TICKLE>
+    <ABS_OM_ROOT Condition="'$(OM_ROOT)'!=''">$([System.IO.Path]::GetFullPath('$(OM_ROOT)'))</ABS_OM_ROOT>
+    <!-- bug: System.IO.Path::GetFullPath('../../..') return: C:\Program Files (x86)\Microsoft Visual Studio\2019 -->
+    <!-- bug: System.IO.Path::GetFullPath('../../..') return wrong value under VS 2022 -->
+    <ABS_OM_ROOT Condition="'$(OM_ROOT)'=='../../..'">$([System.IO.Path]::GetFullPath('$(ProjectDir)..\..\..'))</ABS_OM_ROOT>
+    <ABS_START_UI_BAT>&quot;$(ABS_OM_ROOT)\props\start-ui-at-build.bat&quot;</ABS_START_UI_BAT>
+  </PropertyGroup>
+
+  <Target Name="StartOmppUI"
+          Condition="'$(OPEN_MODEL_WEB_UI)'=='true'" 
+          Outputs="$(OMS_URL_TICKLE)"
+          AfterTargets="ModelPublish;RunModel"
+          >
+    <Message Text="Using batch file to start openM++ UI:" />
+    <Message
+      Text="(set MODEL_NAME=$(MODEL_NAME)) &amp; (set OM_ROOT=$(ABS_OM_ROOT)) &amp; (set PUBLISH_DIR=$(PUBLISH_DIR)) &amp; $(ABS_START_UI_BAT)"
+      />
+    <Exec
+      WorkingDirectory="$(PUBLISH_DIR)"
+      Command="(set MODEL_NAME=$(MODEL_NAME)) &amp; (set PUBLISH_DIR=$(PUBLISH_DIR)) &amp; (set OM_ROOT=$(ABS_OM_ROOT)) &amp; $(ABS_START_UI_BAT)"
+      />
+  </Target>
+
+  <!-- 
+  Diagnostics
+  -->
+ 
+  <Target Name="Diagnostics"
+          Condition="'1'=='1'">
+    <Message Text="MODEL_NAME=$(MODEL_NAME)" />
+    <Message Text="SCENARIO_NAMES=$(SCENARIO_NAMES)" />
+    <Message Text="SCENARIO_NAMES_COLLECTION=@(SCENARIO_NAMES_COLLECTION)" />
+    <Message Text="SCENARIO_FOLDERS=$(SCENARIO_FOLDERS)" />
+    <Message Text="SCENARIO_FOLDERS_COLLECTION=@(SCENARIO_FOLDERS_COLLECTION)" />
+    <Message Text="FIXED_NAME=$(FIXED_NAME)" />
+    <Message Text="FIXED_PARAMETERS_FOLDER=$(FIXED_PARAMETERS_FOLDER)" />
+    <Message Text="OM_ROOT=$(OM_ROOT)" />
+    <Message Text="$(MODEL_ROOT_ENV)" />
+    <Message Text="BuildingInsideVisualStudio=$(BuildingInsideVisualStudio)" />
+    <Message Text="VisualStudioVersion=$(VisualStudioVersion)" />
+    <Message Text="PLATFORM_TOOLSET=$(PLATFORM_TOOLSET)" />
+    <Message Text="CHARACTER_SET=$(CHARACTER_SET)" />
+    <Message Text="DISABLE_ITERATOR_DEBUG=$(DISABLE_ITERATOR_DEBUG)" />
+    <Message Text="OM_DID_DEF=$(OM_DID_DEF)" />
+    <Message Text="DID_SUFFIX=$(DID_SUFFIX)" />
+
+    <Message Text="OM_MSG_USE=$(OM_MSG_USE)" />
+    <Message Text="OMC_INPUTS=@(OMC_INPUTS)" />
+    <Message Text="OMC_OUTPUTS=@(OMC_OUTPUTS)" />
+  </Target>
+
+ 
+  <!-- 
+  Visual Studio IDE integration
+  -->
+ 
+   <ItemGroup>
+    <PropertyPageSchema Include="$(OM_ROOT)/props/model-ompp.VS.xml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- for improved visualization of entity Attribute wrapped values in VS debugger -->
+    <Natvis Include="$(OM_ROOT)/props/model-ompp.natvis" />
+  </ItemGroup>
+
+</Project>

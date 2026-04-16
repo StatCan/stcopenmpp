@@ -1,0 +1,48 @@
+Example and default values for model run options.
+
+To show run options in UI:
+
+  - file names must be:
+      run-options.YourModelName.1.something.json
+      run-options.any_model.1.something-else.json
+    files in UI will be ordered by names:
+      YourModelName.1.xyz, YourModelName.2.abc, any_model.1.zyx, any_model.2.cba, ....
+    
+  - make it a valid JSON: remove any text outside of { }
+    
+  - leave only values which you want to change and remove all others
+    for example, remove line "csvDir": ""
+    if you do not want to change user choice of csvDir
+
+  - change Text.Descr in all model languages to make sure user understand
+    how and when to use those run options
+
+==== REMOVE this line and all text above ====
+
+{
+  "Text": [{
+      "LangCode": "EN",
+      "ShortLabel": "Default Options",
+      "Descr": "Use default model run options"
+    }, {
+      "LangCode": "FR",
+      "ShortLabel": "Options par défaut",
+      "Descr": "Utiliser les options d'exécution du modèle par défaut"
+    }
+  ],
+  "subCount": 1,
+  "threadCount": 1,
+  "workDir": "",
+  "csvDir": "",
+  "csvCodeId": "enumCode",
+  "useIni": false,
+  "iniAnyKey": false,
+  "profile": "",
+  "sparseOutput": false,
+  "progressPercent": 1,
+  "progressStep": 0.0,
+  "runTmpl": "",
+  "mpiNpCount": 0,
+  "mpiOnRoot": false,
+  "mpiTmpl": ""
+}

@@ -1,0 +1,56 @@
+//LABEL(PersonCore, EN) Core functionality of the Person actor
+
+/* NOTE(PersonCore, EN)
+	This module contains the basic information which defines the Person case.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+range LIFE //EN Simulated age range
+{
+    0,
+    100
+};
+
+entity Person            //EN Individual
+{
+    //EN Integer age
+    LIFE integer_age = COERCE(LIFE, self_scheduling_int(age));
+
+    //LABEL(Person.Start, EN) Starts the entity
+    void Start();
+
+    //LABEL(Person.Finish, EN) Finishes the entity
+    void Finish();
+};
+
+#endif // Hide non-C++ syntactic island from IDE
+
+/*NOTE(Person.Start, EN)
+    The Start function initializes entity variables before simulation
+    of the actor commences.
+*/
+void Person::Start()
+{
+    // Initialize all attributes (OpenM++).
+    initialize_attributes();
+
+    age = 0;
+    time = 0;
+
+    hook_Start();
+
+    // Have the entity enter the simulation (OpenM++).
+    enter_simulation();
+}
+
+/*NOTE(Person.Finish, EN)
+    The Finish function terminates the simulation of an actor.
+*/
+void Person::Finish()
+{
+    // Have the entity exit the simulation (OpenM++).
+    exit_simulation();
+}

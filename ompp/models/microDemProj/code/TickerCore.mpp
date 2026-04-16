@@ -1,0 +1,67 @@
+//LABEL (TickerCore, EN) Ticker actor
+
+/*NOTE(TickerCore, EN)
+	This module contains the basic information associated with a Ticker actor.
+*/
+
+range	ALL_YEAR_RANGE { 1913, 2163 };							//EN Year
+range	SIM_YEAR_RANGE { 2013, 2163 };							//EN Simulated years	
+
+actor Ticker 
+{
+	void			Start();									//EN Starts the ticker
+	void			Finish();									//EN Finishes the actor
+	ALL_YEAR_RANGE	calendar_year = { 1913 };					//EN Calendar year
+	TIME			time_next_year_end = { TIME_INFINITE };		//EN Next end year event
+	TIME			time_next_new_year = { TIME_INFINITE };		//EN Next new year event
+	event			timeYearEndEvent, YearEndEvent;				//EN End of year event
+	event			timeNewYearEvent, NewYearEvent;				//EN New year event
+};
+
+void Ticker::Start( )
+{
+    // Initialize all attributes (OpenM++).
+    initialize_attributes();
+
+    calendar_year		= MIN(ALL_YEAR_RANGE);
+	time				= MIN(ALL_YEAR_RANGE);
+	time_next_year_end	= WAIT(1);
+	age					= 0.0;
+
+    // Have the entity enter the simulation (OpenM++).
+    enter_simulation();
+}
+
+void Ticker::Finish()
+{
+    // Exit the simulation (OpenM++).
+    exit_simulation();
+}
+
+TIME Ticker::timeYearEndEvent() { return time_next_year_end; }
+void Ticker::YearEndEvent()
+{
+	int nPerson = asAllPerson->Count();
+	for ( int nJ = 0; nJ < nPerson; nJ++ ) 
+	{
+		auto paPerson = asAllPerson->Item( nJ );
+		paPerson->YearEnd();
+	}
+	time_next_year_end = time_next_year_end + 1;
+	time_next_new_year = WAIT(0);
+}
+
+TIME Ticker::timeNewYearEvent() { return time_next_new_year; }
+void Ticker::NewYearEvent()
+{
+	calendar_year++;
+
+	int nPerson = asAllPerson->Count();
+	for ( int nJ = 0; nJ < nPerson; nJ++ ) 
+	{
+		auto paPerson = asAllPerson->Item( nJ );
+		paPerson->NewYear();
+	}
+	time_next_new_year = TIME_INFINITE;
+}
+

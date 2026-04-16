@@ -1,0 +1,55 @@
+{
+  "ModelTreeDescending": false,
+  "DefaultTitle": [{
+      "Link": "https://openmpp.org",
+      "LangCode": "en",
+      "Label": "OpenM++"
+    }, {
+      "Link": "https://openmpp.org",
+      "LangCode": "fr",
+      "Label": "OpenM++"
+    }
+  ],
+  "MoreMenu": [{
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-User-Interface",
+      "LangCode": "en",
+      "Label": "UI Help"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-User-Interface",
+      "LangCode": "fr",
+      "Label": "Aide de l'interface"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-Create-New-or-Edit-Scenario",
+      "LangCode": "en",
+      "Label": "Create Scenario"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-Create-New-or-Edit-Scenario",
+      "LangCode": "fr",
+      "Label": "Créer un scénario"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-Disk-Space-Cleanup",
+      "LangCode": "en",
+      "Label": "Disk Cleanup"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki/Ompp-UI-Disk-Space-Cleanup",
+      "LangCode": "fr",
+      "Label": "Nettoyage de disque"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki",
+      "LangCode": "en",
+      "Label": "OpenM++ wiki"
+    }, {
+      "Link": "https://github.com/openmpp/openmpp.github.io/wiki",
+      "LangCode": "fr",
+      "Label": "Wiki d'OpenM++"
+    }, {
+      "Link": "https://openmpp.org",
+      "LangCode": "en",
+      "Label": "OpenM++ website"
+    }, {
+      "Link": "https://openmpp.org",
+      "LangCode": "fr",
+      "Label": "Site d'OpenM++"
+    }
+  ]
+}

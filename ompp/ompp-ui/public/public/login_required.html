@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>openM++</title>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="description" content="OpenM++: open source microsimulation platform">
+  <meta name="keywords" content="OpenM++, Open Source, Software, Statistics, Simulations, MIT License">
+
+  <link rel="icon" type="image/ico" sizes="any" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="icon" type="image/svg+xml" sizes="any" href="icons/openmpp.svg">
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+  html {
+    height: 100%;
+  }
+  .page-body {
+    font-family: Roboto,sans-serif;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+  }
+  #page-container {
+    display: flex;
+    flex-direction: column;
+  }
+  #top, #bottom {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100%;
+    text-align: center;
+    color: white;
+    background: #3f51b5;
+    font-size: 1.25rem;
+    font-weight: 500;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  #main {
+    flex-grow: 1;
+    flex-shrink: 0;
+    padding-left: 1rem;
+  }
+  
+  .page-body a {
+    color: blue;
+    text-decoration: none;
+    outline-style: none;
+  }
+  .page-body a:hover {
+    color: red;
+  }
+  
+  .middle-button-container {
+    width: 30%;
+    margin: auto;
+    padding: 0.5rem;
+  }
+  #login-button {
+    display: block;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: blue;
+    background-color: lightgrey;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    border-color: grey;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+  }
+  #login-button:hover {
+    color: red;
+  }
+  
+  .middle-container {
+    width: 80%;
+    margin: auto;
+    padding: 0.5rem;
+    text-align: center;
+  }
+  
+  @supports not (-ms-high-contrast: none) {
+    .ie-show {
+      display: none;
+    }
+  }
+  @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    .ie-hide {
+      display: none;
+    }
+    .ie-show {
+      font-weight: bold;
+      color: gray;
+    }
+  }
+  </style>
+</head>
+
+<body class="page-body">
+  <div id="page-container">
+    <div id="top">OpenM++: open source microsimulation platform</div>
+    <div id="main">
+    
+      <div class="middle-button-container ie-hide">
+        <a id="login-button" role="button" alt="login" title="login" href="/login?logout=true">Login</a>
+      </div>
+      
+      <div class="middle-container">
+        <span class="ie-hide">Please login first.</span><br class="ie-hide" />
+        <p class="ie-show">Internet Explorer is not supported, please use other browser.</p>
+        <p class="ie-show">Internet Explorer n'est pas pris en charge, veuillez utiliser un autre navigateur.</p>
+        Or visit <a href="https://openmpp.org">OpenM++ web-site</a> for more information.
+      </div>
+      
+    </div>
+    <div id="bottom">
+      Thank you for your interest in openM++
+    </div>
+  </div>
+</body>
+
+</html>

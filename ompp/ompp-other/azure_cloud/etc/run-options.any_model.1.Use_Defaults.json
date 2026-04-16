@@ -1,0 +1,27 @@
+{
+  "Text": [{
+      "LangCode": "EN",
+      "ShortLabel": "Default Options",
+      "Descr": "Use default model run options"
+    }, {
+      "LangCode": "FR",
+      "ShortLabel": "Options par défaut",
+      "Descr": "Utiliser les options d'exécution du modèle par défaut"
+    }
+  ],
+  "subCount": 1,
+  "threadCount": 1,
+  "workDir": "",
+  "csvDir": "",
+  "csvCodeId": "enumCode",
+  "useIni": false,
+  "iniAnyKey": false,
+  "profile": "",
+  "sparseOutput": false,
+  "progressPercent": 1,
+  "progressStep": 0.0,
+  "runTmpl": "",
+  "mpiNpCount": 0,
+  "mpiOnRoot": false,
+  "mpiTmpl": ""
+}

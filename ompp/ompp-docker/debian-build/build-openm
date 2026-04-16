@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+#
+# Build stcopenmpp run-time libraries and omc compiler
+#
+# environmemnt variables:
+#  OM_BUILD_CONFIGS=RELEASE,DEBUG (default: RELEASE,DEBUG)
+#  OM_MSG_USE=MPI                 (default: EMPTY)
+#  OMPP_BUILD_TAG                 (default: build from latest git)
+#  OMPP_CPP_BUILD_TAG             (default: build from latest git)
+#  OMPP_GIT_URL                   (default: https://github.com/openmpp)
+#  OMPP_DEPLOY_NAME               (default: stcopenmpp_debian_YYYYMMDD)
+
+OM_BLD_CFG=${OM_BUILD_CONFIGS:-RELEASE,DEBUG}
+
+for C in ${OM_BLD_CFG//,/ }; do
+  if [ "$C" != 'RELEASE' ] && [ "$C" != 'DEBUG' ]; then
+    echo Error: incorrect value: $C, must be any combination of: RELEASE,DEBUG
+    exit 1
+  fi
+done
+
+if [ -n "$OM_MSG_USE" ] && [ "$OM_MSG_USE" != 'EMPTY' ] && [ "$OM_MSG_USE" != 'MPI' ]; then
+  echo Error: incorrect value: $OM_MSG_USE, must be one of: MPI or EMPTY
+  exit 1
+fi
+
+[ "$OM_MSG_USE" = 'MPI' ] && OM_P_MPI="OM_MSG_USE=MPI" || OM_P_MPI=
+
+# show environment
+
+START_DT=`date`
+echo $START_DT Build openM++ run-time libraries and omc compiler
+echo Environment:
+echo " OM_BUILD_CONFIGS   = $OM_BUILD_CONFIGS"
+echo " OM_MSG_USE         = $OM_MSG_USE"
+echo Build configurations: $OM_BLD_CFG
+if [ -z "$OM_P_MPI" ]; then
+  echo Build desktop version: non-MPI
+else
+  echo Build cluster version: using MPI
+fi;
+
+# get source code from git
+
+if [ ! -d stcopenmpp/ompp ]; then
+
+  if ! git clone ${OMPP_GIT_URL} stcopenmpp ;
+  then
+    echo FAILED git clone
+    exit 1
+  fi
+  
+  pushd stcopenmpp
+  
+  if [ ! -d ompp/log ]; then mkdir -p ompp/log; fi
+
+	# if OMPP_CPP_BUILD_TAG or OMPP_BUILD_TAG is set then build from that git tag
+
+	if [ -n "$OMPP_BUILD_TAG" ]; then
+	  OM_BLD_TAG="$OMPP_BUILD_TAG"
+	  echo " OMPP_BUILD_TAG     = $OMPP_BUILD_TAG" | tee -a ompp/log/build-openm.log
+	fi
+	if [ -n "$OMPP_CPP_BUILD_TAG" ]; then
+	  OM_BLD_TAG="$OMPP_CPP_BUILD_TAG"
+	  echo " OMPP_CPP_BUILD_TAG = $OMPP_CPP_BUILD_TAG" | tee -a ompp/log/build-openm.log
+	fi
+
+	if [ -n "$OM_BLD_TAG" ]; then
+
+	  echo "git checkout $OM_BLD_TAG"
+
+	  if ! git checkout "$OM_BLD_TAG" >> ompp/log/build-openm.log 2>&1;
+	  then
+		echo FAILED git checkout "$OM_BLD_TAG" | tee -a ompp/log/build-openm.log
+		exit 1
+	  fi
+	fi
+	if [ -n "$OMPP_DEPLOY_NAME" ]; then
+	  echo " OMPP_DEPLOY_NAME     = $OMPP_DEPLOY_NAME" | tee -a ompp/log/build-openm.log
+	fi
+	
+	# log build environment
+
+	echo Log file: ompp/log/build-openm.log
+	echo $START_DT Build openM++ run-time libraries and omc compiler >> ompp/log/build-openm.log
+	echo " OM_BUILD_CONFIGS   = $OM_BUILD_CONFIGS" >> ompp/log/build-openm.log
+	echo " OM_MSG_USE         = $OM_MSG_USE" >> ompp/log/build-openm.log
+	echo " OM_ROOT            = $OM_ROOT" >> ompp/log/build-openm.log
+	echo Build configurations: $OM_BLD_CFG >> ompp/log/build-openm.log
+	if [ -z "$OM_P_MPI" ]; then
+	  echo Build desktop version: non-MPI >> ompp/log/build-openm.log
+	else
+	  echo Build cluster version: using MPI >> ompp/log/build-openm.log
+	fi;
+
+	# find openM++ version commit and use commit tag, if tagged
+
+	OM_RUNTIME_VERSION=`git log -n 1 --date=short --format="%cd %H"`
+	
+	if [ $? -ne 0 ];
+	then
+	  echo FAILED git log -n 1 --date=short --format=.... | tee -a ompp/log/build-openm.log
+	  exit 1
+	fi
+
+	if [ -n "$OM_BLD_TAG" ];
+	then
+	  om_git_check_tag=`git tag -l "$OM_BLD_TAG"`
+	  [ $? -eq 0 ] && [ "$om_git_check_tag" = "$OM_BLD_TAG" ] && OM_RUNTIME_VERSION="$OM_RUNTIME_VERSION $OM_BLD_TAG"
+	fi
+
+	echo " OM_RUNTIME_VERSION = $OM_RUNTIME_VERSION" | tee -a ompp/log/build-openm.log
+	
+	# Move all contents from $OMPP_GIT_URL/ompp to /$OMPP_USER/ompp
+	mv /home/$OMPP_USER/stcopenmpp/ompp /home/$OMPP_USER/ompp 
+
+	# Move all contents from $OMPP_GIT_URL/plugins to /$OMPP_USER/ompp/plugins
+    mv /home/$OMPP_USER/stcopenmpp/plugins /home/$OMPP_USER/ompp/plugins
+
+else
+  echo Skip: git clone
+fi
+
+# push into ompp root and make log directory if not exist
+
+pushd /home/$OMPP_USER/ompp
+rm -rf stcopenmpp
+OM_ROOT=$PWD
+echo " OM_ROOT            = $OM_ROOT"
+
+# create omVersion.h
+
+echo Create: include/libopenm/omVersion.h >> log/build-openm.log
+
+echo "/**"                         > include/libopenm/omVersion.h
+echo " * @file"                    >> include/libopenm/omVersion.h
+echo " * OpenM++: runtime version" >> include/libopenm/omVersion.h
+echo " */"                         >> include/libopenm/omVersion.h
+echo "// Copyright (c) OpenM++"    >> include/libopenm/omVersion.h
+echo "// This code is licensed under the MIT license (see LICENSE.txt for details)" >> include/libopenm/omVersion.h
+echo "//"                          >> include/libopenm/omVersion.h
+echo "#ifndef OM_H_VERSION_H"      >> include/libopenm/omVersion.h
+echo "#define OM_H_VERSION_H"      >> include/libopenm/omVersion.h
+echo "//"                          >> include/libopenm/omVersion.h
+
+echo "#define OM_RUNTIME_VERSION \"$OM_RUNTIME_VERSION\"" >> include/libopenm/omVersion.h
+
+echo "//"                        >> include/libopenm/omVersion.h
+echo "#endif  // OM_H_VERSION_H" >> include/libopenm/omVersion.h
+
+# build c++ run-time libraries and omc compiler
+
+pushd openm
+
+for C in ${OM_BLD_CFG//,/ }; do
+
+  [ "$C" = 'RELEASE' ] && OM_P_RLS="RELEASE=1" || OM_P_RLS=
+
+  echo make $OM_P_RLS $OM_P_MPI
+  
+  if ! make $OM_P_RLS $OM_P_MPI >> ../log/build-openm.log 2>&1;
+  then
+    echo FAILED: make $OM_P_RLS $OM_P_MPI | tee -a ../log/build-openm.log
+    exit 1
+  fi
+done
+
+popd
+
+echo `date` Done. | tee -a log/build-openm.log
+popd
+

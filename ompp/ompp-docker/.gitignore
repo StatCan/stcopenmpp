@@ -1,0 +1,5 @@
+.secrets
+build*/
+*.zip
+*.gz
+*.log

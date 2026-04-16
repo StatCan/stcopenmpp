@@ -1,0 +1,54 @@
+// Copyright (c) 2013-2015 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(model_core, EN) Core simulation functions
+
+/* NOTE(model_core, EN)
+	This module contains core simulation functions and definitions.
+*/
+
+// The model version number
+version 1, 0, 0, 0;
+
+// The model type
+model_type case_based;
+
+// The data type used to represent time
+time_type double;
+
+// Supported languages
+languages {
+	EN // English
+};
+
+/**
+ * Simulates a single case.
+ * 
+ * Called by code in a simulation framework module.
+ */
+void CaseSimulation(case_info &ci)
+{
+	auto prPerson = new Person();
+	prPerson->Start();
+	prPerson->Finish();
+}
+
+/**
+ * Invoked at the beginning of the Simulation function.
+ *
+ * @param [in,out] ci Additional information related to the case.
+ */
+void Simulation_start(case_info &ci)
+{
+    // Initialize case information in ci (if used).
+}
+
+/**
+ * Invoked at the end of the Simulation function.
+ *
+ * @param [in,out] ci Additional information related to the case.
+ */
+void Simulation_end(case_info &ci)
+{
+    // Finalize case information in ci (if used).
+}

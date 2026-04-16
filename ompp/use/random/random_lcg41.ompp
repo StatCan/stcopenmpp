@@ -1,0 +1,225 @@
+/**
+* @file    random_lcg41.ompp
+* Implementation of framework for random number generation (Modgen's 41 linear congruential generators for streams)
+*
+* This version of the random number generation framework uses a set of 41 
+* integral-congruential generators based on the Mersenne prime 2^31 - 1.
+*
+* The interface to models consists of the functions RandUniform, RandNormal, RandLogistic.
+*
+* The interface to framework modules, e.g. case_based_common.ompp consists of the functions
+* new_streams, delete_streams, initialize_stream, serialize_random_state, deserialize_random_state
+*
+* Other content in this module should be considered to be 'private'.
+*/
+// Copyright (c) 2013-2022 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+namespace fmk {
+
+    /**
+     * The fixed number of random number stream generators available in Modgen.
+     */
+    const int max_stream_generators = 41;
+
+    /**
+     * Multiplier of generator used for a given simulation member.
+     */
+    const long model_stream_generators[max_stream_generators] = {
+        16807,
+        1826645050,
+        519701294,
+        1912518406,
+        87921397,
+        755482893,
+        673205363,
+        727452832,
+        630360016,
+        1142281875,
+        219667202,
+        200558872,
+        1185331463,
+        573186566,
+        396907481,
+        1106264918,
+        1605529283,
+        1902548864,
+        1444095898,
+        1600915560,
+        1987505485,
+        1323051066,
+        1715488211,
+        1289290241,
+        967740346,
+        1644645313,
+        2142074246,
+        1397488348,
+        97473033,
+        1210640156,
+        990191797,
+        640039787,
+        1141672104,
+        2081478048,
+        1236995837,
+        1985494258,
+        84845685,
+        184528125,
+        1303680654,
+        61496220,
+        1096609123,
+    };
+
+    // Multiplier of the generator for the streams for this simulation (shared by all streams, varies by simulation member)
+    thread_local long stream_generator = 0;
+
+    // Current seed for each stream generator in the simulation
+    thread_local long stream_seeds[size_streams];
+
+    // Is there a random normal in other_normal?
+    thread_local bool other_normal_valid[size_streams] = { false };
+
+    // The other normal draw
+    thread_local double other_normal[size_streams];
+
+} // fmk
+
+// Create objects for random streams
+void new_streams()
+{
+	// no objects are used for Modgen random number streams
+}
+
+// Delete objects for random streams
+void delete_streams()
+{
+	// no objects are used for Modgen random number streams
+}
+
+// Initialize a model stream
+void initialize_stream(int model_stream, int member, long seed)
+{
+	// For members beyond number of Modgen generators, re-use generators cyclically.
+	// Note that fmk::stream_generator is identical and shared for a simulation member.
+	fmk::stream_generator = fmk::model_stream_generators[member % fmk::max_stream_generators];
+
+    fmk::stream_seeds[model_stream] = seed;
+    fmk::other_normal_valid[model_stream] = false;
+}
+
+/**
+ * Serialize random state
+ * 
+ * The random state consists of seeds and Normal values for each stream.
+ * These are converted to strings and pushed to the random_state.
+ * If there is no random Normal available, an empty string is pushed.
+ * 
+ * @return A random_state.
+ */
+random_state serialize_random_state()
+{
+    random_state rs;
+    rs.reserve(2 * fmk::size_streams);
+    const size_t bufsize = 50;
+    char wrk[bufsize];
+    for (int j = 0; j < fmk::size_streams; ++j) {
+        snprintf(wrk, bufsize, "%ld", fmk::stream_seeds[j]);
+        rs.push_back(wrk);
+        if (fmk::other_normal_valid[j]) {
+            snprintf(wrk, bufsize, "%a", fmk::other_normal[j]);
+        }
+        else {
+            // string of length 0 means no other normal for this stream
+            wrk[0] = '\0';
+        }
+        rs.push_back(wrk);
+    }
+    return rs;
+}
+
+/**
+ * Deserialize random state
+ *
+ * @param rs A previously saved random state to restore.
+ */
+void deserialize_random_state(const random_state & rs)
+{
+    for (int j = 0, k = 0; j < fmk::size_streams; ++j) {
+        fmk::stream_seeds[j] = atol(rs[k++].c_str());
+        auto wrk = rs[k++];
+        fmk::other_normal_valid[j] = (wrk != "");
+        if (fmk::other_normal_valid[j]) {
+            fmk::other_normal[j] = atof(wrk.c_str());
+        }
+        else {
+            fmk::other_normal[j] = 0.0; // value is irrelevant, never used
+        }
+    }
+}
+
+double RandUniform(int strm)
+{
+    assert(strm < fmk::size_streams);
+    if (strm >= fmk::size_streams) {
+        // The stream number exceeds the maximum number of streams.
+        handle_streams_exceeded(strm, fmk::size_streams - 1);
+        // not reached
+    }
+
+    long seed = fmk::stream_seeds[strm];
+    long long product = fmk::stream_generator;
+    product *= seed;
+    seed = product % fmk::lcg_modulus;
+    fmk::stream_seeds[strm] = seed;
+    return (double)seed / (double)fmk::lcg_modulus;
+}
+
+double RandNormal(int strm)
+{
+    assert(strm < fmk::size_streams);
+    if (strm >= fmk::size_streams) {
+        // The stream number exceeds the maximum number of streams.
+        handle_streams_exceeded(strm, fmk::size_streams - 1);
+        // not reached
+    }
+
+    if (fmk::other_normal_valid[strm]) {
+        fmk::other_normal_valid[strm] = false;
+        return fmk::other_normal[strm];
+    }
+    else {
+        double r2 = 1;
+        double x = 0;
+        double y = 0;
+        while (r2 >= 1) {
+            // unary + used to evade omc error detection of invalid stream
+            x = 2.0 * RandUniform(+strm) - 1.0;
+            y = 2.0 * RandUniform(+strm) - 1.0;
+            r2 = x * x + y * y;
+        }
+        double scale = std::sqrt(-2.0 * std::log(r2) / r2);
+        double n1 = scale * x;
+        double n2 = scale * y;
+        fmk::other_normal[strm] = n2;
+        fmk::other_normal_valid[strm] = true;
+        return n1;
+    }
+}
+
+double RandLogistic(int strm)
+{
+    assert(strm < fmk::size_streams);
+    if (strm >= fmk::size_streams) {
+        // The stream number exceeds the maximum number of streams.
+        handle_streams_exceeded(strm, fmk::size_streams - 1);
+        // not reached
+    }
+
+    // unary + used to evade omc error detection of invalid stream
+    double p = RandUniform(+strm);
+    double odds_ratio = p / (1.0 - p);
+    double x = std::log(odds_ratio);
+    return x;
+}
+

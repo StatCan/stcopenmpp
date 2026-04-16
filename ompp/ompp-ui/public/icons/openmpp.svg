@@ -1,0 +1,13 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+ <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
+ <g>
+  <title>background</title>
+  <rect x="0" y="0" width="512" height="512" id="canvas_background" fill="none"/>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <text transform="matrix(17 0 0 18 -306 -2337)" font-weight="bold" xml:space="preserve" text-anchor="start" font-family="Helvetica, Arial, sans-serif" font-size="24" id="svg_1" y="152" x="17" stroke-width="0" stroke="#000" fill="#0000ff">M</text>
+  <text transform="matrix(13 0 0 12 -4440 -637)" font-weight="bold" xml:space="preserve" text-anchor="start" font-family="Helvetica, Arial, sans-serif" font-size="24" id="svg_6" y="74" x="367" stroke-width="0" stroke="#000" fill="#0000ff">+</text>
+  <text transform="matrix(13 0 0 12 -4440 -505)" font-weight="bold" xml:space="preserve" text-anchor="start" font-family="Helvetica, Arial, sans-serif" font-size="24" id="svg_7" y="79" x="367" stroke-width="0" stroke="#000" fill="#0000ff">+</text>
+ </g>
+</svg>

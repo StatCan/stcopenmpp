@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- 
+  Use this to specify additional build directories and tools, such as bison and flex
+  -->
+  <PropertyGroup>
+    <BUILD_SUFFIX Condition="'$(Configuration)'=='Release' And '$(Platform)'=='Win32'">32</BUILD_SUFFIX>
+    <BUILD_SUFFIX Condition="'$(Configuration)'=='Debug' And '$(Platform)'=='Win32'">32D</BUILD_SUFFIX>
+    <BUILD_SUFFIX Condition="'$(Configuration)'=='Release' And '$(Platform)'=='x64'"></BUILD_SUFFIX>
+    <BUILD_SUFFIX Condition="'$(Configuration)'=='Debug' And '$(Platform)'=='x64'">D</BUILD_SUFFIX>
+    <OM_INC_DIR Condition="'$(OM_INC_DIR)'==''">$(SolutionDir)../include</OM_INC_DIR>
+    <OM_BIN_DIR Condition="'$(OM_BIN_DIR)'==''">$(SolutionDir)../bin</OM_BIN_DIR>
+    <OM_LIB_DIR Condition="'$(OM_LIB_DIR)'==''">$(SolutionDir)../lib</OM_LIB_DIR>
+    <BUILD_DIR>$(SolutionDir)../build</BUILD_DIR>
+    <BISON_FLEX_DIR Condition="'$(BISON_FLEX_DIR)'==''">$(SolutionDir)../bin</BISON_FLEX_DIR>
+    <BISON_EXE>win_bison.exe</BISON_EXE>
+    <FLEX_EXE>win_flex.exe</FLEX_EXE>
+  </PropertyGroup>
+
+  <!-- 
+  Use this to choose database library provider, now only SQlite supported
+    SQLITE - use SQlite version
+  -->
+  <PropertyGroup>
+    <OM_DB_USE>SQLITE</OM_DB_USE>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_DB_USE)'=='SQLITE'">
+    <OM_DB_DEF>OM_DB_SQLITE</OM_DB_DEF>
+    <OM_DB_INC>$(SolutionDir)libsqlite</OM_DB_INC>
+    <OM_DB_LIB>libsqlite$(BUILD_SUFFIX).lib</OM_DB_LIB>
+    <OM_DB_LIB_DIR></OM_DB_LIB_DIR>
+  </PropertyGroup>
+
+  <!-- 
+  Use this to choose message passing library provider
+    MPI   - use MPI-based version (you must have MS-MPI installed)
+    EMPTY - use empty version of the library which does nothing
+  -->
+  <PropertyGroup>
+    <OM_MSG_USE>EMPTY</OM_MSG_USE>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_MSG_USE)'=='EMPTY'">
+    <OM_MSG_DEF>OM_MSG_EMPTY</OM_MSG_DEF>
+    <OM_MSG_INC></OM_MSG_INC>
+    <OM_MSG_LIB></OM_MSG_LIB>
+    <OM_MSG_LIB_DIR></OM_MSG_LIB_DIR>
+    <MPI_SUFFIX></MPI_SUFFIX>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_MSG_USE)'=='MPI'">
+    <OM_MSG_DEF>OM_MSG_MPI</OM_MSG_DEF>
+    <OM_MSG_INC>$(MSMPI_INC)</OM_MSG_INC>
+    <OM_MSG_LIB>msmpi.lib;</OM_MSG_LIB>
+    <MPI_SUFFIX>_mpi</MPI_SUFFIX>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_MSG_USE)'=='MPI' And '$(Platform)'=='Win32'">
+    <OM_MSG_LIB_DIR>$(MSMPI_LIB32)</OM_MSG_LIB_DIR>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_MSG_USE)'=='MPI' And '$(Platform)'=='x64'">
+    <OM_MSG_LIB_DIR>$(MSMPI_LIB64)</OM_MSG_LIB_DIR>
+  </PropertyGroup>
+
+  <!-- 
+  Use this to choose UTF-8 conversion library
+    MSSTL - use MS VC++ wstring_convert and codecvt_utf8
+    ICONV - use libiconv
+  -->
+  <PropertyGroup>
+    <OM_UCVT_USE>MSSTL</OM_UCVT_USE>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_UCVT_USE)'=='MSSTL'">
+    <OM_UCVT_DEF>OM_UCVT_MSSTL</OM_UCVT_DEF>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OM_UCVT_USE)'=='ICONV'">
+    <OM_UCVT_DEF>OM_UCVT_ICONV</OM_UCVT_DEF>
+  </PropertyGroup>
+
+  <!-- 
+  Use this to control iterator debug level to improve time-based model Debug run time
+    false - use default  _ITERATOR_DEBUG_LEVEL (is 2)
+    true  - reduce _ITERATOR_DEBUG_LEVEL to 1 and build alternate libopenm libraries
+    See MS article https://learn.microsoft.com/en-us/cpp/standard-library/iterator-debug-level?view=msvc-170
+  -->
+  <PropertyGroup>
+    <DISABLE_ITERATOR_DEBUG>false</DISABLE_ITERATOR_DEBUG>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DISABLE_ITERATOR_DEBUG)'=='true' And '$(Configuration)'=='Debug'">
+    <OM_DID_DEF>_ITERATOR_DEBUG_LEVEL=1</OM_DID_DEF>
+    <DID_SUFFIX>_disable_iterator_debug</DID_SUFFIX>
+  </PropertyGroup>
+
+  <!-- 
+  Override VS default properties
+  -->
+  <PropertyGroup Condition="'$(ProjectName)'=='libopenm'">
+    <!-- Use MPI-specific intermediate directories for libopenm -->
+    <IntDir>$(BUILD_DIR)/$(ProjectName)/$(Configuration)/$(Platform)/$(OM_MSG_USE)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ProjectName)'!='libopenm'">
+    <IntDir>$(BUILD_DIR)/$(ProjectName)/$(Configuration)/$(Platform)/</IntDir>
+  </PropertyGroup>
+
+
+</Project>

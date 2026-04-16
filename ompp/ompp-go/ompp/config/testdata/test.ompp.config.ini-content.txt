@@ -1,0 +1,27 @@
+[Test]:non=|
+[Test]:rem=|
+[Test]:val=new value of no comments|
+[Test]:dsn=new value of UID='user'; PWD='secret';|
+[Test]:lst=new value of "the # quick" fox 'jumps # over'|
+[Test]:unb="unbalanced quote                           ; this is not a comment: it is a value started from " quote|
+[General]:StartingSeed=16807|
+[General]:Subsamples=8|
+[General]:Cases=5000|
+[General]:SimulationEnd=100|
+[General]:UseSparse=true|
+[multi]:trim=Aname,Bname,Cname,DName|
+[multi]:keep=Multi line   text with spaces|
+[multi]:same=Multi line   text with spaces|
+[multi]:multi1=DSN='server'; UID='user'; PWD='secret';|
+[multi]:multi2=new value of "the # quick" fox "jumps # over"|
+[multi]:c-prog=C:\Program Files \Windows|
+[multi]:c-prog-win=C:\Program Files \Windows|
+[replace]:k=4|
+[escape]:dsn=DSN='server'; UID='user'; PWD='pas#word';|
+[escape]:t w=the "# quick #" brown 'fox ; jumps' over|
+[escape]: key "" 'quoted' here =some value|
+[escape]:qts=" allow ' unbalanced quotes                 ; with comment|
+[end]:end=|
+
+[OpenM]:IniFile=openm/to/inifile|
+[Log]:Sql=false|

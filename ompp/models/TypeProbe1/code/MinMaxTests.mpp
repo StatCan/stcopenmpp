@@ -1,0 +1,143 @@
+//LABEL(MinMaxTests, EN) Tests of min and max templates
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if false // hide syntactic island from IDE
+actor Person {
+    double a_dbl1 = { 3.14159 };
+    double a_dbl2 = { 2.71828 };
+    TIME a_special_time = { 2.34 };
+    int a_int1 = { 3 };
+    int a_clamped_count;
+    void MinMaxClampTests();
+    hook MinMaxClampTests, MortalityEvent, 1;
+};
+
+table Person ClampedOccurrences //EN Clamped count
+{
+    {
+        a_clamped_count
+    }
+};
+#endif // hide syntactic island from IDE
+
+void Person::MinMaxClampTests()
+{
+    int lower = 40;
+    int upper = 60;
+
+    {
+        // a wrapped type (fixed_precision<double>)
+        TIME t1 = { 1.1 };
+        int i1 = 2;
+        //auto x1 = (t1 < i1) ? t1 : i1; // works in MSVC (result is type Time), fails in gcc
+    }
+
+    // constants and fundamental type combos
+    auto w1 = min(1, 2);
+#if MIXED_MODE_MIN_MAX || OVERLOAD_MIN_MAX // under test
+    auto w2 = min(1, 1.2);
+#endif
+    auto w3 = min(1.2, 1.2);
+    auto w3a = min(lower, 39);
+    auto w4 = min(lower, upper);
+    //auto w5 = min(lower, 39.9);
+
+    //
+    // Attribute of a non-wrapped type (double)
+    //
+
+    double l_d1 = (22.0 / 7.0);
+    int l_i1 = 3;
+#if MIXED_MODE_MIN_MAX || OVERLOAD_MIN_MAX // under test
+    auto q1 = min(a_dbl1, l_d1);
+    auto q1r = min(l_d1, a_dbl1);
+    auto q2 = min(a_dbl1, l_i1);
+    auto q2r = min(l_i1, a_dbl1);
+    auto q3 = min(a_dbl1, a_int1);
+    auto q4 = min(a_dbl1, a_dbl2);
+    // std::clamp not implemented in MSVC 15 (VS2017)
+    //auto q5 = clamp(a_dbl1, l_i1, a_dbl1);
+#endif
+
+    //
+    // a wrapped type (fixed_precision<double>)
+    // 
+
+    TIME l_t1 = 1.1;
+    TIME l_t2 = 2.2;
+    auto t3 = std::min(l_t1, l_t2);
+    auto t4 = min(l_t1, l_t2);
+    auto t4a = min(l_t1, l_i1);
+
+    //
+    // attribute of a wrapped type (fixed_precision<double>)
+    // 
+
+    //auto t4b = (l_t1 < l_i1) ? l_t1 : l_i1;
+    //auto t4c = (l_t1 < l_d1) ? l_t1 : l_d1;
+
+#if MIXED_MODE_MIN_MAX || OVERLOAD_MIN_MAX // under test
+    auto t5 = min(time, l_d1);
+    auto t6 = min(a_dbl2, l_i1);
+#endif
+    //auto t7 = (a_dbl2 < i1) ? dbl2 : i1;
+    //if (a_dbl2 < i1) {
+    //    if (t7 != a_dbl2) {
+    //        stringstream ss;
+    //        ss << "error: t7=" << t7 << " a_dbl2=" << a_dbl2;
+    //        ModelExit(ss.str().c_str());
+    //    }
+    //}
+
+    //auto t7 = min(time, t2); // does not work, no common type of two wrapped types
+
+#if MIXED_MODE_MIN_MAX || OVERLOAD_MIN_MAX // under test
+    double clamped1 = 0.0;
+    double clamped2 = 0.0;
+    auto clamped0 = max(lower, min((double)time, upper));
+    double clamped = max(lower, min((double)time, upper));
+    clamped = max(lower, min(time, upper));
+    double x0 = min(lower, upper);
+    auto x1 = min(clamped1, upper);
+    double x2 = min(clamped1, upper);
+
+    //auto e0 = time;  // this compiles, but shouldn't be allowed (creates local copy of Attribute)
+
+    TIME_t e0 = time;
+    auto e1 = min(e0, upper);
+    auto e2 = min(upper, e0);
+
+    // daily_difference uses template Attribute<int, void, ...>
+    auto d1 = min(daily_difference, upper);
+    auto d2 = min(upper, daily_difference);
+
+    auto e3 = min(time, upper);
+    auto e4 = min(upper, time);
+    assert(e3 == e4);
+    if (upper > e0) {
+        if (e0 != e3) {
+            std::stringstream ss;
+            ss << "error: e0=" << e0 << " e3=" << e3;
+            ModelExit(ss.str().c_str());
+        }
+    }
+    //auto e6 = ::min(time, special_time); // does not work - two Attributes
+    clamped1 = max(lower, min(time, upper));
+    //clamped2 = clamp(time, lower, upper);
+    //assert(clamped1 == clamped2);
+    //if (upper > e0 && e0 > lower) {
+    //    if (e0 != clamped1) {
+    //        stringstream ss;
+    //        ss << "error: e0=" << e0 << " clamped1=" << clamped1;
+    //        ModelExit(ss.str().c_str());
+    //    }
+    //}
+#endif
+    auto clamped3 = clampd(time, lower, upper);
+
+    double diff = time - clamped1;
+    if (diff != 0.0) a_clamped_count++;
+}
+
+

@@ -1,0 +1,23 @@
+parameters {
+/* NOTE ( MortalityHazard, EN )
+		An arbitrarily selected value, chosen to produce a life expectancy of about 70
+		years.
+*/
+
+/* NOTE ( MortalityHazard, FR )
+		Une valeur sélectionnée arbitrairement, choisie pour produire une espérance de vie 
+		d'environ 70 ans.
+*/
+
+	double	MortalityHazard = 0.014; //EN Annual hazard of death
+
+/* NOTE ( StartingPopulationSize, EN )
+>An arbitrarily selected value.
+*/
+
+/* NOTE ( StartingPopulationSize, FR )
+>Une valeur sélectionnée arbitrairement.
+*/
+	int	StartingPopulationSize = 500; //EN Starting population size
+};
+

@@ -1,0 +1,218 @@
+---
+title: "Audit of the ``r params$args$model`` microsimulation model"
+subtitle: "`r params$args$release1_label` vs. `r params$args$release2_label` in `r params$args$os_details`"
+date: "today"
+date-format: "MMM DD, YYYY"
+params:
+  args: ""
+  code: ""
+  results: ""
+format: 
+  html:
+    page-layout: full
+    toc: true
+    toc-depth: 5
+    toc-expand: true
+    toc-location: left
+    embed-resources: true
+    code-fold: false
+    code-tools: true
+    code-line-numbers: false
+    code-overflow: wrap
+editor: source
+execute:
+  warning: false
+  message: false
+---
+
+```{=html}
+<style>
+  .notes, .blockquote { padding: 1rem; border-left: 3px solid #0d6efd; margin-top: 1rem; margin-bottom: 1rem; }
+  .notes > h3 { padding-top: 0; margin-top: 0; }
+  .math { font-size: 0.75rem; }
+  .highlight { background: yellow; }
+  .table th, .table td { font-size: 12px; }
+  .table td { vertical-align: middle; }
+  .level1 h1 { font-size: 20px; }
+  .level2 h2 { font-size: 18px; }
+  .level3 h3 { font-size: 16px; color: #0d6efd; }
+</style>
+```
+
+<div style="height: 2rem;"></div>
+
+## Introduction
+
+```{r, eval = TRUE, echo = FALSE, results = "asis"}
+# Get model version
+if(isTRUE(params$args$git_commit != params$args$git_commit_hash)) {
+  model <- paste0(params$args$model, "<sub>", params$args$git_commit, "</sub> (<a href='", tools::file_path_sans_ext(params$args$git_url), "' target='_blank'>", stringr::str_trunc(string = params$args$git_commit_hash, width = 11), "</a>)")
+} else {
+  model <- paste0(params$args$model, " (<a href='", tools::file_path_sans_ext(params$args$git_url), "' target='_blank'>", stringr::str_trunc(string = params$args$git_commit_hash, width = 11), "</a>)")
+}
+
+# Compute number of output tables
+output_tables_count <- params$results$output_tables |>
+  dplyr::as_tibble() |>
+  nrow()
+
+# Get run time
+run_time <- params$results$performance |> 
+  dplyr::as_tibble() |> 
+  dplyr::select(run_time) |>
+  as.numeric()
+
+# Compute performance time
+if(run_time < 1) {
+  performance_time <- paste0(
+    format(
+      x = round(
+        x = run_time,
+        digits = 2
+      ), 
+      big.mark = ",",
+      nsmall = 2
+    ),
+    " minutes."
+  )
+} else {
+  performance_time <- paste0(
+    format(
+      x = round(
+        x = run_time / 60,
+        digits = 2
+      ), 
+      big.mark = ",",
+      nsmall = 2
+    ),
+    " hours."
+  )
+}
+
+# Render paragraph
+cat(
+  "The ",
+  model,
+  " microsimulation model was audited in <a href='",
+  params$args$release1,
+  "' target='_blank'>",
+  params$args$release1_label,
+  "</a> and <a href='", 
+  params$args$release2,
+  "' target='_blank'>",
+  params$args$release2_label,
+  "</a>. The model was compiled and run in each release simultaneously. The values of ",
+  output_tables_count,
+  " non-hidden output table",
+  ifelse(
+    test = output_tables_count > 1,
+    yes = "s were ",
+    no = " was "
+  ),
+  "compared. Total model run time was ",
+  performance_time,
+  sep = ""
+)
+```
+
+## Audit status
+
+```{r, eval = TRUE, echo = FALSE, results = "asis"}
+# Render audit status
+if(params$results$audit |> dplyr::as_tibble() |> dplyr::select(diff_count) |> unlist() |> unname() |> as.numeric() |> sum(na.rm = TRUE) == 0) {
+  cat("Passed: &#x2705;")
+} else {
+  cat("Failed: &#x274c;")
+}
+```
+
+## Code
+
+```{r, echo = FALSE, results = "asis"}
+cat(
+  '<div class="cell">',
+  '<div class="sourceCode cell-code" style="margin: 0; padding: 0;">',
+  '<pre class="sourceCode numberSource r number-lines code-with-copy wrap" style="margin: 0; padding: 0;">',
+  '<code class="sourceCode r" style="margin: 0; padding: 0 0.75rem;">',
+  '# Load auditr',
+  'library(auditr)',
+  '',
+  htmltools::htmlEscape(params$code$new),
+  '',
+  htmltools::htmlEscape(params$code$load_releases),
+  '',
+  ifelse(
+    test = "rebuild_openm" %in% names(params$code),
+    yes = paste0('# Rebuild OpenM++ Library<br>', htmltools::htmlEscape(params$code$rebuild_openm), '<br>'),
+    "<div style='margin-top: -1.5rem;'></div>"
+  ),
+  htmltools::htmlEscape(params$code$load_model),
+  '',
+  htmltools::htmlEscape(params$code$build_models),
+  '',
+  htmltools::htmlEscape(params$code$load_output_tables),
+  '',
+  htmltools::htmlEscape(params$code$run_models),
+  '',
+  htmltools::htmlEscape(params$code$load_report),
+  '</code>',
+  '</pre>',
+  '</div>',
+  '</div>', 
+  sep = "\n"
+)
+```
+
+## Audit
+
+```{r, echo = FALSE}
+# Render table
+kableExtra::kbl(
+  x = params$results$audit |>
+    dplyr::as_tibble() |>
+    dplyr::rename(
+      Table = table,
+      Size = table_size,
+      Expressions = expression_count,
+      Dimensions = dimension_count,
+      Values = value_count,
+      Differences = diff_count,
+      Percent = diff_percent,
+      Min = min_diff,
+      Max = max_diff,
+      Median = median_diff
+    ),
+  align = c(rep(x = "l", times = 2), rep(x = "c", times = 8))
+) |>
+  kableExtra::kable_styling(bootstrap_options = c("hover", "striped")) |>
+  kableExtra::add_header_above(
+    header = c(
+      " " = 2,
+      "Counts" = 4,
+      "Differences" = 4
+    )
+  )
+```
+
+## Output table meta
+
+```{r, echo = FALSE}
+# Render table
+kableExtra::kbl(
+  x = params$results$output_tables |>
+    dplyr::as_tibble() |>
+    dplyr::rename(ID = id, Table = name, Label = label)
+) |>
+  kableExtra::kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+## Model run meta
+
+```{r, echo = FALSE}
+# Render table
+kableExtra::kbl(
+  x = params$results$model_runs |>
+    dplyr::as_tibble()
+) |>
+  kableExtra::kable_styling(bootstrap_options = c("hover", "striped"))
+```

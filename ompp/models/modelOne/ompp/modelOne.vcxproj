@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- OM_ROOT set first allows indirection to folder containing props files -->
+    <OM_ROOT Condition="'$(OM_ROOT)'==''">$(ProjectDir)../../..</OM_ROOT>
+    <MODEL_SRC_DIR Condition="'$(MODEL_SRC_DIR)'==''">$(ProjectDir)..</MODEL_SRC_DIR>
+    <GRID_COMPUTING>EMPTY</GRID_COMPUTING>
+    <DB_PROVIDER>SQLITE</DB_PROVIDER>
+    <!-- If running in VS 2017, set platform toolset for VC 2017 -->
+    <PLATFORM_TOOLSET Condition="'$(PLATFORM_TOOLSET)'=='' And '$(BuildingInsideVisualStudio)'=='true' And '$(VisualStudioVersion)'=='15.0'">v141</PLATFORM_TOOLSET>
+    <!-- If running in VS 2017, set platform toolset for VC 2019 -->
+    <PLATFORM_TOOLSET Condition="'$(PLATFORM_TOOLSET)'=='' And '$(BuildingInsideVisualStudio)'=='true' And '$(VisualStudioVersion)'=='16.0'">v142</PLATFORM_TOOLSET>
+    <!-- Otherwise, hard code to VS 2022 -->
+    <PLATFORM_TOOLSET Condition="'$(PLATFORM_TOOLSET)'==''">v143</PLATFORM_TOOLSET>
+    <PlatformToolset>$(PLATFORM_TOOLSET)</PlatformToolset>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D3264BE5-248F-44B2-B174-C3837FE277D7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>modelOne</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- Import common openM models project settings -->
+  <PropertyGroup>
+    <MODEL_NAME>$(ProjectName)</MODEL_NAME>
+  </PropertyGroup>
+  <Import Project="$(OM_ROOT)/props/model-ompp.1.build.props" />
+  <Import Project="$(OM_ROOT)/props/model-ompp.2.cpp.props" />
+  <ItemGroup>
+    <ClCompile Include="$(MODEL_SRC_DIR)/modelOne.cpp" />
+    <ClCompile Include="$(MODEL_SRC_DIR)/modelOne_om.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MODEL_SRC_DIR)/modelOne_om.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <SqlScript Include="$(MODEL_SRC_DIR)/modelOne_create_model.sql" />
+    <SqlScript Include="$(MODEL_SRC_DIR)/modelOne_insert_param.sql" />
+    <SqlScript Include="$(MODEL_SRC_DIR)/modelOne_optional_views.sql" />
+    <SqlScript Include="$(MODEL_SRC_DIR)/modelOne_drop_tables_views.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ModelIni Include="$(MODEL_SRC_DIR)/modelOne.ini" />
+    <ModelIni Include="$(MODEL_SRC_DIR)/modelOne.message.ini" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\modelOne.ini" />
+    <None Include="..\modelOne.message.ini" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="@(SqlScript)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ModelIni)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
+  </Target>
+</Project>

@@ -1,0 +1,19 @@
+/* NOTE(ScreenedTables.ompp, EN)
+    This module contains functionality for testing screened tables.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+table snapshot screened1 Person ExampleTable
+[trigger_entrances(integer_age, 50)]
+{
+    {
+        unit,           //EN Persons
+        mean(earnings), //EN Average earnings
+        P50(earnings)   //EN Median earnings
+    }
+};
+
+#endif // Hide non-C++ syntactic island from IDE

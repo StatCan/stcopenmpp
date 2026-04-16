@@ -1,0 +1,87 @@
+table Person Table00 //EN Attributes by event
+{
+    script
+    * event_counter
+	* {
+        unit,
+		value_in(fltr),  //EN fltr(in)
+		value_out(fltr), //EN fltr(out)
+		value_in(row),   //EN row(in)
+		value_out(row),  //EN row(out)
+		value_in(col),   //EN col(in)
+		value_out(col),  //EN col(out)
+		value_in(x),     //EN x(in)
+		value_out(x)     //EN x(out)
+	}
+};
+
+table Person Table01
+[ fltr ]
+{
+    script
+	* {
+        unit,
+        value_in(x),
+        value_out(x)
+	}
+    * row
+    * col
+};
+
+table Person Table02
+{
+    script
+	* {
+		unit,
+        duration()
+	}
+};
+
+table Person Table03
+[ trigger_changes(event_counter) ]
+{
+    script
+	* {
+		value_in(x)
+	}
+    * event_counter
+};
+
+table Person Table04
+{
+    script
+	* {
+        //x
+		event(x)
+	}
+    * event_counter
+};
+
+table Person Table05
+[ !alive ]
+{
+    script
+	* {
+        unit
+	}
+    * event_counter
+};
+
+table Person Table06
+{
+    script
+	* {
+		event(x)
+	}
+    * col
+};
+
+
+table Person Table07
+{
+    script
+	* {
+		x
+	}
+    * col
+};

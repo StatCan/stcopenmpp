@@ -1,0 +1,33 @@
+//LABEL(PersonCore, EN) Core functionality of the Person actor
+
+/* NOTE(PersonCore, EN)
+	This module contains the basic information which defines the Person case.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide from IDE
+actor Person //EN Individual
+{
+    void Start();
+    void Finish();
+};
+#endif // Hide from IDE
+
+void Person::Start()
+{
+    initialize_attributes();
+
+    age = 0;
+    time = 0;
+
+    hook_Start();
+
+    enter_simulation();
+}
+
+void Person::Finish()
+{
+    exit_simulation();
+}
+

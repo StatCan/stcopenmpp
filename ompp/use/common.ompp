@@ -1,0 +1,1036 @@
+/**
+* @file    common.ompp
+* Implementation of global functions for all models
+* 
+* The global functions in this module are declared in omSimulation.h.
+* 
+*/
+// Copyright (c) 2013-2017 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+parameters {
+    //EN Simulation starting seed
+    long long SimulationSeed;
+};
+
+#endif // Hide non-C++ syntactic island from IDE
+
+/*NOTE(SimulationSeed,EN)
+`SimulationSeed` determines the starting seeds of all random number generators in the run.
+It is an integer greater than 0 and normally less than 2147483648.
+Values larger than 2147483648 are reserved to reproduce a single selected member.
+*/
+
+//LABEL(SimulationSeed,FR) Graine de nombre aléatoire de la simulation
+
+/*NOTE(SimulationSeed,FR)
+`SimulationSeed` détermine les valeurs initiales de départ de tous les générateurs de nombres aléatoires de l'exécution.
+Il s'agit d'un entier supérieur à 0 et normalement inférieur à 2147483648.
+Les valeurs supérieures à 2147483648 sont réservées à la reproduction d'un seul membre sélectionné.
+*/
+
+//LABEL(bool,EN) boolean
+/*NOTE(bool,EN)
+A symbol of type `bool` has one of two values, `true` or `false`. 
+A `bool` can be used in a numeric context, in which case `true` is `1` and `false` is `0`. 
+A `bool` can also be used like a classification, 
+for example as a dimension of a parameter or table.
+*/
+
+//LABEL(bool,FR) booléen
+/*NOTE(bool,FR)
+Un symbole de type `bool` a l'une des deux valeurs suivantes, `true` ou `false`. 
+Un `bool` peut être utilisé dans un contexte numérique, auquel cas `true` est `1` et `false` est `0`. 
+Un `bool` peut également être utilisé comme une classification, 
+par exemple comme dimension d'un paramètre ou tableau.
+*/
+
+/**
+* Called before model PreSimulation functions.
+*/
+void before_presimulation(int mem_id, int mem_count)
+{
+    extern void before_presimulation_for_framework(void);
+
+    // code block for member and member count
+    {
+        // The number of member simulations in the sample of simulations
+        fmk::simulation_members = mem_count;
+
+        // The member to simulate of the sample of simulations
+        fmk::simulation_member = mem_id;
+    }
+
+    // code block for SimulationSeed
+    {
+        if (SimulationSeed <= 0) {
+            auto msg = openm::formatToString(LT("Error - SimulationSeed '%lld' must be greater than 0"), SimulationSeed);
+            ModelExit(msg.c_str());
+        }
+        // Factor the combined seed SimulationSeed into its two parts
+        fmk::SimulationSeed_member_part = SimulationSeed / ((long long)fmk::lcg_modulus + 1);
+        fmk::SimulationSeed_seed_part = SimulationSeed - ((long long)fmk::lcg_modulus + 1) * fmk::SimulationSeed_member_part;
+    }
+
+    // Code block for random number support in PreSimulation
+    {
+        // In PreSimulation, the master seed is the same for all simulation members.
+        // For lcg-style generators, a different generator is used for each member.
+        // For other generators, the actual starting seed is generated from the master seed
+        // and the simulation member number.
+        fmk::master_seed = (int)fmk::SimulationSeed_seed_part;
+
+        // Create stream generator objects
+        // new_streams is generator-specific - defined in random/random_YYY.ompp
+        new_streams();
+
+        // Note that streams vary by simulation_member, master_seed and stream number.
+        initialize_model_streams(); //defined in common.ompp
+    }
+
+    // Framework-specific before PreSimulation code
+    before_presimulation_for_framework();
+}
+
+/**
+* Called after invocation of PreSimulation functions.
+*/
+void after_presimulation()
+{
+    extern void after_presimulation_for_framework();
+
+    // Code block for random number support in PreSimulation (cleanup)
+    {
+        fmk::master_seed = 0;
+
+        // Free stream generator objects
+        // delete_streams is generator-specific - defined in random/random_YYY.ompp
+        delete_streams();
+    }
+
+    // Framework-specific after PreSimulation code
+    after_presimulation_for_framework();
+}
+
+/**
+ * Gets the combined seed.
+ * 
+ * Returns long long instead of double returned by GetCaseSeed()
+ * For case-based models, the case seed, for time-based models, the global seed.
+ * For both, the simulation member is encoded in high order bits.
+ *
+ * @return The seed, with the simulation member in high order bits
+ */
+long long get_combined_seed()
+{
+    return fmk::combined_seed;
+}
+
+/**
+ * Gets the global time.
+ * 
+ * This global function can be used without #include of Event.h
+ * 
+ * @return The global time
+ */
+double get_global_time()
+{
+    return (double)BaseEvent::get_global_time();
+}
+
+/**
+ * Initializes the model stream generators
+ *
+ * For case-based models, the stream generators are initialized for each case.
+ * For time-based models, the stream generators are initialized for each member (aka replicate)
+ */
+void initialize_model_streams()
+{
+    // Note:
+    //  fmk::master_seed is the run seed for time-based models
+    //  fmk::master_seed is the case seed for case-based models
+    long stream_seed = fmk::master_seed;
+    for (int model_stream = 0; model_stream < fmk::size_streams; model_stream++) {
+        // initialize_stream is generator-specific - defined in random/random_YYY.ompp.
+        // Note that streams vary by simulation_member as well as stream_seed.
+        initialize_stream(model_stream, fmk::simulation_member, stream_seed);
+		// Use fixed integral-congruential generator (with multiplier model_stream_seed_generator)
+		// to create seeds for streams.
+        long long product = fmk::model_stream_seed_generator;
+        product *= stream_seed;
+        stream_seed = product % fmk::lcg_modulus;
+    }
+}
+
+/**
+ * Handles situation where time is running backwards within an entity.
+ * 
+ * An event about to be implemented in an entity has a time in the local past of the entity
+ */
+void handle_backwards_time(
+    double the_current_time,
+    double the_event_time,
+    int the_event,
+    int the_entity)
+{
+    // The time of this event is in the local past of the entity within which the event occurs.
+    // This is caused by an error in model logic.
+    std::stringstream ss;
+    ss  << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << LT("error : Event time ") << std::showpoint << the_event_time
+        << LT(" is earlier than current time ") << the_current_time
+        << LT(" in event ") << omr::event_id_to_name(the_event)
+        << LT(" in entity_id ") << the_entity
+        << LT(" in simulation member ") << get_simulation_member()
+        << LT(" with combined seed ") << get_combined_seed()
+        ;
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where an entity attempts to access another entity in the local future.
+ */
+void handle_clairvoyance(
+    double the_current_time,
+    double the_future_time,
+    int the_future_entity
+    )
+{
+    // This is caused by an error in model logic.
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint // show decimal point
+        << LT("error : Attempt to access entity_id ") << the_future_entity
+        << LT(" with future time ") << the_future_time
+        << LT(" when current time is ") << the_current_time
+        << LT(" after event ") << omr::event_id_to_name(BaseEvent::current_event_id)
+        << LT(" in entity_id ") << BaseEvent::current_entity_id
+        << LT(" in simulation member ") << get_simulation_member()
+        << LT(" with combined seed ") << get_combined_seed()
+        ;
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code attempts to derefence a null pointer to an entity
+ */
+void handle_null_dereference(
+)
+{
+    // This is caused by an error in model logic.
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint; // show decimal point
+    ss << LT("Attempt to dereference null pointer");
+    ss << LT(" when current time is ") << get_global_time();
+    if (BaseEvent::current_entity_id >= 0) {
+        ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+    }
+    if (BaseEvent::current_event_id >= 0) {
+        ss << LT(" in or after event ") << omr::event_id_to_name(BaseEvent::current_event_id);
+    }
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ss << LT(" with combined seed ") << get_combined_seed();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code attempts to modify an attribute when prohibited
+ */
+void handle_prohibited_attribute_assignment(
+    const std_string name
+)
+{
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint; // show decimal point
+    ss << LT("Attempt to modify the attribute ");
+    ss << name;
+    ss << LT(" by the event time function of event ");
+    ss << omr::event_id_to_name(BaseEvent::timefunc_event_id);
+    ss << LT(" in entity_id ") << BaseEvent::timefunc_entity_id;
+    ss << LT(" when current time is ") << get_global_time();
+    if (BaseEvent::current_event_id >= 0) {
+        ss << LT(" after event ") << omr::event_id_to_name(BaseEvent::current_event_id);
+    }
+    else {
+        ss << LT(" before enter_simulation");
+    }
+    if (BaseEvent::current_entity_id >= 0) {
+        ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+    }
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ss << LT(" with combined seed ") << get_combined_seed();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code attempts to access a time-like attribute when prohibited
+ */
+void handle_prohibited_timelike_attribute_access(
+    const std_string name
+)
+{
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint; // show decimal point
+    ss << LT("Attempt to access the time-like attribute ");
+    ss << name;
+    ss << LT(" by the event time function of event ");
+    ss << omr::event_id_to_name(BaseEvent::timefunc_event_id);
+    ss << LT(" in entity_id ") << BaseEvent::timefunc_entity_id;
+    ss << LT(" when current time is ") << get_global_time();
+    if (BaseEvent::current_event_id >= 0) {
+        ss << LT(" after event ") << omr::event_id_to_name(BaseEvent::current_event_id);
+    }
+    else {
+        ss << LT(" before enter_simulation");
+    }
+    if (BaseEvent::current_entity_id >= 0) {
+        ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+    }
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ss << LT(" with combined seed ") << get_combined_seed();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handle invalid table increment
+ */
+void handle_invalid_table_increment(
+    double incr_value,
+    const std_string table_name,
+    const std_string attr_name
+)
+{
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint; // show decimal point
+    ss << LT("Invalid increment ");
+    ss << incr_value;
+    ss << LT(" in table '");
+    ss << table_name;
+    ss << LT("' using attribute '");
+    ss << attr_name;
+    if (BaseEvent::current_event_id >= 0) {
+        ss << LT("' on or after event '") << omr::event_id_to_name(BaseEvent::current_event_id) << "'";
+    }
+    else {
+        ss << LT(" before enter_simulation");
+    }
+    if (BaseEvent::current_entity_id >= 0) {
+        ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+    }
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ss << LT(" with combined seed ") << get_combined_seed();
+    ss << LT(" when current time is ") << get_global_time();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code specifes an invalid number of indices to derived table API
+ */
+void handle_derived_table_API_invalid_rank(
+    const char * name,
+    size_t indices_rank,
+    size_t indices_count
+)
+{
+    std::stringstream ss;
+    ss << LT("Derived table API - table ");
+    ss << name;
+    ss << LT(" has rank ");
+    ss << indices_rank;
+    ss << LT(" but number of indices is ");
+    ss << indices_count;
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code specifies an invalid index value to derived table API
+ */
+void handle_derived_table_API_invalid_index(
+    const char* name,
+    size_t index_position,
+    size_t index_max,
+    int index_value
+)
+{
+    std::stringstream ss;
+    ss << LT("Derived table API - table ");
+    ss << name;
+    ss << LT(" index ");
+    ss << index_position;
+    ss << LT(" must be in [0,");
+    ss << index_max;
+    ss << LT("] but is ");
+    ss << index_value;
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Handles situation where model code attempts to assign an out-of-bouds value to a classifcation or range
+ */
+void handle_bounds_error(
+    const std_string name,
+    int min_value,
+    int max_value,
+    int value
+)
+{
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+        << std::showpoint; // show decimal point
+    ss << LT("attempt to assign ");
+    ss << value;
+    ss << LT(" to ");
+    ss << name;
+    ss << LT(" which has limits [");
+    ss << min_value;
+    ss << ",";
+    ss << max_value;
+    ss << "]";
+
+    ss << LT(" when current time is ") << get_global_time();
+    if (BaseEvent::current_entity_id >= 0) {
+        ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+    }
+    if (BaseEvent::current_event_id >= 0) {
+        ss << LT(" in or after event ") << omr::event_id_to_name(BaseEvent::current_event_id);
+    }
+    ss << LT(" in simulation member ") << get_simulation_member();
+    ss << LT(" with combined seed ") << get_combined_seed();
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Verify validity of array index
+ *
+ * @param   index  The index to check for validity.
+ * @param   size   The size of the dimension.
+ * @param   dim    The 0-based position of the dimension.
+ * @param   symbol The name of the symbol.
+ *
+ * @returns index.
+ */
+int om_check_index(int index, int size, int dim, const char* name, const char* file, int line)
+{
+    if (index < 0 || index >= size) {
+        // invalid array index, exit with runtime error message
+        std::stringstream ss;
+        ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) // maximum precision
+            << std::showpoint; // show decimal point
+        ss << LT("invalid index ");
+        ss << index;
+        ss << LT(" in 0-based dimension ");
+        ss << dim;
+        ss << LT(" of ");
+        ss << name;
+        ss << LT(" with bounds [0,");
+        ss << size - 1;
+        ss << "]";
+
+        ss << LT(" when current time is ") << get_global_time();
+        if (BaseEvent::current_entity_id >= 0) {
+            ss << LT(" in entity_id ") << BaseEvent::current_entity_id;
+        }
+        if (BaseEvent::current_event_id >= 0) {
+            ss << LT(" in or after event ") << omr::event_id_to_name(BaseEvent::current_event_id);
+        }
+        ss << LT(" in simulation member ") << get_simulation_member();
+        ss << LT(" with combined seed ") << get_combined_seed();
+        std::string fname = file;
+        auto pos = fname.find_last_of("/\\");
+        if ((pos != std::string::npos) && (pos + 1 < fname.length())) {
+            fname = fname.substr(pos + 1);
+        }
+        ss << LT(" at module ") << fname;
+        ss << "[" << line << "]";
+        ModelExit(ss.str().c_str());
+    }
+    return index;
+}
+
+/**
+ * Handles situation where the maximum random stream is exceeded.
+ */
+void handle_streams_exceeded(
+    int strm, 
+    int max_model_stream)
+{
+    // The stream number exceeds the maximum number of streams.
+    std::stringstream ss;
+    ss  << LT("error : stream number ") << strm
+        << LT(" exceeds the maximum ") << max_model_stream << LT(".")
+        ;
+    ModelExit(ss.str().c_str());
+}
+
+/**
+ * Gets total number of simulation members.
+ *
+ * @return The simulation members.
+ */
+int get_simulation_members()
+{
+    return fmk::simulation_members;
+}
+
+/**
+ * Gets current simulation member.
+ *
+ * @return The simulation member.
+ */
+int get_simulation_member()
+{
+    return fmk::simulation_member;
+}
+
+/**
+ * Gets the next entity identifier.
+ * 
+ * As a side-effect, increments the counter of entities in the simulation member. The entity_id
+ * is constructed to be unique both within and across simulation members, with a minimum value
+ * of 1.
+ *
+ * @return The next entity identifier.
+ */
+int get_next_entity_id()
+{
+    fmk::member_entity_counter++;
+    return fmk::member_entity_counter * fmk::simulation_members + fmk::simulation_member;
+}
+
+/**
+ * Gets the model name
+ *
+ * @return The model name
+ */
+extern const char* GetModelName(void)
+{
+    return omr::model_name;
+}
+
+/**
+ * Gets the model version
+ *
+ * @return The model version
+ */
+extern const char* GetModelVersion(void)
+{
+    return omr::model_version;
+}
+
+/**
+ * Gets the model version as a 4-digit integer
+ *
+ * @return The model version as a 4-digit integer
+ */
+extern const int GetModelVersionInt(void)
+{
+    return omr::model_version_int;
+}
+
+/**
+ * Fatal exit from the model, with a message.
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+void ModelExit(const char* msg)
+{
+    throw openm::SimulationException(msg);
+}
+
+/**
+ * Report simulation progress.
+ * 
+ */
+void report_simulation_progress(int member, int percent)
+{
+    theLog->logFormatted("member=%d Simulation progress=%d%%", member, percent);
+    report_simulation_progress_beat(percent);
+}
+
+/**
+ * Report simulation progress by sending it to database update thread.
+ * 
+ */
+void report_simulation_progress_beat(int percent, double value)
+{
+    fmk::i_model->updateProgress(percent, value);
+}
+
+/**
+ * Report parameters reading progress.
+ */
+int64_t report_parameter_read_progress(int paramNumber, int paramCount, const char * name, int64_t lastTime)
+{
+    int64_t now = getMilliseconds();
+    if (now < lastTime + 5003) return lastTime;     // report not more often than every 5 seconds
+
+    theLog->logFormatted("    %d of %d: %s", paramNumber, paramCount, name);
+    return now;
+}
+
+/**
+ * Report output tables writing progress.
+ */
+int64_t report_table_write_progress(int member, int tableNumber, const char * name, int64_t lastTime)
+{
+    int64_t now = getMilliseconds();
+    if (now < lastTime + 5003) return lastTime;     // report not more often than every 5 seconds
+
+    theLog->logFormatted("member=%d write table %d: %s", member, tableNumber, name);
+    return now;
+}
+
+/**
+ * In Modgen, displays a progress message in the UI.
+ *
+ * See Modgen Developer's Guide for more information.
+ * Write the message to the log in ompp.
+ * 
+ * @param fmt The format string
+ */
+void ProgressMessage(const char* msg)
+{
+    theLog->logMsg(msg);
+}
+
+/**
+ * In Modgen, communicates current simulation time to UI to display progress.
+ *
+ * See Modgen Developer's Guide for more information.
+ * Not used in ompp.
+ * 
+ * @param tm The time.
+ */
+void TimeReport(double tm)
+{
+    // not implemented
+}
+
+/**
+ * Set maximum time for fixed-precision time operations.
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+void SetMaxTime(double max_value)
+{
+    fixed_precision<Time::type>::set_max(max_value);
+}
+
+/**
+ * Start event trace.
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+void StartEventTrace()
+{
+    if (om_event_trace_capable) {
+        BaseEntity::event_trace_on = true;
+    }
+}
+
+/**
+ * Stop event trace.
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+void StopEventTrace()
+{
+    if (om_event_trace_capable) {
+        BaseEntity::event_trace_on = false;
+    }
+}
+
+/**
+* Variadic function, same as WriteDebugLogEntry but throw an exception on trace file IO error
+*/
+void WriteDebugTraceOrFail(const char * i_format, ...)
+{
+    if (i_format == nullptr) return;            // nothing to log
+
+    if (theTrace->isCreateError()) throw HelperException(LT("Failed to write debug trace"));
+
+    // format message for the log
+    va_list args;
+    va_start(args, i_format);
+    bool isOk = theTrace->logFormatted(i_format, args);
+    va_end(args);
+
+    if (!isOk) throw HelperException(LT("Failed to write debug trace"));
+}
+
+/**
+ * Total number of threads used in simulation.
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+int GetThreads()
+{
+    return 1;
+}
+
+/**
+ * Numeric identifier of current thread for current simulation
+ * 
+ * See Modgen Developer's Guide for more information.
+ */
+int GetThreadNumber()
+{
+    return 1;
+}
+
+/**
+ * Sets the total population used for population scaling
+ *
+ * @param lPopulation The total population.
+ */
+void SetPopulation(long lPopulation)
+{
+    fmk::set_population_value = lPopulation;
+}
+
+/**
+ * Gets the total population used for population scaling
+ *
+ * @return The population.
+ */
+long GetPopulation()
+{
+    return fmk::set_population_value;
+}
+
+/**
+ * Tells the framework to exit all entities from the simulation after completion of the current event.
+ */
+void signal_exit_simulation_all()
+{
+    fmk::do_exit_simulation_all = true;
+}
+
+
+/**
+ * Piece linear lookup.
+ *
+ * @param x  The x coordinate.
+ * @param ax The array of x coordinates of the points
+ * @param ay The array of y coordinates of the points
+ * @param n  The number of x-y points
+ *
+ * @return The y value corresponding to x
+ */
+double PieceLinearLookup(double x, const double *ax, const double *ay, int n)
+{
+    double y = 0.0;
+
+    if (x <= ax[0]) {
+        // X is less than lower bound of first interval, return Y of lower bound of first interval.
+        y = ay[0];
+    }
+    else {
+        // a simple linear search
+        bool found = false;
+        for (int j = 1; j < n; ++j) {
+            if (!(ax[j] > ax[j - 1])) {
+                // non-increasing X, throw error
+                ModelExit("error : non-increasing x in PieceLinearLookup");
+                // NOT_REACHED
+            }
+            if (x < ax[j]) {
+                found = true;
+                // interpolate
+                y = ay[j - 1] + (ay[j] - ay[j - 1]) / (ax[j] - ax[j - 1]) * (x - ax[j - 1]);
+                break;
+            }
+        }
+        if (!found) {
+            // X is greater than upper bound of last interval, return Y of upper bound of last interval.
+            y = ay[n - 1];
+        }
+    }
+    return y;
+}
+
+/**
+ * Piece linear lookup (deprecated 3-argument version)
+ *
+ * @param x   The x coordinate.
+ * @param axy The array of x-y coordinates of the points.
+ * @param n   The number of values in axy (twice the number of points).
+ *
+ * @return The y value corresponding to x.
+ */
+double PieceLinearLookup(double x, const double *axy, int n)
+{
+    assert(0 == n % 2);
+    // change n to number of points, to parallel logic in 4-argument version above
+    n = n / 2;
+    double y = 0.0;
+
+    if (x <= axy[0]) {
+        // X is less than lower bound of first interval, return Y of lower bound of first interval.
+        y = axy[1];
+    }
+    else {
+        // a simple linear search
+        bool found = false;
+        for (int j = 1; j < n; ++j) {
+            int jx = 2 * j;    // index in axy of x of point j
+            int jy = jx + 1;   // index in axy of y of point j
+            int jx_p = jx - 2; // index in axy of x of point j-1
+            int jy_p = jy - 2; // index in axy of y of point j-1
+            if (!(axy[jx] > axy[jx_p])) {
+                // non-increasing X, throw error
+                ModelExit("error : non-increasing x in PieceLinearLookup");
+                // NOT_REACHED
+            }
+            if (x < axy[jx]) {
+                found = true;
+                // interpolate
+                y = axy[jy_p] + (axy[jy] - axy[jy_p]) / (axy[jx] - axy[jx_p]) * (x - axy[jx_p]);
+                break;
+            }
+        }
+        if (!found) {
+            // X is greater than upper bound of last interval, return Y of upper bound of last interval.
+            int jy = 2 * n - 1;
+            y = axy[jy];
+        }
+    }
+    return y;
+}
+
+/**
+ * Process event trace options
+ *
+ * Called in RunInit
+ */
+void process_trace_options(IRunBase* const i_runBase)
+{
+    // Process model dev options for EventTrace
+    if (om_event_trace_capable) { // is constexpr
+        // Model was compiled with event trace capability
+
+        theLog->logFormatted("Warning : possible performance impact - model built with event_trace = on");
+
+        {
+            std::string rptStyle = i_runBase->strOption("EventTrace.ReportStyle", "modgen");
+            openm::toLower(rptStyle);
+            if (rptStyle == "modgen") {
+                BaseEntity::event_trace_report_style = BaseEntity::et_report_style::eModgen;
+            }
+            else if (rptStyle == "readable") {
+                BaseEntity::event_trace_report_style = BaseEntity::et_report_style::eReadable;
+            }
+            else if (rptStyle == "csv") {
+                BaseEntity::event_trace_report_style = BaseEntity::et_report_style::eCsv;
+            }
+            else {
+                theLog->logFormatted("Warning : unrecognized EventTrace.ReportStyle=%s", rptStyle.c_str());
+            }
+        }
+
+        BaseEntity::event_trace_show_events = true;
+        if (i_runBase->isOptionExist("EventTrace.ShowEvents")) {
+            BaseEntity::event_trace_show_events = i_runBase->boolOption("EventTrace.ShowEvents");
+        }
+
+        BaseEntity::event_trace_show_queued_events = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowQueuedEvents")) {
+            BaseEntity::event_trace_show_queued_events = i_runBase->boolOption("EventTrace.ShowQueuedEvents");
+        }
+
+        BaseEntity::event_trace_show_queued_self_scheduling_events = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowQueuedSelfSchedulingEvents")) {
+            BaseEntity::event_trace_show_queued_self_scheduling_events = i_runBase->boolOption("EventTrace.ShowQueuedSelfSchedulingEvents");
+        }
+
+        BaseEntity::event_trace_show_queued_unchanged = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowQueuedUnchanged")) {
+            BaseEntity::event_trace_show_queued_unchanged = i_runBase->boolOption("EventTrace.ShowQueuedUnchanged");
+        }
+
+        BaseEntity::event_trace_show_enter_simulation = true;
+        if (i_runBase->isOptionExist("EventTrace.ShowEnterSimulation")) {
+            BaseEntity::event_trace_show_enter_simulation = i_runBase->boolOption("EventTrace.ShowEnterSimulation");
+        }
+
+        BaseEntity::event_trace_show_exit_simulation = true;
+        if (i_runBase->isOptionExist("EventTrace.ShowExitSimulation")) {
+            BaseEntity::event_trace_show_exit_simulation = i_runBase->boolOption("EventTrace.ShowExitSimulation");
+        }
+
+        BaseEntity::event_trace_show_self_scheduling_events = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowSelfSchedulingEvents")) {
+            BaseEntity::event_trace_show_self_scheduling_events = i_runBase->boolOption("EventTrace.ShowSelfSchedulingEvents");
+        }
+
+        BaseEntity::event_trace_show_attributes = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowAttributes")) {
+            BaseEntity::event_trace_show_attributes = i_runBase->boolOption("EventTrace.ShowAttributes");
+        }
+
+        BaseEntity::event_trace_show_table_increments = false;
+        if (i_runBase->isOptionExist("EventTrace.ShowTableIncrements")) {
+            BaseEntity::event_trace_show_table_increments = i_runBase->boolOption("EventTrace.ShowTableIncrements");
+        }
+
+        BaseEntity::event_trace_minimum_time = i_runBase->doubleOption("EventTrace.MinimumTime", -std::numeric_limits<double>::infinity());
+
+        BaseEntity::event_trace_maximum_time = i_runBase->doubleOption("EventTrace.MaximumTime", std::numeric_limits<double>::infinity());
+
+        BaseEntity::event_trace_minimum_age = i_runBase->doubleOption("EventTrace.MinimumAge", -std::numeric_limits<double>::infinity());
+
+        BaseEntity::event_trace_maximum_age = i_runBase->doubleOption("EventTrace.MaximumAge", std::numeric_limits<double>::infinity());
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedEntityKinds")) {
+            std::list<std::string> entList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedEntityKinds"));
+            for (auto str : entList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                BaseEntity::event_trace_selected_entity_kinds.insert(str);
+            }
+        }
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedEntities")) {
+            std::list<std::string> entList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedEntities"));
+            for (auto str : entList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                int id = std::stoi(str);
+                BaseEntity::event_trace_selected_entities.insert(id);
+            }
+        }
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedCaseSeeds")) {
+            std::list<std::string> entList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedCaseSeeds"));
+            for (auto str : entList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                double val = std::stod(str);
+                BaseEntity::event_trace_selected_case_seeds.insert(val);
+            }
+        }
+
+        BaseEntity::event_trace_select_linked_entities = false;
+        if (i_runBase->isOptionExist("EventTrace.SelectLinkedEntities")) {
+            BaseEntity::event_trace_select_linked_entities = i_runBase->boolOption("EventTrace.SelectLinkedEntities");
+            if (BaseEntity::event_trace_select_linked_entities && 0 == BaseEntity::event_trace_selected_entities.size()) {
+                theLog->logFormatted("Warning : EventTrace.SelectedEntities is empty, ignoring EventTrace.SelectLinkedEntities");
+                BaseEntity::event_trace_select_linked_entities = false;
+            }
+        }
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedEvents")) {
+            std::list<std::string> evtList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedEvents"));
+            for (auto str : evtList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                int id = omr::event_name_to_id(str);
+                if (id >= 0) {
+                    BaseEntity::event_trace_selected_events.insert(id);
+                }
+                else {
+                    theLog->logFormatted("Warning : unrecognized event EventTrace.SelectedEvents=%s", str.c_str());
+                }
+            }
+        }
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedAttributes")) {
+            std::list<std::string> attrList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedAttributes"));
+            for (auto str : attrList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                int id = omr::member_name_to_id(str);
+                if (id >= 0) {
+                    BaseEntity::event_trace_selected_attributes.insert(id);
+                }
+                else {
+                    theLog->logFormatted("Warning : unrecognized attribute EventTrace.SelectedAttributes=%s", str.c_str());
+                }
+            }
+        }
+
+        BaseEntity::event_trace_minimum_attribute = i_runBase->doubleOption("EventTrace.MinimumAttribute", -std::numeric_limits<double>::infinity());
+
+        BaseEntity::event_trace_maximum_attribute = i_runBase->doubleOption("EventTrace.MaximumAttribute", std::numeric_limits<double>::infinity());
+
+        if (i_runBase->isOptionExist("EventTrace.SelectedTables")) {
+            std::list<std::string> attrList = openm::splitCsv(i_runBase->strOption("EventTrace.SelectedTables"));
+            for (auto str : attrList) {
+                if (str.length() == 0) continue; // skip empty items in list
+                int id = omr::table_name_to_id(str);
+                if (id >= 0) {
+                    BaseEntity::event_trace_selected_tables.insert(id);
+                }
+                else {
+                    theLog->logFormatted("Warning : unrecognized table EventTrace.SelectedTables=%s", str.c_str());
+                }
+            }
+        }
+
+        BaseEntity::event_trace_name_column_width = i_runBase->intOption("EventTrace.NameColumnWidth", 40);
+
+        BaseEntity::event_trace_maximum_lines = i_runBase->intOption("EventTrace.MaximumLines", 20000);
+    }
+    else {
+        // Model was not compiled with event trace capability.
+        // Ignore any EventTrace options.
+    }
+}
+
+/**
+* Helper code used internally by run-time
+*
+* The global definitions below are declared in helper.h.
+*
+*/
+namespace omr {
+
+    /**
+    * model build environment to report at run time if user the model as: run model.exe -OpenM.Version
+    *
+    * - platform name: Windows 32 bit, Windows 64 bit, Linux or Apple (MacOS)
+    * - configuration: Release or Debug
+    * - MPI usage enabled or not
+    */
+#if !defined(_WIN32) && !defined(__linux__) && !defined(__APPLE__)
+    const char * modelTargetOsName = "";
+#else
+    #ifdef _WIN32
+        #ifdef _WIN64
+            const char * modelTargetOsName = "Windows 64 bit";
+        #else
+            const char * modelTargetOsName = "Windows 32 bit";
+        #endif
+    #endif // _WIN32
+
+    #ifdef __linux__
+            const char * modelTargetOsName = "Linux";
+    #endif
+
+    #ifdef __APPLE__
+        #include <TargetConditionals.h>
+        #if defined(TARGET_OS_OSX) && TARGET_OS_OSX
+           const char * modelTargetOsName = "macOS";
+        #else
+           const char * modelTargetOsName = "Apple OS";
+        #endif
+    #endif // __APPLE__
+#endif
+
+#ifdef NDEBUG
+            const char * modelTargetConfigName = "Release";
+#else
+            const char * modelTargetConfigName = "Debug";
+#endif // NDEBUG
+
+#ifdef OM_MSG_MPI
+            const char * modelTargetMpiUseName = "MPI";
+#else
+            const char * modelTargetMpiUseName = "";
+#endif // OM_MSG_MPI
+}

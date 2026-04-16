@@ -1,0 +1,31 @@
+// Copyright (c) 2013-2022 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+//LABEL(ompp_framework, EN) OpenM++ simulation framework
+
+/* NOTE(ompp_framework, EN)
+    This module specifies the simulation framework
+    and supplies function definitions required by the framework.
+*/
+
+#include "omc/optional_IDE_helper.h" // help an IDE editor recognize model symbols
+
+#if 0 // Hide non-C++ syntactic island from IDE
+
+// The following modules will be compiled and assembled in this order
+// after all model-specific modules.
+use "common.ompp";
+use "common_modgen.ompp";
+use "random/random_lcg41.ompp";
+use "case_based/case_based_lcg41.ompp";
+use "case_based/case_based_common.ompp";
+use "case_based/case_based_scaling_none.ompp";
+
+parameter_group P04_SimulationControl //EN Simulation Control
+{
+    SimulationCases,
+    SimulationSeed
+};
+//LABEL(P04_SimulationControl,FR) Contrôle de la simulation
+
+#endif // Hide non-C++ syntactic island from IDE

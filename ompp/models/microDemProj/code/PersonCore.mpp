@@ -1,0 +1,94 @@
+//LABEL(PersonCore, EN) Core functionality of the Person actor
+
+/*	NOTE(PersonCore, EN)
+	This module contains the basic information which defines the Person actor.
+*/
+
+
+actor_set Person asAllPerson filter alive;						//EN All Person actors
+
+actor Person 
+{
+	AGE_RANGE		integer_age = COERCE(AGE_RANGE, self_scheduling_int(age));		//EN Age in full years
+
+	logical			alive = { FALSE };							//EN Alive
+	logical			ready_for_year_end_table = { FALSE };		//EN Ready for yearend accounting
+
+	ALL_YEAR_RANGE	calendar_year = { 1913 };					//EN Calendar Year
+	
+	TIME			time_of_birth = { TIME_INFINITE };			//EN Time of birth
+	ALL_YEAR_RANGE	year_of_birth = { 1913 };					//EN Year of birth
+	
+	void			YearEnd();									//EN Year end function		
+	void			NewYear();									//EN New Year Function	
+
+	void			Start(long ActorNumber, Person *peMother);	//EN Starts the actor
+	void			Finish();									//EN Finishes the actor
+
+	TIME			time_set_alive = { TIME_INFINITE };			//EN Time setting actor person alive
+	event			timeSetAliveEvent, SetAliveEvent;			//EN Event setting perosn alive
+};
+
+TIME Person::timeSetAliveEvent() { return time_set_alive; }
+void Person::SetAliveEvent() 
+{
+	alive = TRUE;
+	time_set_alive = TIME_INFINITE; 
+}
+
+void Person::YearEnd()
+{
+	ready_for_year_end_table = TRUE ;
+}
+
+void Person::NewYear()
+{
+	ready_for_year_end_table = FALSE;
+	calendar_year++; 
+}							
+
+void Person::Start(long ActorNumber, Person *peMother)
+{
+    // Initialize all attributes (OpenM++).
+    initialize_attributes();
+
+    if ( ScalePopulation )
+	{
+        // The following function calls implement population scaling for Modgen,
+        // using identical case weights for each entity in the simulation.
+        // These calls do nothing in OpenM++, which implements population scaling directly
+        // for time-based models.
+		Set_actor_weight( StartingPopulationRealSize / StartingPopulationSize );
+		Set_actor_subsample_weight( StartingPopulationRealSize / StartingPopulationSize );
+	}
+	age = 0;
+
+	if ( peMother == NULL )			// Person comes from starting population
+	{
+		ReadBirthCharacteristics(ActorNumber);
+	}
+	else 
+	{
+		sex = MALE;
+		if ( RandUniform(5) < 100.0 / ( 100.0 + SexRatio[RANGE_POS(SIM_YEAR_RANGE,calendar_year)])) sex = FEMALE;
+		time_of_birth = peMother->time;
+	}
+
+	time = time_of_birth;
+	calendar_year = int(time);
+	year_of_birth = calendar_year;
+	time_set_alive = WAIT(0);
+
+    // Location to hook functions to Start
+    hook_Start();
+
+    // Have the entity enter the simulation (OpenM++).
+    enter_simulation();
+}
+
+void Person::Finish()
+{
+    // Exit the simulation (OpenM++).
+    exit_simulation();
+}
+

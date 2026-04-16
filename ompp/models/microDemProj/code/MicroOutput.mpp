@@ -1,0 +1,66 @@
+//LABEL(MicroOutput, EN) Micro data output
+
+/*	NOTE(MicroOutput, EN)
+	This module implements micro data output.
+*/
+
+parameters 
+{
+	logical		WriteMicrodata;									//EN Write micro-data output file Y/N
+	double		TimeMicroOutput;								//EN Time of micro-data output
+	file		MicroRecordFileName;							//EN File name micro-data output file
+};
+
+parameter_group PG05_Files										//EN Microdata output
+{
+	WriteMicrodata, MicroRecordFileName, TimeMicroOutput
+};
+
+actor Person
+{
+	TIME time_microdata_output = { TIME_INFINITE };				//EN Time for microdata output
+
+    void WriteMicroRecord_Start(); //EN Initialization for microdata output event
+    hook WriteMicroRecord_Start, Start;
+
+    event	timeWriteMicroRecord, WriteMicroRecord; 			//EN Write micro-data record event
+};
+
+void Person::WriteMicroRecord_Start()
+{
+    if (WriteMicrodata) {
+        if (TimeMicroOutput < MIN(ALL_YEAR_RANGE)) {
+            // disabled by value
+            time_microdata_output = TIME_INFINITE;
+        }
+        else if (TimeMicroOutput < time) {
+            // microdata output time is in the past at entity creation - do it immediately.
+            time_microdata_output = WAIT(0);
+        }
+        else {
+            time_microdata_output = TimeMicroOutput;
+        }
+    }
+    else {
+        // disabled
+        time_microdata_output = TIME_INFINITE;
+    }
+}
+
+TIME Person::timeWriteMicroRecord()
+{
+    return time_microdata_output;
+}
+
+void Person::WriteMicroRecord()
+{
+    // Push the fields into the output record.
+    out_csv << time_of_birth;
+    out_csv << (int)sex;
+    // All fields have been pushed, now write the record.
+    out_csv.write_record();
+
+    // do only once
+    time_microdata_output = TIME_INFINITE;
+}
+

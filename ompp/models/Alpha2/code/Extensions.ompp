@@ -1,0 +1,238 @@
+// Copyright (c) 2013-2022 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+//LABEL(Extensions, EN) Extensions
+
+/* NOTE(Extensions, EN)
+	This module tests openM++ functionality which is not present in Modgen.
+*/
+
+parameters
+{
+    schar a_schar;
+    llong a_llong;
+    ullong a_ullong;
+    ldouble a_ldouble;
+
+    signed char b_schar;
+    long long b_llong;
+    unsigned long long b_ullong;
+    long double b_ldouble;
+
+    double c_double;
+
+    Time a_time;
+    counter a_counter;
+    integer a_integer;
+    real a_real;
+};
+
+void PreSimulation_A()
+{
+}
+
+void PreSimulation01()
+{
+}
+
+void PreSimulation1()
+{
+}
+
+void PreSimulation4()
+{
+}
+
+void PreSimulation()
+{
+}
+
+void PreSimulation()
+{
+}
+
+void UserTables1()
+{
+}
+
+void UserTables2()
+{
+}
+
+void UserTables11()
+{
+}
+
+void PostSimulation()
+{
+}
+
+void PostSimulation()
+{
+}
+
+void PostSimulation42()
+{
+}
+
+extern const int &A;
+extern int om_param_A;
+
+int om_param_A = 4;
+const int &A = om_param_A;
+
+void PostSimulation43()
+{
+    //A = 5;  // compiler error, as desired
+    om_param_A = 5;
+}
+
+// Deliberately missing parameters
+parameters
+{
+    //EN a long
+    long missing_a_long;
+
+    //EN a float
+    float missing_a_float;
+
+    //EN a double
+    double missing_a_double;
+
+    //EN a switch (bool)
+    logical missing_a_switch;
+
+    //EN a SEX (classification)
+    SEX missing_a_sex;
+
+    //EN a YEAR (range)
+    YEAR missing_a_year;
+
+    //EN a AGE_GROUP (partition)
+    // supported in ompp, unsupported in Modgen
+    AGE_GROUP missing_a_age_group;
+
+    //EN This parameter is missing something
+    double missing_Something[SEX][AGE_GROUP];
+
+};
+
+// Deliberately missing parameters
+parameters
+{
+    //EN a long
+    long missing_a_long;
+
+    //EN a float
+    float missing_a_float;
+
+    //EN a double
+    double missing_a_double;
+
+    //EN a switch (bool)
+    logical missing_a_switch;
+
+    //EN a SEX (classification)
+    SEX missing_a_sex;
+
+    //EN a YEAR (range)
+    YEAR missing_a_year;
+
+    //EN a AGE_GROUP (partition)
+    // supported in ompp, unsupported in Modgen
+    //AGE_GROUP a_age_group;
+
+    //EN This parameter is missing something
+    double missing_Something[SEX][AGE_GROUP];
+
+};
+
+options packing_level = 2;
+
+// tests of entity functions arguments (not Modgen 12 compatible)
+actor Person
+{
+    void SomethingVariadic(const char *fmt, ...);
+    void SomethingStringee(int a, std::string s);
+    void SomethingStringee2(std::string s);
+};
+
+// supply definitions to avoid C++ compiler warnings
+void Person::SomethingVariadic(const char* fmt, ...) {}
+void Person::SomethingStringee(int a, std::string s) {}
+void Person::SomethingStringee2(std::string s) {}
+
+
+// Parameter with named dimensions
+// (copy of parameter Something)
+parameters
+{
+    double Something_with_names
+        Sex    => [SEX]
+        AgeGrp => [AGE_GROUP];
+};
+
+
+// Entity table with named dimensions and measure
+// (copy of MultiDimTest)
+table Person MultiDimTest_with_names
+{
+    {
+        PY => duration()
+    }
+    *
+    Happy   => happy
+    *
+    Playing => playing
+};
+
+// Entity table with named dimensions and measure
+// (copy of ut1_feeder)
+table Person ut1_feeder_with_names //EN Feeder table for ut1
+{
+    AgeGrp   => self_scheduling_split(age, AGE_GROUP)
+    *
+    EyeColor => eye_colour
+    *
+    {
+       PY => duration()
+    }
+};
+
+dependency(ut1_with_names, ut1_feeder_with_names);
+
+// Derived table with named dimensions
+// Copy of ut1
+user_table ut1_with_names //EN User table #1 (with names)
+{
+    AgeGrp   => AGE_GROUP
+    *
+    EyeColor => EYE_COLOUR
+    *
+    {
+        ANALYSIS1,
+        ANALYSIS2,
+        ANALYSIS3 //EN scale=-3 decimals=3
+    }
+};
+
+void UserTables()
+{
+    if (!TablePresent("ut1_with_names")) return;
+
+    const int nAgeGroups = SIZE(AGE_GROUP);
+    const int nEyeColours = SIZE(EYE_COLOUR);
+    for (int nA = 0; nA < nAgeGroups; ++nA) {
+        for (int nC = 0; nC < nEyeColours; ++nC) {
+            // Note that entity table measure name is "PY", not "Expr0"
+            double dValue = GetTableValue("ut1_feeder_with_names.PY", nA, nC);
+            double dValue1 = 1.0 + dValue;
+            double dValue2 = 2.0 + dValue;
+            double dValue3 = 3.0 + dValue;
+            SetTableValue("ut1_with_names.ANALYSIS1", dValue1, nA, nC);
+            SetTableValue("ut1_with_names.ANALYSIS2", dValue2, nA, nC);
+            SetTableValue("ut1_with_names.ANALYSIS3", dValue3, nA, nC);
+        }
+    }
+}
+

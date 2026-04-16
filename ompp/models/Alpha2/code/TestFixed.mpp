@@ -1,0 +1,84 @@
+// Copyright (c) 2013-2017 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+//LABEL(TestFixed, EN) Tests of Fixed parameters
+
+classification DOG_TYPE //EN Type of dog
+{
+    //EN No dog
+    DT_NONE, 
+
+    //EN Pocket dog
+    DT_POCKET,
+
+    //EN Small dog
+    DT_SMALL,
+
+    //EN Large dog
+    DT_LARGE
+};
+
+
+parameters
+{
+    //EN a double
+    double fixed_double;
+
+    //EN a double array
+    double fixed_double_array[SEX];
+
+    //EN dog type distribution
+    cumrate[1] DogTypeDistribution[SEX][DOG_TYPE];
+};
+
+parameter_group PG_fixed {
+    fixed_double,
+    fixed_double_array,
+    DogTypeDistribution
+};
+
+actor Person            //EN Individual
+{
+    //EN Owns dog
+    DOG_TYPE dog_type;
+
+    //EN Set dog ownership
+    void StartDogOwnership();
+
+    hook StartDogOwnership, Start, 2;
+};
+
+void Person::StartDogOwnership()
+{
+    double draw = RandUniform(10);
+    int nDogType = 0;
+    Lookup_DogTypeDistribution(draw, sex, &nDogType);
+    dog_type = (DOG_TYPE) nDogType;
+}
+
+void PreSimulation()
+{
+    double d1 = fixed_double_array[MALE];
+    double d2 = fixed_double_array[FEMALE];
+}
+
+
+// Tests of haz1rate parameters
+parameters {
+    logical ActivateTest_haz1rate;
+    haz1rate fixed_haz1rate_scalar; //EN haz1rate scalar atest
+    haz1rate fixed_haz1rate_array[SEX];
+};
+
+void PreSimulation()
+{
+    double d1 = fixed_haz1rate_scalar;
+    // value in TestFixed.dat is 0.39346934028736657639620046500882 which gives h=0.5
+    double d2 = - log(1.0 - 0.39346934028736657639620046500882);
+    
+    double diff = d1 - d2;
+    if (diff < 0) diff = -diff;
+    if (ActivateTest_haz1rate) {
+        assert(diff < 1e-15); // should be the same to numerical precision
+    }
+}

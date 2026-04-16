@@ -1,0 +1,38 @@
+//
+// omc configuration settings
+//
+// Copyright (c) OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+// OM_ROOT: openM++ root directory, expected sub-directories: bin, lib, sql
+//
+OM_ROOT = $(SRCROOT)/../..
+
+// dynamic source code directory: *.hh and *.cpp output of bison and flex
+//
+BUILD_SRC_DIR = $(SRCROOT)/Xcode-src
+
+// to build omc we need bison version >= 3.3
+// please make it using one of the wiki recipes at:
+//   https://github.com/openmpp/openmpp.github.io/wiki/OpenMpp-Setup-Development-Environment#Bison_and_Flex
+// for example, Homebrew install:
+//   brew install bison@3.8
+//
+// if OMC_BISON_SEARCH = true or yes
+// then during the build omc-bison-flex.sh script does serach for bison in following order:
+//   if $PATH has "bison" substring
+//   if $OMC_BISON_HOME_PATH has bison executable
+//   if $OMC_BISON_BREW_x86_PATH has bison executable
+//   if $OMC_BISON_BREW_ARM64_PATH has bison executable
+//   else use MacOS default bison and result is likely a "Build Failed".
+//
+OMC_BISON_SEARCH = true
+
+OMC_BISON_HOME_PATH = $(HOME)/bison/bin
+OMC_BISON_HOME_LDFLAGS = $(HOME)/bison/lib
+
+OMC_BISON_BREW = bison
+OMC_BISON_BREW_x86_PATH = /usr/local/opt/$(OMC_BISON_BREW)/bin
+OMC_BISON_BREW_x86_LDFLAGS = /usr/local/opt/$(OMC_BISON_BREW)/lib
+OMC_BISON_BREW_ARM64_PATH = /opt/homebrew/opt/$(OMC_BISON_BREW)/bin
+OMC_BISON_BREW_ARM64_LDFLAGS = /opt/homebrew/opt/$(OMC_BISON_BREW)/lib

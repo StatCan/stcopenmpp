@@ -1,0 +1,16 @@
+/**
+* @file    case_based_common.ompp
+* Implementation of framework for case-based models
+*
+*/
+// Copyright (c) 2013-2020 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+// This module is for backwards compatibility after a code refactoring
+// of 'use' modules.
+// Preferably, the 'use' statement which included this module in ompp_framework.ompp
+// should be replaced by the following use statements.
+
+use "case_based/case_based_core.ompp";
+use "case_based/case_based_modgen.ompp";
+use "case_based/case_based_cases_per_run_exogenous.ompp";

@@ -1,0 +1,244 @@
+#!/usr/bin/env bash
+#
+# make new version of openM++ documentation:
+#   Doxygen for libopenm and omc
+#   wiki copy into single file
+#   copy of R documentation
+#
+# create zip archive of openM++ documenation: openmpp_doc_YYYYMMDD.zip
+# update local copy of GitHub pages git repository with new documentation
+#
+# environmemnt variables:
+#
+#  OMPP_BUILD_TAG   (default: build from latest git)
+#  OMPP_GIT_URL     (default: https://github.com/openmpp)
+
+# push into ompp-make-doc root and make log directory if not exist
+
+if [ ! -d ompp-make-doc ]; then 
+
+  echo mkdir ompp-make-doc
+  
+  if ! mkdir ompp-make-doc; then
+    echo FAILED
+    exit 1
+  fi
+fi
+
+pushd ompp-make-doc
+
+if [ ! -d log ]; then mkdir log; fi
+
+OM_ROOT=$PWD
+LOG_DIR=$OM_ROOT/log
+LOG_PATH=$LOG_DIR/make-doc.log
+
+# log build environment 
+
+echo Log file: $LOG_PATH
+echo `date` Build openM++ documentation | tee $LOG_PATH
+echo " OM_ROOT = $OM_ROOT" | tee -a $LOG_PATH
+
+# get ompp-main source code from git, if directory not already exist
+
+do_git_clone()
+{
+  if [ ! -d $2 ]; then
+  
+    echo git clone $1 $2 | tee -a $LOG_PATH
+  
+    if ! git clone $1 $2 >> $LOG_PATH 2>&1;
+    then
+      echo FAILED git clone $2 | tee -a $LOG_PATH
+      exit 1
+    fi
+    
+    if [ -n $3 ]; then
+      
+      pushd $2
+      
+      if ! git checkout $3 >> $LOG_PATH 2>&1;
+      then
+        echo FAILED git checkout $3 | tee -a $LOG_PATH
+        exit 1
+      fi
+
+      popd
+    fi
+  else
+    echo Skip: git clone $2
+  fi
+}
+
+#
+do_git_clone ${OMPP_GIT_URL}/${OMPP_MAIN_GIT} ompp-main $OMPP_BUILD_TAG
+
+# make doxygen documenation for libopenm and omc
+
+do_doxygen()
+{
+  pushd $1
+
+  echo doxygen $1.doxyfile | tee -a $LOG_PATH
+
+  if ! doxygen $1.doxyfile > $LOG_DIR/make-doc-doxygen-$1.log 2>&1;
+  then
+    echo FAILED doxygen $1. | tee -a $LOG_PATH
+    exit 1
+  fi
+
+  # echo zip -r $1_doxygen.zip $1_doxygen | tee -a $LOG_PATH
+  #
+  # if ! zip -r $1_doxygen.zip $1_doxygen > $LOG_DIR/make-doc-doxygen-$1-zip.log 2>&1;
+  # then
+  #   echo FAILED zip $1. | tee -a $LOG_PATH
+  #   exit 1
+  # fi
+
+  popd
+}
+
+#
+pushd ompp-main/openm
+
+do_doxygen libopenm
+do_doxygen omc
+
+popd
+
+# build wiki conveter
+
+# execute command, log results and exit on errors
+do_cmd()
+{
+  echo $@ | tee -a $LOG_PATH
+  
+  if ! $@ >> $LOG_PATH 2>&1;
+  then
+    echo FAILED "$@". | tee -a $LOG_PATH
+    exit 1
+  fi
+}
+
+# en hommage aux auteurs github-wikito-converter intentionally not configurable 
+#
+do_git_clone ${OMPP_GIT_URL}/github-wikito-converter.git ompp-gwtc
+
+export npm_config_cache=$OM_ROOT/build/npm-cache
+
+pushd ompp-gwtc
+
+do_cmd npm install
+do_cmd npm run build
+# do_cmd npm install -g
+
+export GWTC=$PWD/dist/cli/gwtc.js
+
+popd
+
+# make new version of wiki as single file HTML and PDF
+WIKI_FILE_NAME=openmpp-wiki
+
+# en hommage aux auteurs github-wikito-converter intentionally not configurable 
+#
+do_git_clone ${OMPP_GIT_URL}/openmpp.github.io.wiki.git ompp-wiki $OMPP_BUILD_TAG
+
+echo node $GWTC -v --disable-highlight-auto -f all -t "OpenM++ wiki" -n $WIKI_FILE_NAME ./ompp-wiki | tee -a $LOG_PATH
+  
+if ! node $GWTC -v --disable-highlight-auto -f all -t "OpenM++ wiki" -n $WIKI_FILE_NAME ./ompp-wiki >> $LOG_PATH 2>&1;
+then
+  echo FAILED ompp-wiki converter | tee -a $LOG_PATH
+  exit 1
+fi
+
+# make new version of openM++ web-site
+
+# en hommage aux auteurs github-wikito-converter intentionally not configurable 
+#
+do_git_clone ${OMPP_GIT_URL}/openmpp.github.io.git ompp-pages
+
+do_replace_doxygen()
+{
+  echo git rm -rf $1_doxygen | tee -a $LOG_PATH
+  
+  if ! git rm -rf $1_doxygen > $LOG_DIR/make-doc-doxygen-$1-rm.log 2>&1;
+  then
+    echo FAILED git rm -rf $1_doxygen | tee -a $LOG_PATH
+    exit 1
+  fi
+
+  echo mv ../ompp-main/openm/$1/$1_doxygen . | tee -a $LOG_PATH
+  
+  if ! mv ../ompp-main/openm/$1/$1_doxygen . >> $LOG_PATH 2>&1;
+  then
+    echo FAILED to move $1 doxygen | tee -a $LOG_PATH
+    exit 1
+  fi
+
+  echo git add $1_doxygen | tee -a $LOG_PATH
+  
+  if ! git add $1_doxygen/\* > $LOG_DIR/make-doc-doxygen-$1-add.log 2>&1;
+  then
+    echo FAILED git add $1_doxygen | tee -a $LOG_PATH
+    exit 1
+  fi
+}
+
+pushd ompp-pages
+
+do_replace_doxygen libopenm
+do_replace_doxygen omc
+
+do_cmd cp -p ../$WIKI_FILE_NAME.html wiki
+do_cmd cp -p ../$WIKI_FILE_NAME.pdf  wiki
+
+do_cmd git add wiki/$WIKI_FILE_NAME.html
+do_cmd git add wiki/$WIKI_FILE_NAME.pdf
+
+popd
+
+# make documentation archive
+# get current date, UTC time zone and set archive name
+
+OM_DATE_STAMP=`date +%Y%m%d`
+
+DEPLOY_NAME=openmpp_doc_${OM_DATE_STAMP}
+DEPLOY_DIR=../$DEPLOY_NAME
+DEPLOY_ZIP=$DEPLOY_NAME.zip
+
+echo `date` Pack openM++ documenation | tee -a $LOG_PATH
+echo " DEPLOY_DIR = $DEPLOY_DIR" | tee -a $LOG_PATH
+echo Pack into: $DEPLOY_ZIP | tee -a $LOG_PATH
+
+# delete existing pack directory and zip file
+
+if [ -e $DEPLOY_DIR ]; then do_cmd rm -rf $DEPLOY_DIR; fi
+if [ -e ../$DEPLOY_ZIP ];  then do_cmd rm -rf ../$DEPLOY_ZIP; fi
+
+# create new deploy directory
+
+do_cmd mkdir $DEPLOY_DIR
+
+# copy wiki sigle page files, doxygen sub-directories and R sub-directory
+
+do_cmd cp -p $WIKI_FILE_NAME.html $DEPLOY_DIR
+do_cmd cp -p $WIKI_FILE_NAME.pdf  $DEPLOY_DIR
+
+do_cmd cp -pr ompp-pages/libopenm_doxygen $DEPLOY_DIR
+do_cmd cp -pr ompp-pages/omc_doxygen      $DEPLOY_DIR
+do_cmd cp -pr ompp-pages/r                $DEPLOY_DIR
+
+popd
+
+# create zip archive from deployment directory
+
+echo Create $DEPLOY_ZIP | tee -a $LOG_PATH
+echo zip -r $DEPLOY_ZIP $DEPLOY_NAME | tee -a $LOG_PATH
+  
+if ! zip -r $DEPLOY_ZIP $DEPLOY_NAME > $LOG_DIR/make-doc-zip.log 2>&1;
+then
+  echo FAILED. | tee -a $LOG_PATH
+  exit 1
+fi
+
+echo `date` Done. | tee -a $LOG_PATH
