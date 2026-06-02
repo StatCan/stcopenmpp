@@ -23,7 +23,7 @@ release_artifacts:
       echo "Using sanitized version: $VERSION"
 
       # Define artifact filenames using the tag (sh-compatible)
-      ARTIFACTORY_FILES="stcopenmpp-model-tests-${VERSION}.zip stcopenmpp-windows-mpi-${VERSION}.zip stcopenmpp-windows-${VERSION}.zip stcopenmpp-ubuntu-mpi-${VERSION}.tar.xz stcopenmpp-ubuntu-${VERSION}.tar.xz stcopenmpp-debian-mpi-${VERSION}.tar.xz stcopenmpp-debian-${VERSION}.tar.xz"
+      ARTIFACTORY_FILES="stcopenmpp-model-tests-${VERSION}.zip stcopenmpp-windows-mpi-${VERSION}.zip stcopenmpp-windows-${VERSION}.zip stcopenmpp-ubuntu22-mpi-${VERSION}.tar.xz stcopenmpp-ubuntu22-${VERSION}.tar.xz stcopenmpp-ubuntu-mpi-${VERSION}.tar.xz stcopenmpp-ubuntu-${VERSION}.tar.xz stcopenmpp-debian-mpi-${VERSION}.tar.xz stcopenmpp-debian-${VERSION}.tar.xz"
 
 
       # Install curl silently
