@@ -106,6 +106,7 @@ export default {
     descrWorksetCurrent () { return Mdf.descrOfTxt(this.worksetCurrent) },
     fileSelected () { return !(this.uploadFile === null) },
     isDiskOver () { return !!this?.serverConfig?.IsDiskUse && !!this.diskUseState?.DiskUse?.IsOver },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',

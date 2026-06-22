@@ -10,30 +10,30 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy model from database into text json and csv files
 func dbToText(modelName string, modelDigest string, runOpts *config.RunOptions) error {
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func dbToText(modelName string, modelDigest string, runOpts *config.RunOptions) 
 	fileCreated := make(map[string]bool)
 
 	// write model definition to json file
-	if err = toModelJson(srcDb, modelDef, outDir); err != nil {
+	if err = toModelJson(srcDb.DB, modelDef, outDir); err != nil {
 		return err
 	}
 
@@ -71,17 +71,17 @@ func dbToText(modelName string, modelDigest string, runOpts *config.RunOptions) 
 	isIdNames := false
 
 	// write all model run data into csv files: parameters, output expressions and accumulators
-	if isIdNames, err = toRunListText(srcDb, modelDef, outDir, fileCreated, doUseIdNames); err != nil {
+	if isIdNames, err = toRunListText(srcDb.DB, modelDef, outDir, fileCreated, doUseIdNames); err != nil {
 		return err
 	}
 
 	// write all readonly workset data into csv files: input parameters
-	if err = toWorksetListText(srcDb, modelDef, outDir, fileCreated, isIdNames); err != nil {
+	if err = toWorksetListText(srcDb.DB, modelDef, outDir, fileCreated, isIdNames); err != nil {
 		return err
 	}
 
 	// write all modeling tasks and task run history to json files
-	if err = toTaskListJson(srcDb, modelDef, outDir, isIdNames); err != nil {
+	if err = toTaskListJson(srcDb.DB, modelDef, outDir, isIdNames); err != nil {
 		return err
 	}
 

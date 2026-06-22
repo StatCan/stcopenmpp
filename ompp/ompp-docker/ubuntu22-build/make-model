@@ -1,0 +1,232 @@
+#!/usr/bin/env bash
+#
+# build and run openM++ model
+#
+# environmemnt variables:
+#
+# OM_ROOT                   default: ..\..
+# OM_BUILD_CONFIGS=Debug    default: Release
+# OM_MSG_USE=MPI            default: EMPTY
+# MODEL_NAME           if not empty then model name
+# MODEL_DIR            if not empty then model source code directory
+# MODEL_GIT_URL        if not empty then git URL of model source code
+# MODEL_GIT_TAG        if not empty then git tag
+# MODEL_INI            if not empty then run model after build with this model ini file
+# MODEL_DOC_DISABLE=0  if =0 or =false then make model documentation, default: MODEL_DOC_DISABLE=1
+
+# one of: MODEL_NAME or MODEL_DIR must be defined
+#
+# if MODEL_NAME not empty and MODEL_DIR empty then MODEL_DIR  = OM_ROOT/models/MODEL_NAME
+# if MODEL_NAME empty and MODEL_DIR not empty then MODEL_NAME = last element of MODEL_DIR
+
+# if MODEL_DIR not exists and MODEL_GIT_URL specified then do git clone model source code
+
+#
+# set openM++ root folder 
+#
+self=$(basename "$0")
+sd=$(dirname "$0")
+
+[ -z "$OM_ROOT" ] && OM_ROOT="${sd}/../.."
+
+if [ ! -d "${OM_ROOT}" ] || [ ! -x "$OM_ROOT/bin/omc" ] ;
+then
+  echo "ERROR: invalid OM_ROOT = $OM_ROOT"
+  exit 1
+fi
+
+# make absolute directory path if directory path is relative
+# it removes last / or last /.
+# it does not normalize path and it does not check if path exists
+#
+# openmpp/mdls/    => /home/user/openmpp/mdls
+# openmpp/mdls/.   => /home/user/openmpp/mdls
+# openmpp/mdls/..  => /home/user/openmpp/mdls/..
+# .                => /home/user
+# ..               => /home/user/..
+# /openmpp/mdls/   => /openmpp/mdls
+# /openmpp/mdls/.  => /openmpp/mdls
+# /openmpp/mdls/.. => /openmpp/mdls/..
+# /                => empty result
+# /.               => empty result
+#
+do_abspath()
+{
+  wd="$PWD"
+ [ "$PWD" = "/" ] && wd=""
+
+  case "$1" in
+    /*) d="${1}"
+    ;;
+    *)  d="$wd/${1#./}"
+    ;;
+  esac
+
+  d="${d%/}"
+  d="${d%/.}"
+
+  echo "$d"
+}
+
+OM_ROOT=$(do_abspath "$OM_ROOT")
+
+echo "OM_ROOT = $OM_ROOT"
+
+# one of: MODEL_NAME or MODEL_DIR must be defined
+#
+# if MODEL_NAME not empty and MODEL_DIR empty then MODEL_DIR  = OM_ROOT/models/MODEL_NAME
+# if MODEL_NAME empty and MODEL_DIR not empty then MODEL_NAME = last element of MODEL_DIR
+
+if [ -z "$MODEL_NAME" ] && [ -z "$MODEL_DIR" ] ;
+then
+   echo "ERROR: both MODEL_NAME and MODEL_DIR are not defined"
+fi
+
+if [ -z "$MODEL_NAME" ];
+then
+  MODEL_NAME=$(basename "$MODEL_DIR")
+else
+  MODEL_NAME=$(basename "$MODEL_NAME")
+fi
+[ -z "$MODEL_DIR" ]  && MODEL_DIR="$OM_ROOT/models/$MODEL_NAME"
+
+if [ -z "$MODEL_NAME" ] || [ "$MODEL_NAME" = "." ] || [ "$MODEL_NAME" = ".." ] ;
+then
+  echo ERROR: invalid or empty MODEL_NAME
+  exit 1
+fi
+if [ -z "$MODEL_DIR" ] || [ "$MODEL_DIR" = "/" ] ;
+then
+  echo ERROR: invalid or empty MODEL_DIR "$MODEL_DIR"
+  exit 1
+fi
+
+MODEL_DIR=$(do_abspath "$MODEL_DIR")
+
+# make an absolute path to ini-file 
+
+if [ -n "$MODEL_INI" ];
+then
+  ini_dir=$(do_abspath $(dirname "$MODEL_INI"))
+  MODEL_INI="${ini_dir}/"$(basename "$MODEL_INI")
+fi
+
+# set default build configuration
+
+export MODEL_NAME="$MODEL_NAME"
+export MODEL_INI="$MODEL_INI"
+
+
+OM_BLD_CFG=${OM_BUILD_CONFIGS:-RELEASE}
+
+if [ "$OM_BLD_CFG" != 'RELEASE' ] && [ "$OM_BLD_CFG" != 'DEBUG' ];
+then
+  echo Error: incorrect value: $OM_BLD_CFG, it must be one of: RELEASE or DEBUG
+  exit 1
+fi
+
+if [ -n "$OM_MSG_USE" ] && [ "$OM_MSG_USE" != 'EMPTY' ] && [ "$OM_MSG_USE" != 'MPI' ];
+then
+  echo Error: incorrect value: $OM_MSG_USE, it must be one of: MPI or EMPTY
+  exit 1
+fi
+
+[ "$OM_MSG_USE" = 'MPI' ] && OM_P_MPI="OM_MSG_USE=MPI" || OM_P_MPI=
+
+if [ "$MODEL_DOC_DISABLE" == '0' ] || [ "$MODEL_DOC_DISABLE" == 'false' ] || [ "$MODEL_DOC_DISABLE" == 'FALSE' ];
+then
+  export MODEL_DOC_DISABLE=
+else
+  export MODEL_DOC_DISABLE=1
+fi
+
+
+# log build environment 
+
+if [ ! -d "$OM_ROOT/log" ]; then mkdir log; fi
+
+LOG_PATH="$OM_ROOT/log/make-${MODEL_NAME}.log"
+
+echo Log file: $LOG_PATH
+echo `date` Make $MODEL_NAME model | tee "$LOG_PATH"
+echo Environment: | tee -a "$LOG_PATH"
+echo "OM_ROOT            = $OM_ROOT" | tee -a "$LOG_PATH"
+echo "MODEL_NAME         = $MODEL_NAME" | tee -a "$LOG_PATH"
+echo "MODEL_DIR          = $MODEL_DIR" | tee -a "$LOG_PATH"
+echo "OM_BUILD_CONFIGS   = $OM_BLD_CFG" | tee -a "$LOG_PATH"
+echo "OM_MSG_USE         = $OM_MSG_USE" | tee -a "$LOG_PATH"
+echo "MODEL_GIT_URL      = ${MODEL_GIT_URL}" | tee -a "$LOG_PATH"
+echo "MODEL_GIT_TAG      = $MODEL_GIT_TAG" | tee -a "$LOG_PATH"
+echo "OM_ROOT            = $OM_ROOT" | tee -a "$LOG_PATH"
+echo "MODEL_INI          = $MODEL_INI" | tee -a "$LOG_PATH"
+if [ -z "$OM_P_MPI" ]; then
+  echo Build desktop version: non-MPI | tee -a "$LOG_PATH"
+else
+  echo Build cluster version: using MPI | tee -a "$LOG_PATH"
+fi
+
+[ -z "$MODEL_DOC_DISABLE" ] && echo Build model documentation | tee -a "$LOG_PATH"
+
+# if MODEL_DIR not exists and MODEL_GIT_URL specified then do git clone model source code
+
+if [ -d "$MODEL_DIR" ];
+then
+  echo Skip: git clone
+else
+
+  if [ -n "${MODEL_GIT_URL}" ];
+  then
+    echo git clone ${MODEL_GIT_URL} "${MODEL_DIR}" | tee -a "$LOG_PATH"
+    
+    if ! git clone ${MODEL_GIT_URL} "${MODEL_DIR}" >> "$LOG_PATH" 2>&1;
+    then
+      echo FAILED git clone | tee -a "$LOG_PATH"
+      exit 1
+    fi
+  fi
+
+  if [ -n "$MODEL_GIT_TAG" ];
+  then
+    pushd "$MODEL_DIR"
+
+    echo "git checkout $MODEL_GIT_TAG" | tee -a "$LOG_PATH"
+
+    if ! git checkout "$MODEL_GIT_TAG" >> "$LOG_PATH" 2>&1;
+    then
+      echo FAILED git checkout "$MODEL_GIT_TAG" | tee -a "$LOG_PATH"
+      exit 1
+    fi
+
+    popd
+  fi
+
+fi
+
+# check if model source code directory exist
+
+if [ ! -d "$MODEL_DIR" ];
+then
+  echo "ERROR: missing source code directory: $MODEL_DIR" | tee -a "$LOG_PATH"
+  exit 1
+fi
+
+# build model
+# run the model if model ini-file specified
+
+[ -n "${MODEL_INI}" ] && mdl_run=run
+
+pushd "$MODEL_DIR"
+
+[ "$OM_BLD_CFG" = 'RELEASE' ] && OM_P_RLS="RELEASE=1" || OM_P_RLS=
+
+echo make $OM_P_RLS $OM_P_MPI all publish $mdl_run
+
+if ! make $OM_P_RLS $OM_P_MPI all publish $mdl_run >>  "$LOG_PATH" 2>&1;
+then
+  echo FAILED: make $OM_P_RLS $OM_P_MPI all publish $mdl_run | tee -a "$LOG_PATH"
+  exit 1
+fi
+
+popd
+
+echo `date` Done. | tee -a "$LOG_PATH"

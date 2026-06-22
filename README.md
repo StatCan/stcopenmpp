@@ -50,8 +50,9 @@ To install `stcopenmpp`, download the zip file and extract the source code and b
 
 4. Select your model and set up a run. 
 
-**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the .cmd window-
-**setx OM_ROOT “C:/path/to/your/current/stcopenmpp/instance”**
+**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the .cmd window:
+
+`setx OM_ROOT "C:/path/to/your/current/stcopenmpp/instance"`
 
 
 ## Steps for running `stcopenmpp` in Linux
@@ -64,7 +65,9 @@ To install `stcopenmpp`, download the zip file and extract the source code and b
 
 4. Select your model and set up a run. 
 
-**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the Linux console: **export OM_ROOT=“/home/path/to/your/current/stcopenmpp/instance”**
+**Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the Linux console: 
+
+`export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance`
 
 ## Using `stcopenmpp` with built-in models
 
@@ -81,20 +84,20 @@ If you are a model developer at Statistics Canada or in one of our partner organ
 
 1. Download the software to the location of your choice, as described [above](#download-and-install). 
 
-2. Then open the exisitng model solution file (e.g., RiskPaths-ompp.sln) in Visual Studio Community or Professional. and 
+2. Then open the existing model solution file (e.g., RiskPaths-ompp.sln) in Visual Studio Community or Professional.
 
 3. “Rebuild Solution” from the “Build” menu option. 
 
 4. After the model has been successfully built, if the OMS does not start automatically, double-click the “start-ompp-ui.bat” file to launch the service and the UI. 
 
-**Important notes:** If you use an IDE to compile, we recommend using Visual Studio Community or Professional 2022 or 2026. Additionally, tt is important to note that the model should be compiled in the same version of Visual Studio in which it is built, otherwise additional set-up steps will be required: instructions are [linked here](https://github.com/openmpp/openmpp.github.io/wiki/Windows-Quick-Start-Developer#using-older-versions-of-visual-studio).
+**Important notes:** If you use an IDE to compile, we recommend using Visual Studio Community or Professional 2022 or 2026. Additionally, it is important to note that the model should be compiled in the same version of Visual Studio in which it is built, otherwise additional set-up steps will be required: instructions are [linked here](https://github.com/openmpp/openmpp.github.io/wiki/Windows-Quick-Start-Developer#using-older-versions-of-visual-studio).
  
 ## Running your existing models with `stcopenmpp`
 
 There are a couple of ways to run existing microsimulation models developed with `stcopenmpp`. 
 
 **If you like using a UI-**
-- Use the built-in user interface (UI) that comes with `stcopenmpp`. See the [section above](#running-stcopenmpp-in-windows) to learn how to get the webservice started and open the UI. The UI is documented extensively [here](https://github.com/openmpp/openmpp.github.io/wiki/).
+- Use the built-in user interface (UI) that comes with `stcopenmpp`. See the [section above](#steps-for-running-stcopenmpp-in-windows) to learn how to get the webservice started and open the UI. The UI is documented extensively [here](https://github.com/openmpp/openmpp.github.io/wiki/).
 
 **If you like running your models programmatically-**
 - We recommend using the `openmpp` R package developed by **Matt Warkentin** that comes bundled with `stcopenmpp`, see the [plugins](https://gitlab.k8s.cloud.statcan.ca/carrefoursimulationhub/stcopenmpp/-/tree/main/plugins/openmpp) folder. 
@@ -158,7 +161,9 @@ Pour installer `stcopenmpp`, téléchargez le fichier compressé et extrayez le 
 
 4. Sélectionnez votre modèle et lancez une simulation. 
 
-**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : **export OM_ROOT=“/home/path/to/your/current/stcopenmpp/instance”**.
+**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : 
+
+`setx OM_ROOT "C:/path/to/your/current/stcopenmpp/instance"`
 
 ## Étapes pour exécuter `stcopenmpp` dans Linux
 
@@ -170,7 +175,9 @@ Pour installer `stcopenmpp`, téléchargez le fichier compressé et extrayez le 
 
 4. Sélectionnez votre modèle et lancez une simulation. 
 
-**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : **export OM_ROOT
+**Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : 
+
+`export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance`
 
 ## Utilisation de `stcopenmpp` avec des modèles intégrés
 

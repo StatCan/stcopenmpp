@@ -11,7 +11,7 @@ import (
 	"hash/crc32"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // return prefix and suffix for parameter value db tables or output table value db tables or entity generation db tables.

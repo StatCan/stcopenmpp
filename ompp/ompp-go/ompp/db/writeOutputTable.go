@@ -19,7 +19,7 @@ import (
 // Accumulators and expressions values must come in the order of primary key otherwise digest calculated incorrectly.
 // Double format is used for float model types digest calculation, if non-empty format supplied.
 func WriteOutputTableFrom(
-	dbConn *sql.DB, modelDef *ModelMeta, layout *WriteTableLayout, accFrom func() (interface{}, error), exprFrom func() (interface{}, error),
+	dbConn Dbc, modelDef *ModelMeta, layout *WriteTableLayout, accFrom func() (interface{}, error), exprFrom func() (interface{}, error),
 ) error {
 
 	// validate parameters
@@ -52,7 +52,7 @@ func WriteOutputTableFrom(
 	if err != nil {
 		return err
 	}
-	if err = doWriteOutputTableFrom(trx, modelDef, meta, layout.ToId, layout.DoubleFmt, accFrom, exprFrom); err != nil {
+	if err = doWriteOutputTableFrom(DbTrx{Tx: trx, Dbf: dbConn.Dbf}, modelDef, meta, layout.ToId, layout.DoubleFmt, accFrom, exprFrom); err != nil {
 		trx.Rollback()
 		return err
 	}
@@ -67,12 +67,12 @@ func WriteOutputTableFrom(
 // Model run should not already contain output table values: it can be inserted only once in model run and cannot be updated after.
 // Double format is used for float model types digest calculation, if non-empty format supplied
 func doWriteOutputTableFrom(
-	trx *sql.Tx, modelDef *ModelMeta, meta *TableMeta, runId int, doubleFmt string, accFrom func() (interface{}, error), exprFrom func() (interface{}, error),
+	trx DbTrx, modelDef *ModelMeta, meta *TableMeta, runId int, doubleFmt string, accFrom func() (interface{}, error), exprFrom func() (interface{}, error),
 ) error {
 
 	// update model run master record to prevent run use
 	srId := strconv.Itoa(runId)
-	err := TrxUpdate(trx,
+	err := TrxUpdate(trx.Tx,
 		"UPDATE run_lst SET sub_restart = sub_restart - 1 WHERE run_id = "+srId)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func doWriteOutputTableFrom(
 
 	// check if model run exist and status is completed
 	st := ""
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT status FROM run_lst WHERE run_id = "+srId,
 		func(row *sql.Row) error {
 			if err := row.Scan(&st); err != nil {
@@ -101,7 +101,7 @@ func doWriteOutputTableFrom(
 	// check if output table values not already exist for that run
 	sHid := strconv.Itoa(meta.TableHid)
 	n := 0
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT COUNT(*) FROM run_table"+" WHERE run_id = "+srId+" AND table_hid = "+sHid,
 		func(row *sql.Row) error {
 			if err := row.Scan(&n); err != nil {
@@ -118,7 +118,7 @@ func doWriteOutputTableFrom(
 	}
 
 	// insert into run_table with current run id as base run id
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"INSERT INTO run_table (run_id, table_hid, base_run_id, value_digest)"+
 			" VALUES ("+
 			srId+", "+sHid+", "+srId+", NULL)")
@@ -134,10 +134,10 @@ func doWriteOutputTableFrom(
 
 	// insert output table accumulators into model run
 	// prepare put() closure to convert each accumulator cell into parameters of insert sql statement
-	accSql := makeSqlAccValueInsert(meta, runId)
+	accSql := makeSqlAccValueInsert(trx.Dbf, meta, runId)
 	put := putAccInsertFrom(meta, accFrom, digestAcc)
 
-	if err = TrxUpdateStatement(trx, accSql, put); err != nil {
+	if err = TrxUpdateStatement(trx.Tx, accSql, put); err != nil {
 		return err
 	}
 	// check if all rows ordered by primary key, digest is incorrect otherwise
@@ -153,10 +153,10 @@ func doWriteOutputTableFrom(
 
 	// insert output table expressions into model run
 	// prepare put() closure to convert each expression cell into parameters of insert sql statement
-	exprSql := makeSqlExprValueInsert(meta, runId)
+	exprSql := makeSqlExprValueInsert(trx.Dbf, meta, runId)
 	put = putExprInsertFrom(meta, exprFrom, digestExpr)
 
-	if err = TrxUpdateStatement(trx, exprSql, put); err != nil {
+	if err = TrxUpdateStatement(trx.Tx, exprSql, put); err != nil {
 		return err
 	}
 	// check if all rows ordered by primary key, digest is incorrect otherwise
@@ -167,7 +167,7 @@ func doWriteOutputTableFrom(
 	// update output table digest with actual value
 	dgst := fmt.Sprintf("%x", hMd5.Sum(nil))
 
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"UPDATE run_table SET value_digest = "+ToQuoted(dgst)+
 			" WHERE run_id = "+srId+
 			" AND table_hid ="+sHid)
@@ -177,7 +177,7 @@ func doWriteOutputTableFrom(
 
 	// find base run by digest, it must exist
 	nBase := 0
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT MIN(run_id) FROM run_table"+
 			" WHERE table_hid = "+sHid+
 			" AND value_digest = "+ToQuoted(dgst),
@@ -197,25 +197,25 @@ func doWriteOutputTableFrom(
 	// and remove duplicate values
 	if runId != nBase {
 
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE run_table SET base_run_id = "+strconv.Itoa(nBase)+
 				" WHERE run_id = "+srId+
 				" AND table_hid = "+sHid)
 		if err != nil {
 			return err
 		}
-		err = TrxUpdate(trx, "DELETE FROM "+meta.DbExprTable+" WHERE run_id = "+srId)
+		err = TrxUpdate(trx.Tx, "DELETE FROM "+meta.DbExprTable+" WHERE run_id = "+srId)
 		if err != nil {
 			return err
 		}
-		err = TrxUpdate(trx, "DELETE FROM "+meta.DbAccTable+" WHERE run_id = "+srId)
+		err = TrxUpdate(trx.Tx, "DELETE FROM "+meta.DbAccTable+" WHERE run_id = "+srId)
 		if err != nil {
 			return err
 		}
 	}
 
 	// completed OK, restore run_lst values
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"UPDATE run_lst SET sub_restart = sub_restart + 1 WHERE run_id = "+srId)
 	if err != nil {
 		return err
@@ -282,7 +282,7 @@ func digestExpressionsFrom(
 }
 
 // make sql to insert output table expressions into model run
-func makeSqlExprValueInsert(meta *TableMeta, runId int) string {
+func makeSqlExprValueInsert(facet Facet, meta *TableMeta, runId int) string {
 
 	// INSERT INTO salarySex_v2012820
 	//   (run_id, expr_id, dim0, dim1, expr_value)
@@ -293,12 +293,12 @@ func makeSqlExprValueInsert(meta *TableMeta, runId int) string {
 		q += meta.Dim[k].colName + ", "
 	}
 
-	q += "expr_value) VALUES (" + strconv.Itoa(runId) + ", ?, "
+	q += "expr_value) VALUES (" + strconv.Itoa(runId) + ", " + facet.PlaceHolder(1) // , $1
 
 	for k := 0; k < len(meta.Dim); k++ {
-		q += "?, "
+		q += ", " + facet.PlaceHolder(k+2) // , $2
 	}
-	q += "?)"
+	q += ", " + facet.PlaceHolder(len(meta.Dim)+2) + ")" // , $3)
 
 	return q
 }
@@ -356,7 +356,7 @@ func putExprInsertFrom(
 }
 
 // make sql to insert output table accumulators into model run
-func makeSqlAccValueInsert(meta *TableMeta, runId int) string {
+func makeSqlAccValueInsert(facet Facet, meta *TableMeta, runId int) string {
 
 	// INSERT INTO salarySex_a2012820
 	//   (run_id, acc_id, sub_id, dim0, dim1, acc_value)
@@ -367,12 +367,12 @@ func makeSqlAccValueInsert(meta *TableMeta, runId int) string {
 		q += meta.Dim[k].colName + ", "
 	}
 
-	q += "acc_value) VALUES (" + strconv.Itoa(runId) + ", ?, ?, "
+	q += "acc_value) VALUES (" + strconv.Itoa(runId) + ", " + facet.PlaceHolder(1) + ", " + facet.PlaceHolder(2) // ", $1, $2"
 
 	for k := 0; k < len(meta.Dim); k++ {
-		q += "?, "
+		q += ", " + facet.PlaceHolder(k+3) // , $3
 	}
-	q += "?)"
+	q += ", " + facet.PlaceHolder(len(meta.Dim)+3) + ")" //, $4)
 
 	return q
 }

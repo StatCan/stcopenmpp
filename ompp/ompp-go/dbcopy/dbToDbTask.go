@@ -6,10 +6,10 @@ package main
 import (
 	"database/sql"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy modeling task metadata and run history from source database to destination database
@@ -35,37 +35,37 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 	}
 
 	// validate source and destination
-	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
-	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), runOpts.String(toDbDriverArgKey))
+	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.dstDbDriver)
+	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
 	if csInp == csOut && dnInp == dnOut {
 		return helper.ErrorNew("source same as destination: cannot overwrite model in database")
 	}
 
 	// open source database connection and check is it valid
-	srcDb, _, err := db.Open(csInp, dnInp, false)
+	srcDb, err := db.Open(csInp, dnInp)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// open destination database and check is it valid
-	dstDb, dbFacet, err := db.Open(csOut, dnOut, true)
+	dstDb, err := db.Open(csOut, dnOut)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// source: get model metadata
-	srcModel, err := db.GetModel(srcDb, modelName, modelDigest)
+	srcModel, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -74,14 +74,14 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 	// get task metadata by id or name
 	var taskRow *db.TaskRow
 	if taskId > 0 {
-		if taskRow, err = db.GetTask(srcDb, taskId); err != nil {
+		if taskRow, err = db.GetTask(srcDb.DB, taskId); err != nil {
 			return err
 		}
 		if taskRow == nil {
 			return helper.ErrorNew("modeling task not found, task id:", taskId)
 		}
 	} else {
-		if taskRow, err = db.GetTaskByName(srcDb, srcModel.Model.ModelId, taskName); err != nil {
+		if taskRow, err = db.GetTaskByName(srcDb.DB, srcModel.Model.ModelId, taskName); err != nil {
 			return err
 		}
 		if taskRow == nil {
@@ -89,19 +89,19 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 		}
 	}
 
-	meta, err := db.GetTaskFull(srcDb, taskRow, true, "") // get task full metadata, including task run history
+	meta, err := db.GetTaskFull(srcDb.DB, taskRow, true, "") // get task full metadata, including task run history
 	if err != nil {
 		return err
 	}
 
 	// destination: get model metadata
-	dstModel, err := db.GetModel(dstDb, modelName, modelDigest)
+	dstModel, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// destination: get list of languages
-	dstLang, err := db.GetLanguages(dstDb)
+	dstLang, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 			runIdLst = append(runIdLst, runId)
 
 			// find model run metadata by id
-			runRow, err := db.GetRun(srcDb, runId)
+			runRow, err := db.GetRun(srcDb.DB, runId)
 			if err != nil {
 				return err
 			}
@@ -139,7 +139,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 				continue // skip: run not completed
 			}
 
-			rm, err := db.GetRunFullText(srcDb, runRow, true, "") // get full model run metadata
+			rm, err := db.GetRunFullText(srcDb.DB, runRow, true, "") // get full model run metadata
 			if err != nil {
 				return err
 			}
@@ -154,7 +154,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 			}
 
 			// copy source model run metadata, parameter values, output results into destination database
-			_, err = copyRunDbToDb(srcDb, dstDb, dbFacet, srcModel, dstModel, rm.Run.RunId, runPub, dstLang)
+			_, err = copyRunDbToDb(srcDb.DB, dstDb, srcModel, dstModel, rm.Run.RunId, runPub, dstLang)
 			if err != nil {
 				return err
 			}
@@ -195,7 +195,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 		}
 
 		// convert workset db rows into "public" format
-		setPub, err := wm.ToPublic(srcDb, srcModel)
+		setPub, err := wm.ToPublic(srcDb.DB, srcModel)
 		if err != nil {
 			return err
 		}
@@ -204,7 +204,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 		}
 
 		// copy source workset metadata and parameters into destination database
-		_, err = copyWorksetDbToDb(srcDb, dstDb, srcModel, dstModel, wm.Set.SetId, setPub, dstLang)
+		_, err = copyWorksetDbToDb(srcDb.DB, dstDb, srcModel, dstModel, wm.Set.SetId, setPub, dstLang)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 
 	// save task body worksets
 	for k := range meta.Set {
-		if err = fws(srcDb, meta.Set[k]); err != nil {
+		if err = fws(srcDb.DB, meta.Set[k]); err != nil {
 			return err
 		}
 	}
@@ -221,7 +221,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 	// save worksets from model run history
 	for j := range meta.TaskRun {
 		for k := range meta.TaskRun[j].TaskRunSet {
-			if err = fws(srcDb, meta.TaskRun[j].TaskRunSet[k].SetId); err != nil {
+			if err = fws(srcDb.DB, meta.TaskRun[j].TaskRunSet[k].SetId); err != nil {
 				return err
 			}
 		}
@@ -243,7 +243,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 	}
 
 	// convert task db rows into "public" format
-	pub, err := meta.ToPublic(srcDb, srcModel)
+	pub, err := meta.ToPublic(srcDb.DB, srcModel)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func dbToDbTask(modelName string, modelDigest string, runOpts *config.RunOptions
 	}
 
 	// copy source task metadata into destination database
-	_, err = copyTaskDbToDb(srcDb, dstDb, srcModel, dstModel, meta.Task.TaskId, pub, dstLang)
+	_, err = copyTaskDbToDb(srcDb.DB, dstDb.DB, srcModel, dstModel, meta.Task.TaskId, pub, dstLang)
 	if err != nil {
 		return err
 	}

@@ -8,47 +8,47 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy model run from source database to destination database
 func dbToDbRun(modelName string, modelDigest string, runOpts *config.RunOptions) error {
 
 	// validate source and destination
-	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
-	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), runOpts.String(toDbDriverArgKey))
+	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
+	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
 	if csInp == csOut && dnInp == dnOut {
 		return helper.ErrorNew("source same as destination: cannot overwrite model in database")
 	}
 
 	// open source database connection and check is it valid
-	srcDb, _, err := db.Open(csInp, dnInp, false)
+	srcDb, err := db.Open(csInp, dnInp)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// open destination database and check is it valid
-	dstDb, dbFacet, err := db.Open(csOut, dnOut, true)
+	dstDb, err := db.Open(csOut, dnOut)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// source: get model metadata
-	srcModel, err := db.GetModel(srcDb, modelName, modelDigest)
+	srcModel, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func dbToDbRun(modelName string, modelDigest string, runOpts *config.RunOptions)
 		return helper.ErrorFmt("dbcopy invalid argument(s) run id: %s, run name: %s, run digest: %s",
 			runOpts.String(runIdArgKey), runOpts.String(runNameArgKey), runOpts.String(runDigestArgKey))
 	}
-	runRow, e := findModelRunByIdDigestName(srcDb, srcModel.Model.ModelId, runId, runDigest, runName, isFirst, isLast)
+	runRow, e := findModelRunByIdDigestName(srcDb.DB, srcModel.Model.ModelId, runId, runDigest, runName, isFirst, isLast)
 	if e != nil {
 		return e
 	}
@@ -79,19 +79,19 @@ func dbToDbRun(modelName string, modelDigest string, runOpts *config.RunOptions)
 	}
 
 	// get full model run metadata
-	meta, err := db.GetRunFullText(srcDb, runRow, true, "")
+	meta, err := db.GetRunFullText(srcDb.DB, runRow, true, "")
 	if err != nil {
 		return err
 	}
 
 	// destination: get model metadata
-	dstModel, err := db.GetModel(dstDb, modelName, modelDigest)
+	dstModel, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// destination: get list of languages
-	dstLang, err := db.GetLanguages(dstDb)
+	dstLang, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func dbToDbRun(modelName string, modelDigest string, runOpts *config.RunOptions)
 	}
 
 	// copy source model run metadata, parameter values, output results into destination database
-	_, err = copyRunDbToDb(srcDb, dstDb, dbFacet, srcModel, dstModel, meta.Run.RunId, pub, dstLang)
+	_, err = copyRunDbToDb(srcDb.DB, dstDb, srcModel, dstModel, meta.Run.RunId, pub, dstLang)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func dbToDbRun(modelName string, modelDigest string, runOpts *config.RunOptions)
 // copyRunListDbToDb do copy all model runs parameters and output tables from source to destination database
 // Double format is used for float model types digest calculation, if non-empty format supplied
 func copyRunListDbToDb(
-	srcDb *sql.DB, dstDb *sql.DB, dbFacet db.Facet, srcModel *db.ModelMeta, dstModel *db.ModelMeta, dstLang *db.LangMeta) error {
+	srcDb *sql.DB, dstDb db.Dbc, srcModel *db.ModelMeta, dstModel *db.ModelMeta, dstLang *db.LangMeta) error {
 
 	// source: get all successfully completed model runs in all languages
 	srcRl, err := db.GetRunFullTextList(srcDb, srcModel.Model.ModelId, true, "")
@@ -141,7 +141,7 @@ func copyRunListDbToDb(
 		}
 
 		// save into destination database
-		_, err = copyRunDbToDb(srcDb, dstDb, dbFacet, srcModel, dstModel, srcRl[k].Run.RunId, pub, dstLang)
+		_, err = copyRunDbToDb(srcDb, dstDb, srcModel, dstModel, srcRl[k].Run.RunId, pub, dstLang)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func copyRunListDbToDb(
 // copyRunDbToDb do copy model run metadata, run parameters and output tables from source to destination database
 // it return destination run id (run id in destination database)
 func copyRunDbToDb(
-	srcDb *sql.DB, dstDb *sql.DB, dbFacet db.Facet, srcModel *db.ModelMeta, dstModel *db.ModelMeta, srcId int, pub *db.RunPub, dstLang *db.LangMeta) (int, error) {
+	srcDb *sql.DB, dstDb db.Dbc, srcModel *db.ModelMeta, dstModel *db.ModelMeta, srcId int, pub *db.RunPub, dstLang *db.LangMeta) (int, error) {
 
 	// validate parameters
 	if pub == nil {
@@ -166,7 +166,7 @@ func copyRunDbToDb(
 	}
 
 	// destination: save model run metadata
-	isExist, err := dstRun.UpdateRun(dstDb, dstModel, dstLang, theCfg.doubleFmt)
+	isExist, err := dstRun.UpdateRun(dstDb.DB, dstModel, dstLang, theCfg.doubleFmt)
 	if err != nil {
 		return 0, err
 	}
@@ -329,7 +329,7 @@ func copyRunDbToDb(
 				DoubleFmt: theCfg.doubleFmt,
 			}
 
-			if err = db.WriteMicrodataFrom(dstDb, dbFacet, dstModel, dstRun, &dstMicroLt, makeFromList(cLst)); err != nil {
+			if err = db.WriteMicrodataFrom(dstDb, dstModel, dstRun, &dstMicroLt, makeFromList(cLst)); err != nil {
 				return 0, err
 			}
 		}

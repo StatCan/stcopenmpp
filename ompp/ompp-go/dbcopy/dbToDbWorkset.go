@@ -8,10 +8,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy workset from source database to destination database
@@ -37,37 +37,37 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 	}
 
 	// validate source and destination
-	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
-	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), runOpts.String(toDbDriverArgKey))
+	csInp, dnInp := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.dstDbDriver)
+	csOut, dnOut := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
 	if csInp == csOut && dnInp == dnOut {
 		return helper.ErrorNew("source same as destination: cannot overwrite model in database")
 	}
 
 	// open source database connection and check is it valid
-	srcDb, _, err := db.Open(csInp, dnInp, false)
+	srcDb, err := db.Open(csInp, dnInp)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// open destination database and check is it valid
-	dstDb, _, err := db.Open(csOut, dnOut, true)
+	dstDb, err := db.Open(csOut, dnOut)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// source: get model metadata
-	srcModel, err := db.GetModel(srcDb, modelName, modelDigest)
+	srcModel, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -76,14 +76,14 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 	// get workset metadata by id or name
 	var wsRow *db.WorksetRow
 	if setId > 0 {
-		if wsRow, err = db.GetWorkset(srcDb, setId); err != nil {
+		if wsRow, err = db.GetWorkset(srcDb.DB, setId); err != nil {
 			return err
 		}
 		if wsRow == nil {
 			return helper.ErrorNew("workset not found, set id:", setId)
 		}
 	} else {
-		if wsRow, err = db.GetWorksetByName(srcDb, srcModel.Model.ModelId, setName); err != nil {
+		if wsRow, err = db.GetWorksetByName(srcDb.DB, srcModel.Model.ModelId, setName); err != nil {
 			return err
 		}
 		if wsRow == nil {
@@ -91,7 +91,7 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 		}
 	}
 
-	srcWs, err := db.GetWorksetFull(srcDb, wsRow, "") // get full workset metadata
+	srcWs, err := db.GetWorksetFull(srcDb.DB, wsRow, "") // get full workset metadata
 	if err != nil {
 		return err
 	}
@@ -102,19 +102,19 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 	}
 
 	// destination: get model metadata
-	dstModel, err := db.GetModel(dstDb, modelName, modelDigest)
+	dstModel, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// destination: get list of languages
-	dstLang, err := db.GetLanguages(dstDb)
+	dstLang, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
 
 	// convert workset db rows into "public" format
-	pub, err := srcWs.ToPublic(srcDb, srcModel)
+	pub, err := srcWs.ToPublic(srcDb.DB, srcModel)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 	}
 
 	// copy source workset metadata and parameters into destination database
-	_, err = copyWorksetDbToDb(srcDb, dstDb, srcModel, dstModel, srcWs.Set.SetId, pub, dstLang)
+	_, err = copyWorksetDbToDb(srcDb.DB, dstDb, srcModel, dstModel, srcWs.Set.SetId, pub, dstLang)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func dbToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOpti
 
 // copyWorksetListDbToDb do copy all readonly worksets parameters from source to destination database
 func copyWorksetListDbToDb(
-	srcDb *sql.DB, dstDb *sql.DB, srcModel *db.ModelMeta, dstModel *db.ModelMeta, dstLang *db.LangMeta) error {
+	srcDb *sql.DB, dstDb db.Dbc, srcModel *db.ModelMeta, dstModel *db.ModelMeta, dstLang *db.LangMeta) error {
 
 	// source: get all readonly worksets in all languages
 	srcWl, err := db.GetWorksetFullList(srcDb, srcModel.Model.ModelId, true, "")
@@ -171,7 +171,7 @@ func copyWorksetListDbToDb(
 // copyWorksetDbToDb do copy workset metadata and parameters from source to destination database
 // it return destination set id (set id in destination database)
 func copyWorksetDbToDb(
-	srcDb *sql.DB, dstDb *sql.DB, srcModel *db.ModelMeta, dstModel *db.ModelMeta, srcId int, pub *db.WorksetPub, dstLang *db.LangMeta) (int, error) {
+	srcDb *sql.DB, dstDb db.Dbc, srcModel *db.ModelMeta, dstModel *db.ModelMeta, srcId int, pub *db.WorksetPub, dstLang *db.LangMeta) (int, error) {
 
 	// validate parameters
 	if pub == nil {
@@ -187,7 +187,7 @@ func copyWorksetDbToDb(
 
 	// destination: convert from "public" format into destination db rows
 	// display warning if base run not found in destination database
-	dstWs, err := pub.FromPublic(dstDb, dstModel)
+	dstWs, err := pub.FromPublic(dstDb.DB, dstModel)
 	if err != nil {
 		return 0, err
 	}
@@ -196,23 +196,23 @@ func copyWorksetDbToDb(
 	}
 
 	// if destination workset exists then make it read-write and delete all existing parameters from workset
-	wsRow, err := db.GetWorksetByName(dstDb, dstModel.Model.ModelId, pub.Name)
+	wsRow, err := db.GetWorksetByName(dstDb.DB, dstModel.Model.ModelId, pub.Name)
 	if err != nil {
 		return 0, err
 	}
 	if wsRow != nil {
-		err = db.UpdateWorksetReadonly(dstDb, wsRow.SetId, false) // make destination workset read-write
+		err = db.UpdateWorksetReadonly(dstDb.DB, wsRow.SetId, false) // make destination workset read-write
 		if err != nil {
 			return 0, helper.ErrorNew("failed to clear workset read-only status:", wsRow.SetId, wsRow.Name, err)
 		}
-		err = db.DeleteWorksetAllParameters(dstDb, wsRow.SetId) // delete all parameters from workset
+		err = db.DeleteWorksetAllParameters(dstDb.DB, wsRow.SetId) // delete all parameters from workset
 		if err != nil {
 			return 0, helper.ErrorNew("failed to delete workset", wsRow.SetId, wsRow.Name, err)
 		}
 	}
 
 	// create empty workset metadata or update existing workset metadata
-	err = dstWs.UpdateWorkset(dstDb, dstModel, true, dstLang)
+	err = dstWs.UpdateWorkset(dstDb.DB, dstModel, true, dstLang)
 	if err != nil {
 		return 0, err
 	}
@@ -254,7 +254,7 @@ func copyWorksetDbToDb(
 	}
 
 	// update workset readonly status with actual value
-	err = db.UpdateWorksetReadonly(dstDb, dstId, isReadonly)
+	err = db.UpdateWorksetReadonly(dstDb.DB, dstId, isReadonly)
 	if err != nil {
 		return 0, err
 	}

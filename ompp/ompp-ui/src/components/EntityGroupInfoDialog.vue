@@ -16,7 +16,7 @@
           <tr v-if="docLink">
             <td class="om-p-head-center"></td>
             <td class="om-p-cell-left">
-              <a target="_blank" :href="'doc/' + docLink + '#' + entityName + '.' + groupName" class="file-link"><q-icon name="mdi-book-open" size="md" color="primary" class="q-pr-sm"/>{{ $t('Model Documentation') }}</a>
+              <a target="_blank" :href="'../../doc/' + docLink + '#' + entityName + '.' + groupName" class="file-link"><q-icon name="mdi-book-open" size="md" color="primary" class="q-pr-sm"/>{{ $t('Model Documentation') }}</a>
             </td>
           </tr>
         </tbody>

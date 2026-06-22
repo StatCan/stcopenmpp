@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // Standard config keys to get values from ini-file or command line arguments

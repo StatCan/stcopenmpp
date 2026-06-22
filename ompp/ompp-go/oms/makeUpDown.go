@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // UpDownStatusLog contains download, upload or delete  status info and content of log file
@@ -495,16 +495,6 @@ func renameToUpDownErrorLog(upDown string, logPath string, logErrMsg string, err
 	os.Rename(logPath, strings.TrimSuffix(logPath, ".progress."+upDown+".log")+".error."+upDown+".log")
 }
 
-// update file status of download files
-func updateStatDownloadLog(logName string, uds *UpDownStatusLog) {
-	updateStatUpDownLog(logName, uds, theCfg.downloadDir)
-}
-
-// update file status of upload files
-func updateStatUploadLog(logName string, uds *UpDownStatusLog) {
-	updateStatUpDownLog(logName, uds, theCfg.uploadDir)
-}
-
 // update file status of download or upload files:
 // check if zip exist, if folder exist and retirve file modification time in milliseconds since epoch
 func updateStatUpDownLog(logName string, uds *UpDownStatusLog, upDownDir string) {
@@ -533,16 +523,6 @@ func updateStatUpDownLog(logName string, uds *UpDownStatusLog, upDownDir string)
 	if fi, err := os.Stat(filepath.Join(upDownDir, logName)); err == nil {
 		uds.LogModTime = fi.ModTime().UnixNano() / int64(time.Millisecond)
 	}
-}
-
-// parseDownloadLogFileList for each download directory entry check is it a .download.log file and parse content
-func parseDownloadLogFileList(preffix string, dirEntryLst []fs.DirEntry) []UpDownStatusLog {
-	return parseUpDownLogFileList("download", preffix, dirEntryLst, theCfg.downloadDir)
-}
-
-// parseUploadLogFileList for each upload directory entry check is it a .upload.log file and parse content
-func parseUploadLogFileList(preffix string, dirEntryLst []fs.DirEntry) []UpDownStatusLog {
-	return parseUpDownLogFileList("upload", preffix, dirEntryLst, theCfg.uploadDir)
 }
 
 // parseUpDownLogFileList for each download or upload directory entry check is it a .up-or-down.log file and parse content
@@ -576,18 +556,6 @@ func parseUpDownLogFileList(upDown string, preffix string, dirEntryLst []fs.DirE
 	}
 
 	return udsLst
-}
-
-// parse log file content to get folder name, log file kind and keys
-// kind and keys are:
-//
-//	model:   model digest
-//	run:     model digest, run digest
-//	workset: model digest, workset name
-//	delete:  folder
-//	upload:  zip file name
-func parseDownloadLog(fileName, fileContent string) UpDownStatusLog {
-	return parseUpDownLog("download", fileName, fileContent)
 }
 
 // parse log file content to get folder name, log file kind and keys

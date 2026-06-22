@@ -17,6 +17,9 @@ export const useServerStateStore = defineStore('server-state', {
     dispatchServerConfig (cfg) {
       if (Mdf.isConfig(cfg)) {
         cfg.Env ??= {}
+        cfg.IsAdminAll ??= false
+        cfg.IsJobControl ??= false
+        cfg.IsReadonly ??= false
         let uiex = {}
         try {
           uiex = JSON.parse((cfg?.UiExtra || '{}'))

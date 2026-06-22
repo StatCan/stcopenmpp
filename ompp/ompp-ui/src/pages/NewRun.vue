@@ -11,7 +11,7 @@
           <q-btn
            v-if="!isDiskOver"
             @click="onModelRunClick"
-            :disable="isInitRun || !runOpts.runName || isNoTables || isDiskOver"
+            :disable="isInitRun || !runOpts.runName || isNoTables || isDiskOver || isReadonlyServer"
             color="primary"
             class="rounded-borders q-pr-xs"
             >
@@ -406,20 +406,20 @@
                     dense
                     color="primary"
                     class="col-auto rounded-borders"
-                    :icon="showIniFilesTree ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+                    :icon="showIniFilesTree ? 'mdi-file-tree-outline' : 'mdi-file-tree'"
                     :title="$t('Select INI-file')"
                     />
                   <div class="col"><q-checkbox v-model="runOpts.useIni" :disable="(runOpts.iniName || '') === ''" :label="$t('Use INI-file:')" /></div>
                 </div>
               </td>
-              <td :class="runOpts.useIni ? ['panel-border', 'rounded-borders'] : []">
+              <td :class="runOpts.useIni ? ['om-light-border', 'rounded-borders'] : []">
                 <div class="q-pl-xs"><span v-if="!!runOpts.iniName">{{ iniFileLabel(runOpts.iniName) }}</span><span v-else class="om-text-descr">{{ '(' + $t('None') + ')' }}</span></div>
               </td>
             </tr>
 
             <template v-if="showIniFilesTree">
               <tr>
-                <td colspan="2">
+                <td colspan="2" class="om-primary-border">
                   <q-input
                     ref="iniTreeFilterInput"
                     debounce="500"
@@ -433,11 +433,7 @@
                       <q-icon v-else name="search" />
                     </template>
                   </q-input>
-                </td>
-              </tr>
 
-              <tr>
-                <td colspan="2">
                   <q-tree
                     :nodes="iniTreeData"
                     node-key="key"
@@ -499,7 +495,7 @@
                 >
                 <q-checkbox v-model="runOpts.iniAnyKey" :disable="!runOpts.useIni" :label="$t('Development options:')"/>
               </td>
-              <td :class="(runOpts.useIni && runOpts.iniAnyKey) ? ['panel-border', 'rounded-borders'] : []">
+              <td :class="(runOpts.useIni && runOpts.iniAnyKey) ? ['om-light-border', 'rounded-borders'] : []">
                 <span v-if="!!runOpts.iniName" class="q-pl-xs">{{ iniFileLabel(runOpts.iniName) }}</span><span v-else class="om-text-descr">{{ '(' + $t('None') + ')' }}</span>
               </td>
             </tr>
@@ -518,20 +514,20 @@
                     dense
                     color="primary"
                     class="col-auto rounded-borders"
-                    :icon="showCsvFilesTree ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+                    :icon="showCsvFilesTree ? 'mdi-file-tree-outline' : 'mdi-file-tree'"
                     :title="$t('Select CSV Directory')"
                     />
                   <div class="col"><q-checkbox v-model="runOpts.useCsvDir" :disable="(runOpts.csvDir || '') === ''" :label="$t('Use CSV Directory:')" /></div>
                 </div>
               </td>
-              <td :class="runOpts.useCsvDir ? ['panel-border', 'rounded-borders'] : []">
+              <td :class="runOpts.useCsvDir ? ['om-light-border', 'rounded-borders'] : []">
                 <div class="q-pl-xs"><span v-if="!!runOpts.csvDir">{{ csvDirLabel(runOpts.csvDir) }}</span><span v-else class="om-text-descr">{{ '(' + $t('None') + ')' }}</span></div>
               </td>
             </tr>
 
             <template v-if="showCsvFilesTree">
               <tr>
-                <td colspan="2">
+                <td colspan="2" class="om-primary-border">
                   <q-input
                     ref="csvTreeFilterInput"
                     debounce="500"
@@ -545,11 +541,7 @@
                       <q-icon v-else name="search" />
                     </template>
                   </q-input>
-                </td>
-              </tr>
 
-              <tr>
-                <td colspan="2">
                   <q-tree
                     :nodes="csvTreeData"
                     node-key="key"
@@ -609,7 +601,7 @@
                 >
                 <q-checkbox v-model="runOpts.csvId" :disable="!runOpts.useCsvDir" :label="$t('CSV file(s) contains Id:')"/>
               </td>
-              <td :class="(runOpts.useCsvDir && runOpts.csvId) ? ['panel-border', 'rounded-borders'] : []">
+              <td :class="(runOpts.useCsvDir && runOpts.csvId) ? ['om-light-border', 'rounded-borders'] : []">
                 <div class="q-pl-xs"><span v-if="!!runOpts.csvDir">{{ csvDirLabel(runOpts.csvDir) }}</span><span v-else class="om-text-descr">{{ '(' + $t('None') + ')' }}</span></div>
               </td>
             </tr>
@@ -718,7 +710,7 @@
             :disable="!serverConfig.IsJobControl"
             >
             <td class="q-pr-xs">{{ $t('Use Jobs Service') }}:</td>
-            <td class="tc-max-width-10 row panel-border rounded-borders">
+            <td class="tc-max-width-10 row om-light-border rounded-borders">
               <q-space />
               <q-toggle
                 @click="onMpiUseJobs"
@@ -733,7 +725,7 @@
             :disable="runOpts.mpiNpCount <= 0 && !runOpts.mpiUseJobs"
             >
             <td class="q-pr-xs">{{ $t('Use MPI Root for Modelling') }}:</td>
-            <td class="tc-max-width-10 row panel-border rounded-borders">
+            <td class="tc-max-width-10 row om-light-border rounded-borders">
               <q-space />
               <q-toggle
                 v-model="runOpts.mpiOnRoot"
@@ -863,9 +855,6 @@
 <script src="./new-run.js"></script>
 
 <style lang="scss" scope="local">
-  .panel-border {
-    border: 1px solid lightgrey;
-  }
   .tc-right {
     text-align: right;
   }

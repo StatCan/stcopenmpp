@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // ReadParameterTo select "page" of parameter values from workset or model run and pass each row into cvtWr().
@@ -42,7 +42,7 @@ func (mc *ModelCatalog) ReadParameterTo(dn, src string, layout *db.ReadParamLayo
 	// find workset id by name or run id by name-or-digest
 	if layout.IsFromSet {
 
-		w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, src)
+		w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, src)
 		if err != nil {
 			return nil, false // return empty result: workset select error
 		}
@@ -52,7 +52,7 @@ func (mc *ModelCatalog) ReadParameterTo(dn, src string, layout *db.ReadParamLayo
 	} else {
 
 		// get run_lst db row by digest, stamp or run name
-		rst, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, src)
+		rst, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, src)
 		if err != nil {
 			omppLog.Log("Error at get run status:", meta.Model.Name, ":", src, ":", err.Error())
 			return nil, false // return empty result: run select error
@@ -66,7 +66,7 @@ func (mc *ModelCatalog) ReadParameterTo(dn, src string, layout *db.ReadParamLayo
 	}
 
 	// read parameter page
-	lt, err := db.ReadParameterTo(dbConn, meta, layout, cvtWr)
+	lt, err := db.ReadParameterTo(dbConn.DB, meta, layout, cvtWr)
 	if err != nil {
 		omppLog.Log("Error at read parameter: ", dn, ": ", layout.Name, ": ", err.Error())
 		return nil, false // return empty result: values select error
@@ -118,7 +118,7 @@ func (mc *ModelCatalog) ReadOutTableTo(dn, rdsn string, layout *db.ReadTableLayo
 	layout.FromId = r.RunId // source run id
 
 	// read output table page
-	lt, err := db.ReadOutputTableTo(dbConn, meta, layout, cvtWr)
+	lt, err := db.ReadOutputTableTo(dbConn.DB, meta, layout, cvtWr)
 	if err != nil {
 		omppLog.Log("Error at read output table: ", dn, ": ", layout.Name, ": ", err.Error())
 		return nil, false // return empty result: values select error
@@ -185,7 +185,7 @@ func (mc *ModelCatalog) ReadOutTableCalculateTo(
 	layout.FromId = r.RunId // source run id
 
 	// read output table page
-	lt, err := db.ReadOutputTableCalculteTo(dbConn, meta, layout, calcLt, runIds, cvtWr)
+	lt, err := db.ReadOutputTableCalculteTo(dbConn.DB, meta, layout, calcLt, runIds, cvtWr)
 	if err != nil {
 		omppLog.Log("Error at read output table: ", dn, ": ", layout.Name, ": ", err.Error())
 		return nil, false // return empty result: values select error
@@ -249,7 +249,7 @@ func (mc *ModelCatalog) ReadMicrodataTo(dn, rdsn string, layout *db.ReadMicroLay
 	}
 
 	// read microdata values page
-	lt, err := db.ReadMicrodataTo(dbConn, meta, layout, cvtWr)
+	lt, err := db.ReadMicrodataTo(dbConn.DB, meta, layout, cvtWr)
 	if err != nil {
 		omppLog.Log("Error at read microdata: ", dn, ": ", layout.Name, ": ", layout.GenDigest, ": ", err.Error())
 		return nil, false // return empty result: values select error
@@ -324,7 +324,7 @@ func (mc *ModelCatalog) ReadMicrodataCalculateTo(
 	}
 
 	// read microdata values page
-	lt, err := db.ReadMicrodataCalculateTo(dbConn, meta, layout, calcLt, runIds, cvtWr)
+	lt, err := db.ReadMicrodataCalculateTo(dbConn.DB, meta, layout, calcLt, runIds, cvtWr)
 	if err != nil {
 		omppLog.Log("Error at read microdata: ", dn, ": ", layout.Name, ": ", layout.GenDigest, ": ", err.Error())
 		return nil, false // return empty result: values select error

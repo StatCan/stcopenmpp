@@ -1,13 +1,13 @@
 {
   "ModelTreeDescending": false,
   "DefaultTitle": [{
-      "Link": "https://openmpp.org",
+      "Link": "https://github.com/statcan/stcopenmpp",
       "LangCode": "en",
-      "Label": "OpenM++"
+      "Label": "stcopenmpp"
     }, {
-      "Link": "https://openmpp.org",
+      "Link": "https://github.com/statcan/stcopenmpp",
       "LangCode": "fr",
-      "Label": "OpenM++"
+      "Label": "stcopenmpp"
     }
   ],
   "MoreMenu": [{
@@ -43,13 +43,13 @@
       "LangCode": "fr",
       "Label": "Wiki d'OpenM++"
     }, {
-      "Link": "https://openmpp.org",
+      "Link": "https://github.com/statcan/stcopenmpp",
       "LangCode": "en",
-      "Label": "OpenM++ website"
+      "Label": "stcopenmpp website"
     }, {
-      "Link": "https://openmpp.org",
+      "Link": "https://github.com/statcan/stcopenmpp",
       "LangCode": "fr",
-      "Label": "Site d'OpenM++"
+      "Label": "Site d'stcopenmpp"
     }
   ]
 }

@@ -219,37 +219,61 @@ If you want to write utf-8 BOM into output csv file then:
 	dbcopy -m modelOne -dbcopy.Utf8BomIntoCsv
 	dbcopy -m modelOne -dbcopy.Utf8BomIntoCsv -dbcopy.To csv
 
-By default dbcopy using SQLite database connection:
+**Data Source**
+
+By default openM++ is using SQLite database:
 
 	dbcopy -m modelOne
 
-is equivalent of:
+Above is equivalent of:
 
 	dbcopy -m modelOne -dbcopy.FromSqlite modelOne.sqlite
-	dbcopy -m modelOne -dbcopy.Database "Database=modelOne.sqlite; Timeout=86400; OpenMode=ReadOnly;"
-	dbcopy -m modelOne -dbcopy.Database "Database=modelOne.sqlite; Timeout=86400; OpenMode=ReadOnly;" -dbcopy.DatabaseDriver SQLite
+	dbcopy -m modelOne -dbcopy.Database "Database=modelOne.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadOnly;"
+	dbcopy -m modelOne -dbcopy.Database "Database=modelOne.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadOnly;" -dbcopy.DatabaseDriver SQLite
 
-Output database connection settings by default are the same as input database,
-which may not be suitable because you don't want to overwrite input database.
+Most generic data source format is to use connection string and driver name, for example:
 
-To specify output database connection string and driver:
+	dbcopy -m modelOne
+	  -dbcopy.Database "Database=model.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadOnly;"
+	  -dbcopy.DatabaseDriver SQLite
 
-	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToSqlite modelOne.sqlite
-	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToDatabase "Database=modelOne.sqlite; Timeout=86400; OpenMode=ReadWrite;"
-	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToDatabase "Database=modelOne.sqlite; Timeout=86400; OpenMode=ReadWrite;" -dbcopy.ToDatabaseDriver SQLite
+You don't need to specify driver name for SQLite database, it is enough to specify model name or path to model.sqlite file:
 
-	dbcopy -m modelOne -dbcopy.To db2db -dbcopy.FromSqlite src.sqlite -dbcopy.ToSqlite dst.sqlite
+	dbcopy -m modelOne
+	dbcopy -m modelOne -dbcopy.FromSqlite some/dir/m1.sqlite
 
-Other supported database drivers are "sqlite3" and "odbc":
+To copy between databases or from CSV into database you need to specify output database connection:
 
-	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToDatabaseDriver odbc -dbcopy.ToDatabase "DSN=bigSql"
-	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToDatabaseDriver sqlite3 -dbcopy.ToDatabase "file:dst.sqlite?mode=rw"
+	dbcopy -m modelOne -dbcopy.To db -dbcopy.ToSqlite m1.sqlite
+	dbcopy -m modelOne -dbcopy.To db2db -dbcopy.FromSqlite src.sqlite -dbcopy.ToSqlite some/dir/dst.sqlite
 
-ODBC dbcopy tested with MySQL (MariaDB), PostgreSQL, Microsoft SQL, Oracle and DB2.
+For non-SQLite db vendors you must provide database driver name eiher as "-dbcopy.DatabaseDriver" option or as "OM_DB_DRIVER" environment variable:
 
-If dbcopy used for massive database copy it may be convenient to control it from shell script by process ID:
+	set OM_DB_DRIVER=postgresql
 
-	dbcopy -dbcopy.PidSaveTo some/dir/dbcopy.pid.txt
+And for output database it is either "-dbcopy.ToDatabaseDriver" option or "OM_TO_DB_DRIVER" environment variable:
+
+	set OM_TO_DB_DRIVER=mysql
+
+You can use one of the following driver names:
+
+	odbc: MySQL, PostgreSQL, MS SQL, Oracle or DB2
+	mysql: MySQL, MariaDB
+	postgres: PostgreSQL
+	sqlserver: Microsoft SQL Sever
+
+For some database vendors you may want to adjust connection properties by using "OM_DB_SET_{vendor-or-driver-name}" environment variable.
+For example, connecting from Windows to MySQL:
+
+	set OM_DB_SET_mysql=SET @@SQL_MODE = CONCAT(@@SQL_MODE, ',PIPES_AS_CONCAT,ANSI_QUOTES,NO_BACKSLASH_ESCAPES'), AUTOCOMMIT = 0
+
+Or from Linux:
+
+	export OM_DB_SET_mysql="SET @@SQL_MODE = CONCAT(@@SQL_MODE, ',PIPES_AS_CONCAT,ANSI_QUOTES,NO_BACKSLASH_ESCAPES'), AUTOCOMMIT = 0"
+
+Above names can be either driver name or one of: sqlite3, mysql, postgresql, sqlserver, oracle, db2
+
+**Language**
 
 By default dbcopy log messages are in user OS language, user can override message language:
 
@@ -265,6 +289,10 @@ Also dbcopy support OpenM++ standard log settings (described in openM++ wiki):
 	-OpenM.LogUseTs:     if true then use time-stamp in log file name
 	-OpenM.LogUsePid:    if true then use pid-stamp in log file name
 	-OpenM.LogSql:       if true then log sql statements into log file
+
+If dbcopy used for massive database copy it may be convenient to control it from shell script by process ID:
+
+	dbcopy -dbcopy.PidSaveTo some/dir/dbcopy.pid.txt
 */
 package main
 
@@ -276,12 +304,10 @@ import (
 	"strings"
 
 	"github.com/jeandeaual/go-locale"
-	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // dbcopy config keys to get values from ini-file or command line arguments.
@@ -354,6 +380,8 @@ var theCfg = struct {
 	doubleFmt       string // format to convert float or double value to string
 	encodingName    string // code page for converting source files, e.g. windows-1252
 	isWriteUtf8Bom  bool   // if true then write utf-8 BOM into csv file
+	srcDbDriver     string // source database driver name
+	dstDbDriver     string // destination database driver name
 }{
 	doubleFmt:    "%.15g", // default format to convert float or double values to string
 	encodingName: "",      // by default detect utf-8 encoding or use OS-specific default: windows-1252 on Windowds and utf-8 outside
@@ -394,10 +422,10 @@ func mainBody(args []string) error {
 	_ = flag.Int(taskIdArgKey, 0, "modeling task id, if specified then copy only this run modeling task data")
 	_ = flag.String(fromSqliteArgKey, "", "input database SQLite file path")
 	_ = flag.String(dbConnStrArgKey, "", "input database connection string")
-	_ = flag.String(dbDriverArgKey, db.SQLiteDbDriver, "input database driver name: SQLite, odbc, sqlite3")
+	_ = flag.String(dbDriverArgKey, "", "input database driver name: SQLite, odbc, mysql, postgres, sqlserver, sqlite3")
 	_ = flag.String(toSqliteArgKey, "", "output database SQLite file path")
 	_ = flag.String(toDbConnStrArgKey, "", "output database connection string")
-	_ = flag.String(toDbDriverArgKey, db.SQLiteDbDriver, "output database driver name: SQLite, odbc, sqlite3")
+	_ = flag.String(toDbDriverArgKey, "", "output database driver name: SQLite, odbc, mysql, postgres, sqlserver, sqlite3")
 	_ = flag.String(inputDirArgKey, "", "input directory to read model .json and .csv files")
 	_ = flag.String(outputDirArgKey, "", "output directory for model .json and .csv files")
 	_ = flag.Bool(keepOutputDirArgKey, theCfg.isKeepOutputDir, "keep (do not delete) existing output directory")
@@ -486,6 +514,15 @@ func mainBody(args []string) error {
 	theCfg.doubleFmt = runOpts.String(doubleFormatArgKey)
 	theCfg.encodingName = runOpts.String(encodingArgKey)
 	theCfg.isWriteUtf8Bom = runOpts.Bool(useUtf8CsvArgKey)
+
+	theCfg.srcDbDriver = runOpts.String(dbDriverArgKey)
+	if theCfg.srcDbDriver == "" {
+		theCfg.srcDbDriver = os.Getenv("OM_DB_DRIVER")
+	}
+	theCfg.dstDbDriver = runOpts.String(toDbDriverArgKey)
+	if theCfg.dstDbDriver == "" {
+		theCfg.dstDbDriver = os.Getenv("OM_TO_DB_DRIVER")
+	}
 
 	// minimal validation of run options
 	//

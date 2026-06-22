@@ -4,7 +4,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -12,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy workset from text json and csv files into database
@@ -144,30 +143,26 @@ func textToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOp
 	}
 
 	// open source database connection and check is it valid
-	dn := runOpts.String(toDbDriverArgKey)
-	if dn == "" && runOpts.IsExist(dbDriverArgKey) {
-		dn = runOpts.String(dbDriverArgKey)
-	}
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), dn)
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
-	dstDb, _, err := db.Open(cs, dn, true)
+	dstDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(dstDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// get full list of languages
-	langDef, err := db.GetLanguages(dstDb)
+	langDef, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
@@ -190,7 +185,7 @@ func textToDbWorkset(modelName string, modelDigest string, runOpts *config.RunOp
 // convert it to db cells and insert into database
 // update set id's and base run id's with actual id in database
 func fromWorksetTextListToDb(
-	dbConn *sql.DB, modelDef *db.ModelMeta, langDef *db.LangMeta, inpDir string,
+	dbConn db.Dbc, modelDef *db.ModelMeta, langDef *db.LangMeta, inpDir string,
 ) error {
 
 	// get list of workset json files
@@ -235,7 +230,7 @@ func fromWorksetTextListToDb(
 // update set id's and base run id's with actual id in destination database
 // it return source workset id (set id from metadata json file) and destination set id
 func fromWorksetTextToDb(
-	dbConn *sql.DB,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	langDef *db.LangMeta,
 	srcSetName string,
@@ -317,7 +312,7 @@ func fromWorksetTextToDb(
 
 	// destination: convert from "public" format into destination db rows
 	// display warning if base run not found in destination database
-	ws, err := pub.FromPublic(dbConn, modelDef)
+	ws, err := pub.FromPublic(dbConn.DB, modelDef)
 	if err != nil {
 		return 0, err
 	}
@@ -326,23 +321,23 @@ func fromWorksetTextToDb(
 	}
 
 	// if destination workset exists then make it read-write and delete all existing parameters from workset
-	wsRow, err := db.GetWorksetByName(dbConn, modelDef.Model.ModelId, ws.Set.Name)
+	wsRow, err := db.GetWorksetByName(dbConn.DB, modelDef.Model.ModelId, ws.Set.Name)
 	if err != nil {
 		return 0, err
 	}
 	if wsRow != nil {
-		err = db.UpdateWorksetReadonly(dbConn, wsRow.SetId, false) // make destination workset read-write
+		err = db.UpdateWorksetReadonly(dbConn.DB, wsRow.SetId, false) // make destination workset read-write
 		if err != nil {
 			return 0, errors.New("failed to clear workset read-only status: " + strconv.Itoa(wsRow.SetId) + " " + wsRow.Name + " " + err.Error())
 		}
-		err = db.DeleteWorksetAllParameters(dbConn, wsRow.SetId) // delete all parameters from workset
+		err = db.DeleteWorksetAllParameters(dbConn.DB, wsRow.SetId) // delete all parameters from workset
 		if err != nil {
 			return 0, errors.New("failed to delete workset " + strconv.Itoa(wsRow.SetId) + " " + wsRow.Name + " " + err.Error())
 		}
 	}
 
 	// create empty workset metadata or update existing workset metadata
-	err = ws.UpdateWorkset(dbConn, modelDef, true, langDef)
+	err = ws.UpdateWorkset(dbConn.DB, modelDef, true, langDef)
 	if err != nil {
 		return 0, err
 	}
@@ -374,7 +369,7 @@ func fromWorksetTextToDb(
 	}
 
 	// update workset readonly status with actual value
-	err = db.UpdateWorksetReadonly(dbConn, dstId, isReadonly)
+	err = db.UpdateWorksetReadonly(dbConn.DB, dstId, isReadonly)
 	if err != nil {
 		return 0, err
 	}
@@ -384,7 +379,7 @@ func fromWorksetTextToDb(
 
 // updateWorksetParamFromCsvFile read parameter csv file values insert it into db parameter value table and update workset parameter metadata
 func updateWorksetParamFromCsvFile(
-	dbConn *sql.DB,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	wsMeta *db.WorksetMeta,
 	paramPub *db.ParamRunSetPub,

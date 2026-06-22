@@ -422,17 +422,17 @@ static bool do_xref(string lang, int lang_index, Symbol* s, string name, std::st
 /**
  * create model user documentation and model developer documentation.
  *
- * @param   model_name Name of the model.
- * @param   docOutDir  The document out dir.
- * @param   mdOutDir   The md out dir.
- * @param   omrootDir  The omroot dir.
- * @param   cg         The cg.
+ * @param[in] model_name  model name
+ * @param[in] docOutDir   output documentation directory, e.g.: ompp/bin/doc
+ * @param[in] mdOutDir    intermediate directory to write .md files: ompp/src
+ * @param[in] omrootDir   openM++ "root" deirectory to find HTML styles
+ * @param[in] cg          code generator to get model metadata
  */
 void do_model_doc(
     const string& model_name, const string& docOutDir, const string& mdOutDir, const string& omrootDir, const CodeGen& cg
 ) {
 
-    // create json file for ompp UI:
+    // create json file for ompp UI: model_name.extra.json
     /*
     {
     "ModelDoc": [{
@@ -2697,10 +2697,7 @@ void do_model_doc(
             // experimental: include LaTeX(MathJax) support 
             htmlStream << "<meta charset=\"utf-8\">\n";
             htmlStream << "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
-            htmlStream << "<script src=\"https://polyfill.io/v3/polyfill.min.js?features=es6\"></script>\n";
-            htmlStream << "<script id=\"MathJax-script\" async \n"
-                            "src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\">";
-            htmlStream << "</script>\n";
+            htmlStream << "<script id='MathJax-script' defer src='https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js'></script>\n";
 
             htmlStream << htmlStyles;
 

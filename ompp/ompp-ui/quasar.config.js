@@ -44,14 +44,14 @@ export default defineConfig((ctx) => {
         node: 'node20'
       },
 
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      vueRouterMode: 'hash', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      // publicPath: '/',
+      publicPath: './',
       // analyze: true,
       // env: {},
       // rawDefine: {}
@@ -60,10 +60,12 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
       env: {
-        OMS_URL: '' // ctx.dev ? 'http://localhost:4040' : '' // oms service url
+		OMS_URL: '.'
       },
 
-      // extendViteConf (viteConf) {},
+      extendViteConf (viteConf) {
+		viteConf.base = './'
+	  },
       // viteVuePluginOptions: {},
       
       vitePlugins: [

@@ -4,10 +4,10 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // rename model run
@@ -20,20 +20,20 @@ func dbRenameRun(modelName string, modelDigest string, runOpts *config.RunOption
 	}
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// find the model by name and/or digest
-	isFound, modelId, err := db.GetModelId(srcDb, modelName, modelDigest)
+	isFound, modelId, err := db.GetModelId(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func dbRenameRun(modelName string, modelDigest string, runOpts *config.RunOption
 		return helper.ErrorFmt("dbcopy invalid argument(s) run id: %s, run name: %s, run digest: %s",
 			runOpts.String(runIdArgKey), runOpts.String(runNameArgKey), runOpts.String(runDigestArgKey))
 	}
-	runRow, e := findModelRunByIdDigestName(srcDb, modelId, runId, runDigest, runName, isFirst, isLast)
+	runRow, e := findModelRunByIdDigestName(srcDb.DB, modelId, runId, runDigest, runName, isFirst, isLast)
 	if e != nil {
 		return e
 	}
@@ -68,7 +68,7 @@ func dbRenameRun(modelName string, modelDigest string, runOpts *config.RunOption
 	// rename model run
 	omppLog.LogFmt("Rename model run %d % s into: %s", runRow.RunId, runRow.Name, newRunName)
 
-	isFound, err = db.RenameRun(srcDb, runRow.RunId, newRunName)
+	isFound, err = db.RenameRun(srcDb.DB, runRow.RunId, newRunName)
 	if err != nil {
 		helper.ErrorNew("failed to rename model run", runRow.RunId, runRow.Name, ":", err)
 	}
@@ -107,20 +107,20 @@ func dbRenameWorkset(modelName string, modelDigest string, runOpts *config.RunOp
 	}
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// find the model
-	isFound, modelId, err := db.GetModelId(srcDb, modelName, modelDigest)
+	isFound, modelId, err := db.GetModelId(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -131,14 +131,14 @@ func dbRenameWorkset(modelName string, modelDigest string, runOpts *config.RunOp
 	// get workset metadata by id or name
 	var wsRow *db.WorksetRow
 	if setId > 0 {
-		if wsRow, err = db.GetWorkset(srcDb, setId); err != nil {
+		if wsRow, err = db.GetWorkset(srcDb.DB, setId); err != nil {
 			return err
 		}
 		if wsRow == nil {
 			return helper.ErrorNew("workset not found, set id:", setId)
 		}
 	} else {
-		if wsRow, err = db.GetWorksetByName(srcDb, modelId, setName); err != nil {
+		if wsRow, err = db.GetWorksetByName(srcDb.DB, modelId, setName); err != nil {
 			return err
 		}
 		if wsRow == nil {
@@ -154,7 +154,7 @@ func dbRenameWorkset(modelName string, modelDigest string, runOpts *config.RunOp
 	// rename workset (even it is read-only)
 	omppLog.LogFmt("Rename workset %d %s into: %s", wsRow.SetId, wsRow.Name, newSetName)
 
-	isFound, err = db.RenameWorkset(srcDb, wsRow.SetId, newSetName, true)
+	isFound, err = db.RenameWorkset(srcDb.DB, wsRow.SetId, newSetName, true)
 	if err != nil {
 		return helper.ErrorNew("failed to rename workset", wsRow.SetId, wsRow.Name, err)
 	}
@@ -194,20 +194,20 @@ func dbRenameTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	}
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// find the model
-	isFound, modelId, err := db.GetModelId(srcDb, modelName, modelDigest)
+	isFound, modelId, err := db.GetModelId(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -218,14 +218,14 @@ func dbRenameTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	// find modeling task by id or name
 	var taskRow *db.TaskRow
 	if taskId > 0 {
-		if taskRow, err = db.GetTask(srcDb, taskId); err != nil {
+		if taskRow, err = db.GetTask(srcDb.DB, taskId); err != nil {
 			return err
 		}
 		if taskRow == nil {
 			return helper.ErrorNew("modeling task not found, task id:", taskId)
 		}
 	} else {
-		if taskRow, err = db.GetTaskByName(srcDb, modelId, taskName); err != nil {
+		if taskRow, err = db.GetTaskByName(srcDb.DB, modelId, taskName); err != nil {
 			return err
 		}
 		if taskRow == nil {
@@ -241,7 +241,7 @@ func dbRenameTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	// rename modeling task
 	omppLog.LogFmt("Rename task %d %s into: %s", taskRow.TaskId, taskRow.Name, newTaskName)
 
-	isFound, err = db.RenameTask(srcDb, taskRow.TaskId, newTaskName)
+	isFound, err = db.RenameTask(srcDb.DB, taskRow.TaskId, newTaskName)
 	if err != nil {
 		return helper.ErrorNew("failed to rename modeling task", taskRow.TaskId, taskRow.Name, err)
 	}

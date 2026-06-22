@@ -36,6 +36,12 @@ $om-secondary-text-color: #616161; // grey-8
 .om-text-medium {
   font-weight: map-get($text-weights, "medium");
 }
+.om-light-border {
+  border: 1px solid lightgrey;
+}
+.om-primary-border {
+  border: 4px solid $primary;
+}
 
 .om-tree-control-button {
   height: 2.5rem;
@@ -50,8 +56,8 @@ $om-secondary-text-color: #616161; // grey-8
   text-decoration: none;
 }
 .om-tree-found-node {
+  @extend .om-light-border;
   // background-color: whitesmoke;
-  border: 1px solid lightgrey;
 }
 
 .om-bg-active {
@@ -70,8 +76,8 @@ $om-secondary-text-color: #616161; // grey-8
   border-collapse: collapse;
 }
 .om-p-cell {
+  @extend .om-light-border;
   padding: 0.25rem;
-  border: 1px solid lightgrey;
   font-size: 0.875rem;
 }
 .om-p-head {

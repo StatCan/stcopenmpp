@@ -13,8 +13,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 func TestTranslateMicroCalcToSql(t *testing.T) {
@@ -42,18 +42,18 @@ func TestTranslateMicroCalcToSql(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestTranslateMicroCalcToSql(t *testing.T) {
 	entity = &modelDef.Entity[eIdx]
 
 	// get list of entity generations for that model run
-	egLst, err := GetEntityGenList(srcDb, baseRunId)
+	egLst, err := GetEntityGenList(srcDb.DB, baseRunId)
 	if err != nil {
 		t.Fatal("Error at get run entities: ", entityName, ": ", baseRunId, ": ", err.Error())
 	}
@@ -202,18 +202,18 @@ func TestCalculateMicrodata(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestCalculateMicrodata(t *testing.T) {
 	entity = &modelDef.Entity[eIdx]
 
 	// get list of entity generations for that model run
-	egLst, err := GetEntityGenList(srcDb, baseRunId)
+	egLst, err := GetEntityGenList(srcDb.DB, baseRunId)
 	if err != nil {
 		t.Fatal("Error at get run entities: ", entityName, ": ", baseRunId, ": ", err.Error())
 	}
@@ -255,7 +255,7 @@ func TestCalculateMicrodata(t *testing.T) {
 	entityGen = &egLst[gIdx]
 
 	// test only: include all model runs all model runs
-	rLst, err := GetRunList(srcDb, modelDef.Model.ModelId)
+	rLst, err := GetRunList(srcDb.DB, modelDef.Model.ModelId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func TestCalculateMicrodata(t *testing.T) {
 		}
 
 		// aggregate microdata
-		cLst, rdLt, err := CalculateMicrodata(srcDb, modelDef, microLt, runIds)
+		cLst, rdLt, err := CalculateMicrodata(srcDb.DB, modelDef, microLt, runIds)
 		if err != nil {
 			t.Fatal(err)
 		}

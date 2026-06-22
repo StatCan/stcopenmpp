@@ -119,6 +119,7 @@ export default {
     fileSelected () { return !(this.uploadFile === null) },
     isMicrodata () { return !!this.serverConfig.AllowMicrodata && Mdf.entityCount(this.theModel) > 0 },
     isDiskOver () { return !!this?.serverConfig?.IsDiskUse && !!this.diskUseState?.DiskUse?.IsOver },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',

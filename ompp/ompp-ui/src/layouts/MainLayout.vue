@@ -224,7 +224,7 @@
         </q-item-section>
       </q-item>
 
-      <q-item
+      <q-item v-if="!serverConfig.IsReadonly"
         clickable
         :disable="!runDigestSelected && !worksetNameSelected && !taskNameSelected"
         :to="'/model/' + modelDigest + '/new-run'"
@@ -300,7 +300,7 @@
         </q-item-section>
       </q-item>
 
-      <q-item v-if="serverConfig.IsAdminAll"
+      <q-item v-if="!!serverConfig.IsAdminAll"
         clickable
         :disable="!serverConfig.IsJobControl"
         to="/admin-state"

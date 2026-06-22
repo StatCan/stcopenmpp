@@ -11,8 +11,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 func TestCleanSourceExpr(t *testing.T) {
@@ -175,18 +175,18 @@ func TestTranslateToExprSql(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestTranslateToExprSql(t *testing.T) {
 	if k, ok := modelDef.OutTableByName(tableName); ok {
 		table = &modelDef.Table[k]
 	} else {
-		t.Errorf("output table not found: " + tableName)
+		t.Errorf("output table not found: %s", tableName)
 	}
 
 	t.Log("Check non-aggregation SQL")
@@ -283,18 +283,18 @@ func TestParseAggrCalculation(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,7 +325,7 @@ func TestParseAggrCalculation(t *testing.T) {
 		entity = &modelDef.Entity[eIdx]
 
 		// get list of entity generations for that model run
-		egLst, err := GetEntityGenList(srcDb, microRunId)
+		egLst, err := GetEntityGenList(srcDb.DB, microRunId)
 		if err != nil {
 			t.Fatal("Error at get run entities: ", entityName, ": ", microRunId, ": ", err.Error())
 		}

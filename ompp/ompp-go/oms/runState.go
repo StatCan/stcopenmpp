@@ -10,8 +10,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 const modelRunsScanInterval = 4021 // timeout in msec, sleep interval between scanning run list in database

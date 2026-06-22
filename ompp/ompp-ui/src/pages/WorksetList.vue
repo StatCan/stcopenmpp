@@ -34,7 +34,7 @@
             <q-separator />
 
             <q-item
-              :disable="uploadFileSelect || isReadonlyWorksetCurrent || isEdit()"
+              :disable="isReadonlyServer || uploadFileSelect || isReadonlyWorksetCurrent || isEdit()"
               @click="onShowNoteEditor"
               clickable
               >
@@ -44,7 +44,7 @@
               <q-item-section>{{ $t('Edit notes for') + ' ' + worksetNameSelected }}</q-item-section>
             </q-item>
             <q-item
-              :disable="uploadFileSelect || isEdit()"
+              :disable="isReadonlyServer || uploadFileSelect || isEdit()"
               @click="onNewWorksetClick"
               clickable
               >
@@ -54,7 +54,7 @@
               <q-item-section>{{ $t('Create new input scenario') }}</q-item-section>
             </q-item>
 
-            <template v-if="serverConfig.AllowUpload">
+            <template v-if="serverConfig.AllowUpload && !isReadonlyServer">
               <q-item
                 :disable="isNewWorksetShow || isShowNoteEditor || isDiskOver"
                 @click="doShowFileSelect()"
@@ -80,7 +80,7 @@
             <q-separator />
 
             <q-item
-              :disable="isEdit() || isReadonlyWorksetCurrent || !isRunSuccess"
+              :disable="isReadonlyServer && isEdit() || isReadonlyWorksetCurrent || !isRunSuccess"
               @click="onFromRunShow"
               clickable
               >
@@ -90,7 +90,7 @@
               <q-item-section>{{ $t('Copy parameters from model run') + (isRunSuccess ? ' ' + runCurrent.Name : '') }}</q-item-section>
             </q-item>
             <q-item
-              :disable="isEdit() || isReadonlyWorksetCurrent || !isNotEmptyFrom || !isReadonlyFrom"
+              :disable="isReadonlyServer || isEdit() || isReadonlyWorksetCurrent || !isNotEmptyFrom || !isReadonlyFrom"
               @click="onFromWorksetShow"
               clickable
               >
@@ -103,7 +103,7 @@
 
             <q-item
               @click="onNewRunClick(worksetNameSelected)"
-              :disable="!isReadonlyWorksetCurrent"
+              :disable="!isReadonlyWorksetCurrent || isReadonlyServer"
               clickable
               >
               <q-item-section avatar>
@@ -113,7 +113,7 @@
             </q-item>
             <q-item
               @click="onWorksetReadonlyToggle"
-              :disable="isEdit() || !isNotEmptyWorksetCurrent"
+              :disable="isReadonlyServer || isEdit() || !isNotEmptyWorksetCurrent"
               clickable
               >
               <q-item-section avatar>
@@ -138,7 +138,7 @@
       <q-separator vertical inset spaced="sm" color="secondary" />
 
       <q-btn
-        :disable="uploadFileSelect || isReadonlyWorksetCurrent || isEdit()"
+        :disable="isReadonlyServer || uploadFileSelect || isReadonlyWorksetCurrent || isEdit()"
         @click="onShowNoteEditor"
         flat
         dense
@@ -148,7 +148,7 @@
         />
 
       <q-btn
-        :disable="uploadFileSelect || isEdit()"
+        :disable="isReadonlyServer || uploadFileSelect || isEdit()"
         @click="onNewWorksetClick"
         flat
         dense
@@ -157,7 +157,7 @@
         :title="$t('Create new input scenario')"
        />
 
-      <template v-if="serverConfig.AllowUpload">
+      <template v-if="serverConfig.AllowUpload && !isReadonlyServer">
         <q-btn
           :disable="isNewWorksetShow || isShowNoteEditor || isDiskOver"
           @click="doShowFileSelect()"
@@ -181,7 +181,7 @@
       <q-separator vertical inset spaced="sm" color="secondary" />
 
       <q-btn
-        :disable="isEdit() || isReadonlyWorksetCurrent || !isRunSuccess"
+        :disable="isReadonlyServer && isEdit() || isReadonlyWorksetCurrent || !isRunSuccess"
         @click="onFromRunShow"
         flat
         dense
@@ -190,7 +190,7 @@
         :title="$t('Copy parameters from model run') + (isRunSuccess ? ' ' + runCurrent.Name : '')"
        />
       <q-btn
-        :disable="isEdit() || isReadonlyWorksetCurrent || !isNotEmptyFrom || !isReadonlyFrom"
+        :disable="isReadonlyServer && isEdit() || isReadonlyWorksetCurrent || !isNotEmptyFrom || !isReadonlyFrom"
         @click="onFromWorksetShow"
         flat
         dense
@@ -202,7 +202,7 @@
 
       <q-btn
         @click="onNewRunClick(worksetNameSelected)"
-        :disable="!isReadonlyWorksetCurrent"
+        :disable="!isReadonlyWorksetCurrent || isReadonlyServer"
         flat
         dense
         class="col-auto bg-primary text-white rounded-borders"
@@ -211,7 +211,7 @@
         />
       <q-btn
         @click="onWorksetReadonlyToggle"
-        :disable="isEdit() || !isNotEmptyWorksetCurrent"
+        :disable="isReadonlyServer || isEdit() || !isNotEmptyWorksetCurrent"
         flat
         dense
         class="col-auto bg-primary text-white rounded-borders q-ml-xs"
@@ -260,9 +260,9 @@
         :refresh-tickle="refreshTickle"
         :refresh-param-tree-tickle="refreshParamTreeTickle"
         :is-param-leaf-click="true"
-        :is-remove="true"
-        :is-remove-group="true"
-        :is-remove-disabled="isReadonlyWorksetCurrent"
+        :is-remove="!isReadonlyServer"
+        :is-remove-group="!isReadonlyServer"
+        :is-remove-disabled="isReadonlyWorksetCurrent || isReadonlyServer"
         :is-param-download="true"
         :is-param-download-disabled="!isReadonlyWorksetCurrent || isFromWorksetShow"
         @set-parameter-select="onWorksetParamClick"
@@ -350,8 +350,8 @@
         :workset-name="worksetNameFrom"
         :refresh-tickle="refreshTickle"
         :refresh-param-tree-tickle="refreshParamTreeFromTickle"
-        :is-add="true"
-        :is-add-group="true"
+        :is-add="!isReadonlyServer"
+        :is-add-group="!isReadonlyServer"
         @set-parameter-add="onParamWorksetCopy"
         @set-parameter-group-add="onParamGroupWorksetCopy"
         @set-parameter-info-show="doParamNoteWorksetFrom"
@@ -467,6 +467,7 @@
             >
             <div class="col-auto">
               <q-btn
+                v-if="!isReadonlyServer"
                 :disable="!wsTreeTicked.length || isEdit() || isUnsavedTicked()"
                 @click.stop="onWsMultipleDelete"
                 :round="!wsTreeTicked.length"
@@ -518,7 +519,7 @@
               :title="$t('About') + ' ' + prop.node.label"
               />
             <q-btn
-              v-if="prop.node.label"
+              v-if="prop.node.label && !isReadonlyServer"
               :disable="!prop.node.isReadonly || prop.node.label === worksetNameSelected || isReadonlyWorksetCurrent"
               @click.stop="onWorksetFromClick(prop.node.label)"
               flat
@@ -532,7 +533,7 @@
               />
             <q-btn
               v-if="prop.node.label"
-              :disable="!prop.node.isReadonly || isEdit()"
+              :disable="isReadonlyServer || !prop.node.isReadonly || isEdit()"
               @click.stop="onNewRunClick(prop.node.label)"
               flat
               round
@@ -544,7 +545,7 @@
               :title="$t('Run the Model using Scenario') + ' ' +  prop.node.label"
               />
             <q-btn
-              v-if="prop.node.label"
+              v-if="prop.node.label && !isReadonlyServer"
               :disable="prop.node.isReadonly || isEdit()"
               @click.stop="onDeleteWorkset(prop.node.label)"
               flat
@@ -557,7 +558,7 @@
               :title="$t('Delete') + ' ' + prop.node.label"
               />
             <q-btn
-              v-if="serverConfig.AllowDownload"
+              v-if="serverConfig.AllowDownload && !isReadonlyServer"
               :disable="!prop.node.isReadonly || isEdit()"
               @click.stop="onDownloadWorkset(prop.node.label)"
               flat

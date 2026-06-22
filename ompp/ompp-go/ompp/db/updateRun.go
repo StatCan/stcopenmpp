@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // UpdateRunStatus updates run status to the one of run completed: s=success, x=exit, e=error.

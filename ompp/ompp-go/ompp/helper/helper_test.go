@@ -12,7 +12,7 @@ func TestParseKeyValue(t *testing.T) {
 
 	kv, err := ParseKeyValue(kvStr)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	checkString := func(key, expected string) {
@@ -33,7 +33,7 @@ func TestParseKeyValue(t *testing.T) {
 
 	kv, err = ParseKeyValue(kvStr)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	checkString("DSN", "server")
 	checkString("UID", `us""''er`)
@@ -44,7 +44,7 @@ func TestParseKeyValue(t *testing.T) {
 
 	kv, err = ParseKeyValue(kvStr)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	checkString("abc", "")
 
@@ -53,7 +53,7 @@ func TestParseKeyValue(t *testing.T) {
 
 	kv, err = ParseKeyValue(kvStr)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	checkString("abc", `"unbalanced quoutes ;`)
 }

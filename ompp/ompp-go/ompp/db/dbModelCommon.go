@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // Clone return deep copy of source model metadata

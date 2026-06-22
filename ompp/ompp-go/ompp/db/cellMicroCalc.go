@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -563,7 +563,7 @@ func (cellCvt *CellMicroCalcConverter) groupByAttrs() ([]EntityAttrRow, error) {
 // If language code or description is empty then label is attribute name
 func (cellCvt *CellMicroCalcLocaleConverter) groupByLabel() (map[int]string, error) {
 
-	if cellCvt.theGroupByLabels != nil && len(cellCvt.theGroupByLabels) > 0 {
+	if len(cellCvt.theGroupByLabels) > 0 {
 		return cellCvt.theGroupByLabels, nil // attribute labels are already found
 	}
 

@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 	"golang.org/x/text/language"
 )
 
@@ -45,7 +45,7 @@ func (mc *ModelCatalog) RunRow(dn string, rdsn string) *db.RunRow {
 	}
 
 	// get run_lst db row by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run status:", meta.Model.Name, ":", rdsn, ":", err.Error())
 		return nil // return empty result: run select error
@@ -77,7 +77,7 @@ func (mc *ModelCatalog) RunStatus(dn, rdsn string) (*db.RunPub, bool) {
 	}
 
 	// get run_lst db row by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run status:", dn, ":", rdsn, ":", err.Error())
 		return &db.RunPub{}, false // return empty result: run select error
@@ -88,7 +88,7 @@ func (mc *ModelCatalog) RunStatus(dn, rdsn string) (*db.RunPub, bool) {
 	}
 
 	// get run sub-values progress for that run id
-	rpRs, err := db.GetRunProgress(dbConn, r.RunId)
+	rpRs, err := db.GetRunProgress(dbConn.DB, r.RunId)
 	if err != nil {
 		omppLog.Log("Error at get run progress:", dn, ":", rdsn, ":", err.Error())
 		return &db.RunPub{}, false // return empty result: run progress select error
@@ -123,7 +123,7 @@ func (mc *ModelCatalog) RunStatusList(dn, rdsn string) ([]db.RunPub, bool) {
 	}
 
 	// get run_lst db row by digest, stamp or run name
-	rLst, err := db.GetRunListByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	rLst, err := db.GetRunListByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run status:", dn, ":", rdsn, ":", err.Error())
 		return []db.RunPub{}, false // return empty result: run select error
@@ -138,7 +138,7 @@ func (mc *ModelCatalog) RunStatusList(dn, rdsn string) ([]db.RunPub, bool) {
 
 	for n := range rLst {
 		// get run sub-values progress for that run id
-		rpRs, err := db.GetRunProgress(dbConn, rLst[n].RunId)
+		rpRs, err := db.GetRunProgress(dbConn.DB, rLst[n].RunId)
 		if err != nil {
 			omppLog.Log("Error at get run progress:", dn, ":", rdsn, ":", err.Error())
 			return []db.RunPub{}, false // return empty result: run progress select error
@@ -174,12 +174,12 @@ func (mc *ModelCatalog) FirstOrLastRunStatus(dn string, isFirst, isCompleted boo
 	var err error
 
 	if isFirst {
-		rst, err = db.GetFirstRun(dbConn, meta.Model.ModelId)
+		rst, err = db.GetFirstRun(dbConn.DB, meta.Model.ModelId)
 	} else {
 		if !isCompleted {
-			rst, err = db.GetLastRun(dbConn, meta.Model.ModelId)
+			rst, err = db.GetLastRun(dbConn.DB, meta.Model.ModelId)
 		} else {
-			rst, err = db.GetLastCompletedRun(dbConn, meta.Model.ModelId)
+			rst, err = db.GetLastCompletedRun(dbConn.DB, meta.Model.ModelId)
 		}
 	}
 	if err != nil {
@@ -192,7 +192,7 @@ func (mc *ModelCatalog) FirstOrLastRunStatus(dn string, isFirst, isCompleted boo
 	}
 
 	// get run sub-values progress for that run id
-	rpRs, err := db.GetRunProgress(dbConn, rst.RunId)
+	rpRs, err := db.GetRunProgress(dbConn.DB, rst.RunId)
 	if err != nil {
 		omppLog.Log("Error at get run progress:", dn, ":", err.Error())
 		return &db.RunPub{}, false // return empty result: run progress select error
@@ -224,7 +224,7 @@ func (mc *ModelCatalog) RunRowList(dn string, rdsn string) ([]db.RunRow, bool) {
 	}
 
 	// get run_lst db rows by digest, stamp or run name
-	rLst, err := db.GetRunListByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	rLst, err := db.GetRunListByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run status:", dn, ":", rdsn, ":", err.Error())
 		return []db.RunRow{}, false // return empty result: run select error
@@ -247,7 +247,7 @@ func (mc *ModelCatalog) RunRowListByModel(dn string) ([]db.RunRow, bool) {
 	}
 
 	// get run list
-	rl, err := db.GetRunList(dbConn, meta.Model.ModelId)
+	rl, err := db.GetRunList(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get run list:", dn, ":", err.Error())
 		return []db.RunRow{}, false // return empty result: run select error
@@ -270,7 +270,7 @@ func (mc *ModelCatalog) RunPubList(dn string) ([]db.RunPub, bool) {
 		return []db.RunPub{}, false
 	}
 
-	rl, err := db.GetRunList(dbConn, meta.Model.ModelId)
+	rl, err := db.GetRunList(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get run list:", dn, ":", err.Error())
 		return []db.RunPub{}, false // return empty result: run select error
@@ -320,7 +320,7 @@ func (mc *ModelCatalog) RunListText(dn string, preferredLang []language.Tag) ([]
 	}
 
 	// get run_txt db row for each run_lst using matched preferred language
-	rl, rt, err := db.GetRunListText(dbConn, meta.Model.ModelId, lc)
+	rl, rt, err := db.GetRunListText(dbConn.DB, meta.Model.ModelId, lc)
 	if err != nil {
 		omppLog.Log("Error at get run list:", dn, ":", err.Error())
 		return []db.RunPub{}, false // return empty result: run select error
@@ -381,7 +381,7 @@ func (mc *ModelCatalog) RunFull(dn, rdsn string) (*db.RunPub, bool) {
 	}
 
 	// get run_lst db row by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run db row:", dn, ": ", rdsn, ": ", err.Error())
 		return &db.RunPub{}, false // return empty result: run select error
@@ -392,7 +392,7 @@ func (mc *ModelCatalog) RunFull(dn, rdsn string) (*db.RunPub, bool) {
 	}
 
 	// get full metadata db rows
-	rm, err := db.GetRunFull(dbConn, r)
+	rm, err := db.GetRunFull(dbConn.DB, r)
 	if err != nil {
 		omppLog.Log("Error at get run:", dn, ":", r.Name, ":", err.Error())
 		return &db.RunPub{}, false // return empty result: run select error
@@ -427,7 +427,7 @@ func (mc *ModelCatalog) RunTextFull(dn, rdsn string, isAllLang bool, preferredLa
 	}
 
 	// get run_lst db row by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get run db row:", dn, ": ", rdsn, ": ", err.Error())
 		return &db.RunPub{}, false // return empty result: run select error
@@ -447,7 +447,7 @@ func (mc *ModelCatalog) RunTextFull(dn, rdsn string, isAllLang bool, preferredLa
 		}
 	}
 
-	rm, err := db.GetRunFullText(dbConn, r, false, lc)
+	rm, err := db.GetRunFullText(dbConn.DB, r, false, lc)
 	if err != nil {
 		omppLog.Log("Error at get run text:", dn, ":", r.Name, ":", err.Error())
 		return &db.RunPub{}, false // return empty result: run select error

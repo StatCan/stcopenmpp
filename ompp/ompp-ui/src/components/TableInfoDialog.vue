@@ -53,7 +53,7 @@
           <tr v-if="docLink">
             <td class="om-p-head-center"></td>
             <td class="om-p-cell-left">
-              <a target="_blank" :href="'doc/' + docLink + '#' + tableName" class="file-link"><q-icon name="mdi-book-open" size="md" color="primary" class="q-pr-sm"/>{{ $t('Model Documentation') }}</a>
+              <a target="_blank" :href="'../../doc/' + docLink + '#' + tableName" class="file-link"><q-icon name="mdi-book-open" size="md" color="primary" class="q-pr-sm"/>{{ $t('Model Documentation') }}</a>
             </td>
           </tr>
         </tbody>
@@ -121,6 +121,7 @@
     </q-card-section>
 
     <q-card-section v-if="exprNotes" class="text-body1 q-pb-none">
+      <div v-if="tableText.ExprDescr" class="q-pt-md">{{ tableText.ExprDescr }}</div>
       <div v-html="exprNotes" />
     </q-card-section>
     <q-card-section v-if="notes" class="text-body1 q-pb-none">

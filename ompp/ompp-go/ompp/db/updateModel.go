@@ -16,7 +16,7 @@ import (
 // If new model inserted then modelDef updated with actual id's (model id, parameter Hid...)
 // If parameter (output table) not exist then create db tables for parameter values (output table values)
 // If db table names is "" empty then make db table names for parameter values (output table values)
-func UpdateModel(dbConn *sql.DB, dbFacet Facet, modelDef *ModelMeta) (bool, error) {
+func UpdateModel(dbConn Dbc, modelDef *ModelMeta) (bool, error) {
 
 	// validate parameters
 	if modelDef == nil {
@@ -27,12 +27,12 @@ func UpdateModel(dbConn *sql.DB, dbFacet Facet, modelDef *ModelMeta) (bool, erro
 	}
 
 	// check if model already exist
-	isExist, mId, err := GetModelId(dbConn, "", modelDef.Model.Digest)
+	isExist, mId, err := GetModelId(dbConn.DB, "", modelDef.Model.Digest)
 	if err != nil {
 		return isExist, err
 	}
 	if isExist {
-		md, err := GetModelById(dbConn, mId) // read existing model definition
+		md, err := GetModelById(dbConn.DB, mId) // read existing model definition
 		if err != nil {
 			return isExist, err
 		}
@@ -45,7 +45,7 @@ func UpdateModel(dbConn *sql.DB, dbFacet Facet, modelDef *ModelMeta) (bool, erro
 	if err != nil {
 		return isExist, err
 	}
-	if err = doInsertModel(trx, dbFacet, modelDef); err != nil {
+	if err = doInsertModel(DbTrx{Tx: trx, Dbf: dbConn.Dbf}, modelDef); err != nil {
 		trx.Rollback()
 		return isExist, err
 	}
@@ -59,11 +59,11 @@ func UpdateModel(dbConn *sql.DB, dbFacet Facet, modelDef *ModelMeta) (bool, erro
 // If new model inserted then modelDef updated with actual id's (model id, parameter Hid...)
 // If parameter (output table) not exist then create db tables for parameter values (output table values)
 // If db table names is "" empty or too long then make db table names for parameter values (output table values)
-func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
+func doInsertModel(trx DbTrx, modelDef *ModelMeta) error {
 
 	// find default model language id by code
 	var dlId int
-	err := TrxSelectFirst(trx,
+	err := TrxSelectFirst(trx.Tx,
 		"SELECT lang_id FROM lang_lst WHERE lang_code = "+ToQuoted(modelDef.Model.DefaultLangCode),
 		func(row *sql.Row) error {
 			return row.Scan(&dlId)
@@ -76,12 +76,12 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 	}
 
 	// get new model id
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"UPDATE id_lst SET id_value = id_value + 1 WHERE id_key = 'model_id'")
 	if err != nil {
 		return err
 	}
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT id_value FROM id_lst WHERE id_key = 'model_id'",
 		func(row *sql.Row) error {
 			return row.Scan(&modelDef.Model.ModelId)
@@ -99,7 +99,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 	//   (model_id, model_name, model_digest, model_type, model_ver, create_dt, default_lang_id)
 	// VALUES
 	//   (1234, 'modelOne', '1234abcd', 0, '1.0.0.0', '2012-08-17 16:04:59.148', 0)
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"INSERT INTO model_dic"+
 			" (model_id, model_name, model_digest, model_type, model_ver, create_dt, default_lang_id)"+
 			" VALUES ("+
@@ -130,7 +130,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//     ELSE id_value
 		//   END
 		// WHERE id_key = 'type_hid'
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE id_lst SET id_value ="+
 				" CASE"+
 				" WHEN 0 = (SELECT COUNT(*) FROM type_dic WHERE type_digest = "+ToQuoted(modelDef.Type[idx].Digest)+")"+
@@ -144,7 +144,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 		// check if this type already exist
 		modelDef.Type[idx].TypeHid = 0
-		err = TrxSelectFirst(trx,
+		err = TrxSelectFirst(trx.Tx,
 			"SELECT type_hid FROM type_dic WHERE type_digest = "+ToQuoted(modelDef.Type[idx].Digest),
 			func(row *sql.Row) error {
 				return row.Scan(&modelDef.Type[idx].TypeHid)
@@ -157,7 +157,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		if modelDef.Type[idx].TypeHid <= 0 {
 
 			// get new type Hid
-			err = TrxSelectFirst(trx,
+			err = TrxSelectFirst(trx.Tx,
 				"SELECT id_value FROM id_lst WHERE id_key = 'type_hid'",
 				func(row *sql.Row) error {
 					return row.Scan(&modelDef.Type[idx].TypeHid)
@@ -174,7 +174,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			//   (type_hid, type_name, type_digest, dic_id, total_enum_id)
 			// VALUES
 			//   (26, 'age', '20128171604590121', 2, 4)
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO type_dic (type_hid, type_name, type_digest, dic_id, total_enum_id)"+
 					" VALUES ("+
 					sHid+", "+
@@ -193,7 +193,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 					modelDef.Type[idx].Enum[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-					err = TrxUpdate(trx,
+					err = TrxUpdate(trx.Tx,
 						"INSERT INTO type_enum_lst (type_hid, enum_id, enum_name) VALUES ("+
 							sHid+", "+
 							strconv.Itoa(modelDef.Type[idx].Enum[j].EnumId)+", "+
@@ -206,7 +206,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				for nId := modelDef.Type[idx].MinEnumId; nId <= modelDef.Type[idx].MaxEnumId; nId++ {
 
-					err = TrxUpdate(trx,
+					err = TrxUpdate(trx.Tx,
 						"INSERT INTO type_enum_lst (type_hid, enum_id, enum_name) VALUES ("+
 							sHid+", "+
 							strconv.Itoa(nId)+", "+
@@ -228,7 +228,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		// (
 		//   SELECT * FROM model_type_dic E WHERE E.model_id = 1234 AND E.model_type_id = 31
 		// )
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO model_type_dic (model_id, model_type_id, type_hid)"+
 				" SELECT "+
 				smId+", "+
@@ -264,7 +264,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//     ELSE id_value
 		//   END
 		// WHERE id_key = 'parameter_hid'
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE id_lst SET id_value ="+
 				" CASE"+
 				" WHEN 0 = (SELECT COUNT(*) FROM parameter_dic WHERE parameter_digest = "+ToQuoted(modelDef.Param[idx].Digest)+")"+
@@ -278,7 +278,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 		// check if this parameter already exist
 		modelDef.Param[idx].ParamHid = 0
-		err = TrxSelectFirst(trx,
+		err = TrxSelectFirst(trx.Tx,
 			"SELECT parameter_hid FROM parameter_dic WHERE parameter_digest = "+ToQuoted(modelDef.Param[idx].Digest),
 			func(row *sql.Row) error {
 				return row.Scan(&modelDef.Param[idx].ParamHid)
@@ -293,7 +293,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		if modelDef.Param[idx].ParamHid <= 0 {
 
 			// get new parameter Hid
-			err = TrxSelectFirst(trx,
+			err = TrxSelectFirst(trx.Tx,
 				"SELECT id_value FROM id_lst WHERE id_key = 'parameter_hid'",
 				func(row *sql.Row) error {
 					return row.Scan(&modelDef.Param[idx].ParamHid)
@@ -321,7 +321,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			//   db_set_table, parameter_rank, type_hid, is_extendable, num_cumulated)
 			// VALUES
 			//   (4, 'ageSex', '978abf5', 'ageSex', '2012817', 2, 14, 1, 0)
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO parameter_dic"+
 					" (parameter_hid, parameter_name, parameter_digest, db_run_table,"+
 					" db_set_table, parameter_rank, type_hid, is_extendable,"+
@@ -347,7 +347,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				modelDef.Param[idx].Dim[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-				err = TrxUpdate(trx,
+				err = TrxUpdate(trx.Tx,
 					"INSERT INTO parameter_dims (parameter_hid, dim_id, dim_name, type_hid) VALUES ("+
 						strconv.Itoa(modelDef.Param[idx].ParamHid)+", "+
 						strconv.Itoa(modelDef.Param[idx].Dim[j].DimId)+", "+
@@ -359,15 +359,15 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			}
 
 			// create parameter tables: parameter run values and parameter workset values
-			rSql, wSql, err := sqlCreateParamTable(dbFacet, &modelDef.Param[idx])
+			rSql, wSql, err := sqlCreateParamTable(trx.Dbf, &modelDef.Param[idx])
 			if err != nil {
 				return err
 			}
-			err = TrxUpdate(trx, rSql)
+			err = TrxUpdate(trx.Tx, rSql)
 			if err != nil {
 				return err
 			}
-			err = TrxUpdate(trx, wSql)
+			err = TrxUpdate(trx.Tx, wSql)
 			if err != nil {
 				return err
 			}
@@ -383,7 +383,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		// (
 		//   SELECT * FROM model_parameter_dic E WHERE E.model_id = 1234 AND E.model_parameter_id = 0
 		// )
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO model_parameter_dic (model_id, model_parameter_id, parameter_hid, is_hidden)"+
 				" SELECT "+
 				smId+", "+
@@ -409,7 +409,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 			modelDef.Param[idx].Import[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO model_parameter_import (model_id, model_parameter_id, from_name, from_model_name, is_sample_dim)"+
 					" VALUES ("+
 					smId+", "+
@@ -441,7 +441,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//     ELSE id_value
 		//   END
 		// WHERE id_key = 'table_hid'
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE id_lst SET id_value ="+
 				" CASE"+
 				" WHEN 0 = (SELECT COUNT(*) FROM table_dic WHERE table_digest = "+ToQuoted(modelDef.Table[idx].Digest)+")"+
@@ -455,7 +455,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 		// check if this output table already exist
 		modelDef.Table[idx].TableHid = 0
-		err = TrxSelectFirst(trx,
+		err = TrxSelectFirst(trx.Tx,
 			"SELECT table_hid FROM table_dic WHERE table_digest = "+ToQuoted(modelDef.Table[idx].Digest),
 			func(row *sql.Row) error {
 				return row.Scan(&modelDef.Table[idx].TableHid)
@@ -470,7 +470,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		if modelDef.Table[idx].TableHid <= 0 {
 
 			// get new output table Hid
-			err = TrxSelectFirst(trx,
+			err = TrxSelectFirst(trx.Tx,
 				"SELECT id_value FROM id_lst WHERE id_key = 'table_hid'",
 				func(row *sql.Row) error {
 					return row.Scan(&modelDef.Table[idx].TableHid)
@@ -500,7 +500,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			//   import_digest)
 			// VALUES
 			//   (2, 'salarySex', '0887a6494df', 'salarySex', '2012820', 2, 1)
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO table_dic"+
 					" (table_hid, table_name, table_digest, table_rank,"+
 					" is_sparse, db_expr_table, db_acc_table, db_acc_all_view,"+
@@ -528,7 +528,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				modelDef.Table[idx].Dim[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-				err = TrxUpdate(trx,
+				err = TrxUpdate(trx.Tx,
 					"INSERT INTO table_dims (table_hid, dim_id, dim_name, type_hid, is_total, dim_size)"+
 						" VALUES ("+
 						strconv.Itoa(modelDef.Table[idx].TableHid)+", "+
@@ -548,7 +548,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				modelDef.Table[idx].Acc[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-				err = TrxUpdate(trx,
+				err = TrxUpdate(trx.Tx,
 					"INSERT INTO table_acc (table_hid, acc_id, acc_name, is_derived, acc_src, acc_sql)"+
 						" VALUES ("+
 						strconv.Itoa(modelDef.Table[idx].TableHid)+", "+
@@ -570,7 +570,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				modelDef.Table[idx].Expr[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-				err = TrxUpdate(trx,
+				err = TrxUpdate(trx.Tx,
 					"INSERT INTO table_expr (table_hid, expr_id, expr_name, expr_decimals, expr_src, expr_sql)"+
 						" VALUES ("+
 						strconv.Itoa(modelDef.Table[idx].TableHid)+", "+
@@ -585,19 +585,19 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			}
 
 			// create db tables: output table expression(s) values and accumulator(s) values
-			eSql, aSql := sqlCreateOutTable(dbFacet, &modelDef.Table[idx])
-			err = TrxUpdate(trx, eSql)
+			eSql, aSql := sqlCreateOutTable(trx.Dbf, &modelDef.Table[idx])
+			err = TrxUpdate(trx.Tx, eSql)
 			if err != nil {
 				return err
 			}
-			err = TrxUpdate(trx, aSql)
+			err = TrxUpdate(trx.Tx, aSql)
 			if err != nil {
 				return err
 			}
 
 			// create db views: output table all accumulators view
-			avSql := sqlCreateAccAllView(dbFacet, &modelDef.Table[idx])
-			err = TrxUpdate(trx, avSql)
+			avSql := sqlCreateAccAllView(trx.Dbf, &modelDef.Table[idx])
+			err = TrxUpdate(trx.Tx, avSql)
 			if err != nil {
 				return err
 			}
@@ -613,7 +613,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		// (
 		//   SELECT * FROM model_table_dic E WHERE E.model_id = 1234 AND E.model_table_id = 0
 		// )
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO model_table_dic (model_id, model_table_id, table_hid, is_user, expr_dim_pos, is_hidden)"+
 				" SELECT "+
 				smId+", "+
@@ -650,7 +650,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//     ELSE id_value
 		//   END
 		// WHERE id_key = 'entity_hid'
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE id_lst SET id_value ="+
 				" CASE"+
 				" WHEN 0 = (SELECT COUNT(*) FROM entity_dic WHERE entity_digest = "+ToQuoted(modelDef.Entity[idx].Digest)+")"+
@@ -664,7 +664,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 		// check if this entity already exist
 		modelDef.Entity[idx].EntityHid = 0
-		err = TrxSelectFirst(trx,
+		err = TrxSelectFirst(trx.Tx,
 			"SELECT entity_hid FROM entity_dic WHERE entity_digest = "+ToQuoted(modelDef.Entity[idx].Digest),
 			func(row *sql.Row) error {
 				return row.Scan(&modelDef.Entity[idx].EntityHid)
@@ -677,7 +677,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		if modelDef.Entity[idx].EntityHid <= 0 {
 
 			// get new entity Hid
-			err = TrxSelectFirst(trx,
+			err = TrxSelectFirst(trx.Tx,
 				"SELECT id_value FROM id_lst WHERE id_key = 'entity_hid'",
 				func(row *sql.Row) error {
 					return row.Scan(&modelDef.Entity[idx].EntityHid)
@@ -690,7 +690,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			}
 
 			// INSERT INTO entity_dic (entity_hid, entity_name, entity_digest) VALUES (101, 'Person', '7890abcd')
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO entity_dic"+
 					" (entity_hid, entity_name, entity_digest)"+
 					" VALUES ("+
@@ -710,7 +710,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 
 				modelDef.Entity[idx].Attr[j].ModelId = modelDef.Model.ModelId // update model id with db value
 
-				err = TrxUpdate(trx,
+				err = TrxUpdate(trx.Tx,
 					"INSERT INTO entity_attr"+
 						" (entity_hid, attr_id, attr_name, type_hid, is_internal)"+
 						" VALUES ("+
@@ -736,7 +736,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		// (
 		//   SELECT * FROM model_entity_dic E WHERE E.model_id = 1234 AND E.model_entity_id = 1
 		// )
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO model_entity_dic (model_id, model_entity_id, entity_hid)"+
 				" SELECT "+
 				smId+", "+
@@ -789,7 +789,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//   (model_id, group_id, is_parameter, group_name, is_hidden)
 		// VALUES
 		//   (1234, 4, 1, 'Geo_group', 0)
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO group_lst"+
 				" (model_id, group_id, is_parameter, group_name, is_hidden)"+
 				" VALUES ("+
@@ -814,7 +814,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			//   (model_id, group_id, child_pos, child_group_id, leaf_id)
 			// VALUES
 			//   (1234, 4, 1, NULL, 101)
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO group_pc"+
 					" (model_id, group_id, child_pos, child_group_id, leaf_id)"+
 					" VALUES ("+
@@ -865,7 +865,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 		//   (model_id, model_entity_id, group_id, group_name, is_hidden)
 		// VALUES
 		//   (1234, 4, 1, 'Geo_group', 0)
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"INSERT INTO entity_group_lst"+
 				" (model_id, model_entity_id, group_id, group_name, is_hidden)"+
 				" VALUES ("+
@@ -890,7 +890,7 @@ func doInsertModel(trx *sql.Tx, dbFacet Facet, modelDef *ModelMeta) error {
 			//   (model_id, model_entity_id, group_id, child_pos, child_group_id, attr_id)
 			// VALUES
 			//   (1234, 4, 1, 0, NULL, 101)
-			err = TrxUpdate(trx,
+			err = TrxUpdate(trx.Tx,
 				"INSERT INTO entity_group_pc"+
 					" (model_id, model_entity_id, group_id, child_pos, child_group_id, attr_id)"+
 					" VALUES ("+

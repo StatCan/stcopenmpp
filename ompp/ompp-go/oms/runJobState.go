@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // scan job control directories to read and update job lists: queue, active and history
@@ -219,7 +219,7 @@ func scanStateJobs(doneC <-chan bool) {
 		if len(computeState) <= 0 {
 
 			mpiTotalRes = jsState.LocalRes
-			isMpiLimit = jsState.LocalRes.Cpu > 0
+			isMpiLimit = mpiTotalRes.Cpu > 0
 		} else {
 
 			isMpiLimit = true
@@ -238,7 +238,6 @@ func scanStateJobs(doneC <-chan bool) {
 		qKeys, maxPos, minPos, qTotal, qOwn, qLocalTotal, qLocal, firstHostUse := updateQueueJobs(
 			queueFiles,
 			queueJobs,
-			activeJobs,
 			mpiTotalRes,
 			isMpiLimit,
 			jsState.MpiMaxThreads,
@@ -375,7 +374,7 @@ func scanStateJobs(doneC <-chan bool) {
 
 // insert run job into job map: map job file submission stamp to file content (run job).
 // update last run stamp for oms instances.
-func updateActiveJobs(fLst []string, jobMap map[string]runJobFile, omsActive map[string]omsUsage, activeRuns []runUsage) ([]string, ComputeRes, ComputeRes, ComputeRes, ComputeRes, []runUsage) {
+func updateActiveJobs(fLst []string, activeJobs map[string]runJobFile, omsActive map[string]omsUsage, activeRuns []runUsage) ([]string, ComputeRes, ComputeRes, ComputeRes, ComputeRes, []runUsage) {
 
 	subStamps := make([]string, 0, len(fLst)) // list of submission stamps
 	totalRes := ComputeRes{}
@@ -461,8 +460,7 @@ func updateActiveJobs(fLst []string, jobMap map[string]runJobFile, omsActive map
 
 		subStamps = append(subStamps, stamp)
 
-		if jc, ok := jobMap[stamp]; ok {
-			jobMap[stamp] = jc
+		if _, ok := activeJobs[stamp]; ok {
 			continue // this file already in the jobs list
 		}
 
@@ -471,13 +469,13 @@ func updateActiveJobs(fLst []string, jobMap map[string]runJobFile, omsActive map
 		isOk, err := helper.FromJsonFile(f, &jc)
 		if err != nil {
 			omppLog.LogNoLT(err)
-			jobMap[stamp] = runJobFile{filePath: f, isError: true, oms: oms}
+			activeJobs[stamp] = runJobFile{filePath: f, isError: true, oms: oms}
 		}
 		if !isOk || err != nil {
 			continue // file not exist or invalid
 		}
 
-		jobMap[stamp] = runJobFile{RunJob: jc, filePath: f, oms: oms} // add job into jobs list
+		activeJobs[stamp] = runJobFile{RunJob: jc, filePath: f, oms: oms} // add job into jobs list
 	}
 
 	return subStamps, totalRes, ownRes, localTotalRes, localOwnRes, activeRuns
@@ -487,7 +485,6 @@ func updateActiveJobs(fLst []string, jobMap map[string]runJobFile, omsActive map
 func updateQueueJobs(
 	fLst []string,
 	queueJobs map[string]queueJobFile,
-	activeJobs map[string]runJobFile,
 	mpiTotalRes ComputeRes,
 	isMpiLimit bool,
 	mpiMaxTh int,
@@ -548,23 +545,11 @@ func updateQueueJobs(
 		mem := memoryRunSize(procCount, thCount, procMem, thMem)
 
 		// check resources quota: MPI cpu and memory available and disk usage not over the limit
-		isOver := u.IsDiskOver || (isMpiLimit && cpu > mpiTotalRes.Cpu) || (mpiTotalRes.Mem > 0 && mem > mpiTotalRes.Mem)
-
-		// check resources quota: max cpu memory allowed for each oms instance
-		if !isOver && (maxMpiOwnRes.Cpu > 0 || maxMpiOwnRes.Mem > 0) {
-
-			omsCpu := 0
-			omsMem := 0
-			for stamp := range activeJobs {
-				omsCpu += activeJobs[stamp].Res.Cpu
-				omsMem += activeJobs[stamp].Res.Mem
-
-				isOver = maxMpiOwnRes.Cpu > 0 && omsCpu >= maxMpiOwnRes.Cpu || maxMpiOwnRes.Mem > 0 && omsMem >= mpiTotalRes.Mem
-				if isOver {
-					break
-				}
-			}
-		}
+		isOver := u.IsDiskOver ||
+			isMpiLimit && u.Cpu+cpu > mpiTotalRes.Cpu ||
+			mpiTotalRes.Mem > 0 && u.Mem+mem > mpiTotalRes.Mem ||
+			maxMpiOwnRes.Cpu > 0 && u.Cpu+cpu > maxMpiOwnRes.Cpu ||
+			maxMpiOwnRes.Mem > 0 && u.Mem+mem > maxMpiOwnRes.Mem
 
 		// append to the instance queue
 		qOms, ok := qAll[oms]
@@ -665,41 +650,43 @@ func updateQueueJobs(
 			totalRes.Cpu = totalRes.Cpu + qOms.q[jq].res.Cpu
 			totalRes.Mem = totalRes.Mem + qOms.q[jq].res.Mem
 
-			// if current top job is not exceeding available resources then assign global queue index position
-			if !qOms.q[jq].isOver {
+			// skip job if it exceeding available resources
+			if qOms.q[jq].isOver {
+				continue
+			}
+			// else assign global queue index position
 
-				// check if there are any server(s) exists to run the job
-				srcJhu := jobHostUse{oms: omsKeys[iOms], stamp: qOms.q[jq].stamp, res: qOms.q[jq].res, hostUse: []computeUse{}}
+			// check if there are any server(s) exists to run the job
+			srcJhu := jobHostUse{oms: omsKeys[iOms], stamp: qOms.q[jq].stamp, res: qOms.q[jq].res, hostUse: []computeUse{}}
 
+			if qOms.q[jq].res.Mem > 0 {
+				qOms.q[jq].isOver, _ = findComputeRes(srcJhu, false, mpiMaxTh, hostByMem, computeState)
+			} else {
+				qOms.q[jq].isOver, _ = findComputeRes(srcJhu, false, mpiMaxTh, hostByCpu, computeState)
+			}
+
+			// if job queue not paused then allocate job to the servers and add servers to startup list
+			if !qOms.q[jq].isOver && !qOms.q[jq].isPaused {
+
+				isOver := false
+				var dst jobHostUse
 				if qOms.q[jq].res.Mem > 0 {
-					qOms.q[jq].isOver, _ = findComputeRes(srcJhu, false, mpiMaxTh, hostByMem, computeState)
+					isOver, dst = findComputeRes(srcJhu, true, mpiMaxTh, hostByMem, computeState)
 				} else {
-					qOms.q[jq].isOver, _ = findComputeRes(srcJhu, false, mpiMaxTh, hostByCpu, computeState)
+					isOver, dst = findComputeRes(srcJhu, true, mpiMaxTh, hostByCpu, computeState)
 				}
 
-				// if job queue not paused then allocate job to the servers and add servers to startup list
-				if !qOms.q[jq].isOver && !qOms.q[jq].isPaused {
-
-					isOver := false
-					var dst jobHostUse
-					if qOms.q[jq].res.Mem > 0 {
-						isOver, dst = findComputeRes(srcJhu, true, mpiMaxTh, hostByMem, computeState)
-					} else {
-						isOver, dst = findComputeRes(srcJhu, true, mpiMaxTh, hostByCpu, computeState)
-					}
-
-					// if this is the first job in global queue then save host ini servers
-					if !isOver && isFirstJob {
-						isFirstJob = false
-						qOms.q[jq].isFirst = true
-						firstHostUse = dst
-					}
+				// if this is the first job in global queue then save host ini servers
+				if !isOver && isFirstJob {
+					isFirstJob = false
+					qOms.q[jq].isFirst = true
+					firstHostUse = dst
 				}
+			}
 
-				if !qOms.q[jq].isOver {
-					nextQueueIdx++
-					qOms.q[jq].allQPos = nextQueueIdx // one based index in global queue
-				}
+			if !qOms.q[jq].isOver {
+				nextQueueIdx++
+				qOms.q[jq].allQPos = nextQueueIdx // one based index in global queue
 			}
 		}
 

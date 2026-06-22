@@ -6,8 +6,8 @@ package main
 import (
 	"errors"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // UpdateTaskDef replace or merge task definition: task text (description and notes) and task input worksets into database.
@@ -51,7 +51,7 @@ func (mc *ModelCatalog) UpdateTaskDef(isReplace bool, tpd *db.TaskDefPub) (bool,
 
 	// convert run from "public" into db rows
 	// all input worskset names must exist in workset_lst
-	tm, isSetNotFound, _, err := (&db.TaskPub{TaskDefPub: *tpd}).FromPublic(dbConn, meta, true)
+	tm, isSetNotFound, _, err := (&db.TaskPub{TaskDefPub: *tpd}).FromPublic(dbConn.DB, meta, true)
 	if err != nil {
 		omppLog.Log("Error at modeling task conversion: ", dn, ": ", tn, ": ", err.Error())
 		return false, dn, tn, err
@@ -71,9 +71,9 @@ func (mc *ModelCatalog) UpdateTaskDef(isReplace bool, tpd *db.TaskDefPub) (bool,
 
 	// replace or merge task text and task input worksets into database task_lst, task_txt, task_set tables
 	if isReplace {
-		err = tm.ReplaceTaskDef(dbConn, meta, langMeta)
+		err = tm.ReplaceTaskDef(dbConn.DB, meta, langMeta)
 	} else {
-		err = tm.MergeTaskDef(dbConn, meta, langMeta)
+		err = tm.MergeTaskDef(dbConn.DB, meta, langMeta)
 	}
 	if err != nil {
 		omppLog.Log("Error at update modeling task: ", dn, ": ", tn, ": ", err.Error())
@@ -108,7 +108,7 @@ func (mc *ModelCatalog) DeleteTask(dn, tn string) (bool, error) {
 	}
 
 	// find task in database
-	t, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	t, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return false, err
@@ -118,7 +118,7 @@ func (mc *ModelCatalog) DeleteTask(dn, tn string) (bool, error) {
 	}
 
 	// delete task from database
-	err = db.DeleteTask(dbConn, t.TaskId)
+	err = db.DeleteTask(dbConn.DB, t.TaskId)
 	if err != nil {
 		omppLog.Log("Error at delete task: ", dn, ": ", tn, ": ", err.Error())
 		return false, err

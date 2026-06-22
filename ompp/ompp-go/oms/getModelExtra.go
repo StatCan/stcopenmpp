@@ -6,9 +6,9 @@ package main
 import (
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 	"golang.org/x/text/language"
 )
 
@@ -62,7 +62,7 @@ func (mc *ModelCatalog) ModelProfileByName(dn, profile string) (*db.ProfileMeta,
 	}
 
 	// read profile from database
-	p, err := db.GetProfile(dbConn, profile)
+	p, err := db.GetProfile(dbConn.DB, profile)
 	if err != nil {
 		omppLog.Log("Error at get profile:", dn, ": ", profile, ": ", err)
 		return &db.ProfileMeta{}, false // return empty result: model not found or error
@@ -90,7 +90,7 @@ func (mc *ModelCatalog) ProfileNamesByDigestOrName(dn string) ([]string, bool) {
 	}
 
 	// read profile names from database
-	nameLst, err := db.GetProfileList(dbConn)
+	nameLst, err := db.GetProfileList(dbConn.DB)
 	if err != nil {
 		omppLog.Log("Error at get profile list from model database:", dn, ":", err)
 		return []string{}, false
@@ -226,7 +226,7 @@ func (mc *ModelCatalog) EntityGenByName(dn string, runId int, entityName string)
 	ent := &meta.Entity[eIdx]
 
 	// get list of entity generations for that model run
-	egLst, err := db.GetEntityGenList(dbConn, runId)
+	egLst, err := db.GetEntityGenList(dbConn.DB, runId)
 	if err != nil {
 		omppLog.Log("Error at get run entities:", entityName, ": ", runId, ":", err)
 		return nil, nil, false
@@ -275,7 +275,7 @@ func (mc *ModelCatalog) EntityGenAttrsRunList(dn string, runId int, entityName s
 	}
 
 	// find all run_entity rows for that entity generation
-	runEnt, err := db.GetRunEntityGenByModel(dbConn, entGen.ModelId)
+	runEnt, err := db.GetRunEntityGenByModel(dbConn.DB, entGen.ModelId)
 	if err != nil {
 		return nil, nil, []db.EntityAttrRow{}, []db.RunEntityRow{}, helper.ErrorNew("Error at get run entities by model id:", entGen.ModelId, ":", err)
 	}

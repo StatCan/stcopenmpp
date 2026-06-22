@@ -161,6 +161,7 @@ export default {
     isNoTables () { return !this.tablesRetain || this.tablesRetain.length <= 0 },
     isMicrodata () { return !!this.serverConfig.AllowMicrodata && Mdf.entityCount(this.theModel) > 0 },
     isNoEntityAttrsUse () { return !this.entityAttrsUse || this.entityAttrsUse.length <= 0 },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',
@@ -1646,5 +1647,9 @@ export default {
   mounted () {
     this.doRefresh()
     this.$emit('tab-mounted', 'new-run', { digest: this.digest })
+
+    if (this.isReadonlyServer) {
+      this.$q.notify({ type: 'info', message: this.$t('Model run disabled on the server') })
+    }
   }
 }

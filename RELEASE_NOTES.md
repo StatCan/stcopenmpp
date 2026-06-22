@@ -1,6 +1,59 @@
-# `stcopenmpp` 0.1 Release Notes/Notes de Mise à Jour
+# `stcopenmpp` 0.2 Release Notes/Notes de Mise à Jour
 
 <details open>
+
+<summary>English</summary>
+
+### New or updated features
+* **Open M++:** synched to OpenM++ 1.17.13 (https://github.com/openmpp/main/releases/tag/v1.17.13), which is a recent security patch release. A special thank you to **Anatoly Cherkassky** for all his work on this release:
+	* **C++ core:** security fix: remove polyfill.io from model documentation.
+	* **C++ core:** improve error handling if number of sub-values exceeding number of random streams.
+	* **C++ core:** fix an possible MPI model deadlock if number of CPU cores exceeds number of sub-values.
+	* **C++ and Go:** enforce SQLite database referential integrity.
+	* **Go:** fix sql error if microdata entities group deleted from database.
+	* **Go:** support native Go database drivers for MySQL, PostgreSQL, MS SQL.
+	* **Go and UI:** read-only model publishing, users can view models but not run or update.
+	* **UI:** in table info dialog show expression dimension label only if notes are not empty.
+* **`stcopenmpp` builds:** upgraded build dependencies (7-Zip, Go, Node.js).
+* **`stcopenmpp` builds:** added an Ubuntu 22.04 build.
+* **UI:** updated default path, url and router mode so the links are not broken when launching the UI in a Kubeflow environment.
+* **UI:** changed header text and link to `stcopenmpp` branding.
+* **UI:** changed primary color and favicon bundle to `stcopenmpp` branding.
+* **UI:** fixed broken model documentation links for parameter notes.
+* **Model run log:** changed a couple of labels in the model run log for clarity.
+* **Plugins:** upgraded Matt Warkentin's **openmpp** R package to v0.0.2.
+
+</details>
+
+<details open>
+
+<summary>Français</summary>
+
+### Fonctionnalités nouvelles ou mises à jour
+
+* **OpenM++ :** synchronisé avec OpenM++ 1.17.13 (https://github.com/openmpp/main/releases/tag/v1.17.13), qui est une version récente du correctif de sécurité.. Un merci spécial à **Anatoly Cherkassky** pour tout son travail sur cette sortie :
+	* **C++ core :** correctif de sécurité : supprimer polyfill.io de la documentation du modèle.
+	* **C++ core :** amélioration de la gestion des erreurs si le nombre de sous-valeurs dépasse le nombre de flux aléatoires.
+	* **C++ core :** correction d’un blocage possible du modèle MPI si le nombre de CPU cores dépasse le nombre de sous-valeurs.
+	* **C++ et Go :** renforcent l’intégrité référentielle de la base de données SQLite.
+	* **Go :** corriger l’erreur sql si le groupe d’entités de microdonnées est supprimé de la base de données.
+	* **Go :** prend en charge les pilotes natifs de base de données Go pour MySQL, PostgreSQL, MS SQL.
+	* **Go et UI :** publication de modèles en lecture seule, les utilisateurs peuvent visualiser les modèles mais pas les exécuter ou les mettre à jour.
+	* **UI :** dans la boîte de dialogue d’informations de la table, afficher l’étiquette de dimension d’expression uniquement si les notes ne sont pas vides.
+* **Compilation d'`stcopenmpp` :** mise à jour des dépendances de build (7-Zip, Go, Node.js).
+* **Compilation d'`stcopenmpp` :** ajout d’une version Ubuntu 22.04.
+* **UI :** mise à jour du chemin par défaut, de l’URL et du mode routeur afin que les liens ne soient pas rompus lors du lancement de l’interface utilisateur dans un environnement Kubeflow.
+* **UI :** changement du texte d’en-tête et du lien vers la marque `stcopenmpp`.
+* **UI :** changement de la couleur primaire et du paquet favicon en marque `stcopenmpp`.
+* **UI :** correction des liens de documentation du modèle cassés pour les notes de paramètres.
+* **Journal d’exécution du modèle :** modification de quelques étiquettes dans le journal d’exécution du modèle pour plus de clarté.
+* **Plugins :** mise à jour du paquet R de Matt Warkentin **openmpp** vers la v0.0.2.
+
+</details>
+
+# `stcopenmpp` 0.1 Release Notes/Notes de Mise à Jour
+
+<details close>
 <summary>English</summary>
 
 ### New or updated features
@@ -25,7 +78,7 @@ the output table information modal.
 </details>
 
 
-<details open>
+<details close>
 <summary>Français</summary>
 
 ### Fonctionnalités nouvelles ou mises à jour

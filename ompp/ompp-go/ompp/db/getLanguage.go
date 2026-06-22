@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // GetLanguages return language rows from lang_lst join to lang_word tables and map from lang_code to lang_id.

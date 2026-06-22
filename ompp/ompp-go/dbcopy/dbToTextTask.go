@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy modeling task metadata and run history from database into text json and csv files
@@ -38,20 +38,20 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	}
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	var taskRow *db.TaskRow
 	var outDir string
 	if taskId > 0 {
-		if taskRow, err = db.GetTask(srcDb, taskId); err != nil {
+		if taskRow, err = db.GetTask(srcDb.DB, taskId); err != nil {
 			return err
 		}
 		if taskRow == nil {
@@ -69,7 +69,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 		}
 		outDir = filepath.Join(runOpts.String(outputDirArgKey), modelName+".task."+strconv.Itoa(taskId))
 	} else {
-		if taskRow, err = db.GetTaskByName(srcDb, modelDef.Model.ModelId, taskName); err != nil {
+		if taskRow, err = db.GetTaskByName(srcDb.DB, modelDef.Model.ModelId, taskName); err != nil {
 			return err
 		}
 		if taskRow == nil {
@@ -78,7 +78,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 		outDir = filepath.Join(runOpts.String(outputDirArgKey), modelName+".task."+taskName)
 	}
 
-	meta, err := db.GetTaskFull(srcDb, taskRow, true, "") // get task full metadata, including task run history
+	meta, err := db.GetTaskFull(srcDb.DB, taskRow, true, "") // get task full metadata, including task run history
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 				rIdLst = append(rIdLst, runId)
 
 				// find model run metadata by id
-				runRow, err := db.GetRun(srcDb, runId)
+				runRow, err := db.GetRun(srcDb.DB, runId)
 				if err != nil {
 					return err
 				}
@@ -147,7 +147,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	fileCreated := make(map[string]bool)
 
 	// write task metadata into json file
-	if err = toTaskJson(srcDb, modelDef, meta, outDir, isUseIdNames); err != nil {
+	if err = toTaskJson(srcDb.DB, modelDef, meta, outDir, isUseIdNames); err != nil {
 		return err
 	}
 
@@ -169,7 +169,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 			runIdLst = append(runIdLst, runId)
 
 			// find model run metadata by id
-			runRow, err := db.GetRun(srcDb, runId)
+			runRow, err := db.GetRun(srcDb.DB, runId)
 			if err != nil {
 				return err
 			}
@@ -184,13 +184,13 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 				continue // skip: run not completed
 			}
 
-			rm, err := db.GetRunFullText(srcDb, runRow, true, "") // get full model run metadata
+			rm, err := db.GetRunFullText(srcDb.DB, runRow, true, "") // get full model run metadata
 			if err != nil {
 				return err
 			}
 
 			// write model run metadata into json, parameters and output result values into csv files
-			if err = toRunText(srcDb, modelDef, rm, outDir, "", fileCreated, isUseIdNames); err != nil {
+			if err = toRunText(srcDb.DB, modelDef, rm, outDir, "", fileCreated, isUseIdNames); err != nil {
 				return err
 			}
 		}
@@ -238,7 +238,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 
 	// save task body worksets
 	for k := range meta.Set {
-		if err = fws(srcDb, meta.Set[k], fileCreated); err != nil {
+		if err = fws(srcDb.DB, meta.Set[k], fileCreated); err != nil {
 			return err
 		}
 	}
@@ -246,7 +246,7 @@ func dbToTextTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	// save worksets from model run history
 	for j := range meta.TaskRun {
 		for k := range meta.TaskRun[j].TaskRunSet {
-			if err = fws(srcDb, meta.TaskRun[j].TaskRunSet[k].SetId, fileCreated); err != nil {
+			if err = fws(srcDb.DB, meta.TaskRun[j].TaskRunSet[k].SetId, fileCreated); err != nil {
 				return err
 			}
 		}

@@ -183,13 +183,15 @@ export default {
     chartWidth () { // chart width, us automatic height
       return (!this.prctChartSize || this.prctChartSize <= 0) ? '50%' : this.prctChartSize.toString() + '%'
     },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',
       'wordList'
     ]),
     ...mapState(useServerStateStore, {
-      omsUrl: 'omsUrl'
+      omsUrl: 'omsUrl',
+      serverConfig: 'config'
     }),
     ...mapState(useUiStateStore, [
       'uiLang',

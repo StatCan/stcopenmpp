@@ -47,8 +47,8 @@ export default {
       nDiskUseErr: 0, // disk use error count
       loginUrl: '',
       logoutUrl: '',
-      orgTitle: 'OpenM++',
-      orgLink: 'https://openmpp.org',
+      orgTitle: 'stcopenmpp',
+      orgLink: 'https://github.com/statcan/stcopenmpp',
       isLoginCatch: false,
       modelInfoTickle: false,
       toUpDownSection: 'down',
@@ -222,8 +222,8 @@ export default {
 
       for (const m of this.serverConfig.UiExtra.DefaultTitle) {
         if (m.LangCode === ulc) {
-          this.orgTitle = m?.Label || 'OpenM++'
-          this.orgLink = m?.Link || 'https://openmpp.org'
+          this.orgTitle = m?.Label || 'stcopenmpp'
+          this.orgLink = m?.Link || 'https://github.com/statcan/stcopenmpp'
           break
         }
         const m2p = Mdf.splitLangCode(m.LangCode)
@@ -232,13 +232,13 @@ export default {
           continue
         }
         if (m2p.lower === ui2p.lower) {
-          this.orgTitle = m?.Label || 'OpenM++'
-          this.orgLink = m?.Link || 'https://openmpp.org'
+          this.orgTitle = m?.Label || 'stcopenmpp'
+          this.orgLink = m?.Link || 'https://github.com/statcan/stcopenmpp'
           break
         }
         if (m2p.first === ui2p.first) {
-          this.orgTitle = m?.Label || 'OpenM++'
-          this.orgLink = m?.Link || 'https://openmpp.org'
+          this.orgTitle = m?.Label || 'stcopenmpp'
+          this.orgLink = m?.Link || 'https://github.com/statcan/stcopenmpp'
           break
         }
       }

@@ -9,22 +9,64 @@ import (
 	"strings"
 )
 
-// Facet is type to define database provider and driver facets, ie: name of bigint type
-type Facet uint8
+// Facet is type to define database engine and driver facets, e.g.: name of bigint type
+type Facet uint16
+
+// database provider engine, for example: MySQL engine of MariaDB or MySQL provider
+type Engine uint16
+
+const eShift = 8 // shift of engine part of the facet
+
+const (
+	DefaultFacet = Facet(DefaultEngine<<eShift + Engine(DefaultPhs)) // common default db facet
+
+	SqliteFacet     = Facet(SqliteEngine<<eShift + Engine(QmarkPhs))      // SQLite db facet
+	PostgreSqlFacet = Facet(PostgreSqlEngine<<eShift + Engine(DollarPhs)) // PostgreSQL db facet
+	MySqlFacet      = Facet(MySqlEngine<<eShift + Engine(QmarkPhs))       // MySQL and MariaDB facet
+	MsSqlFacet      = Facet(MsSqlEngine<<eShift + Engine(MsSqlPhs))       // MS SQL db facet
+	OracleFacet     = Facet(OracleEngine<<eShift + Engine(ColonPhs))      // Oracle db facet
+
+	PostgreSqlOdbcFacet = Facet(PostgreSqlEngine<<eShift + Engine(OdbcPhs)) // PostgreSQL db ODBC facet
+	MySqlOdbcFacet      = Facet(MySqlEngine<<eShift + Engine(OdbcPhs))      // MySQL and MariaDB ODBC facet
+	MsSqlOdbcFacet      = Facet(MsSqlEngine<<eShift + Engine(OdbcPhs))      // MS SQL ODBC db facet
+	OracleOdbcFacet     = Facet(OracleEngine<<eShift + Engine(OdbcPhs))     // Oracle ODBC db facet
+	Db2OdbcFacet        = Facet(Db2Engine<<eShift + Engine(OdbcPhs))        // DB2 ODBC db facet
+)
+
+const (
+	DefaultEngine    Engine = iota // common default db engine
+	SqliteEngine                   // SQLite db engine
+	PostgreSqlEngine               // PostgreSQL db engine
+	MySqlEngine                    // MySQL and MariaDB engine
+	MsSqlEngine                    // MS SQL db engine
+	OracleEngine                   // Oracle db engine
+	Db2Engine                      // DB2 db engine
+)
+
+type placeHolderStyle uint8
+
+const (
+	DefaultPhs placeHolderStyle = iota // by default return empty "" string as invalid query parameter placeholder
+	QmarkPhs                           // use ? question mark positional parameter placeholder
+	DollarPhs                          // use $N dollar sign and index PostgreSQL parameter placeholder
+	MsSqlPhs                           // use @pN MS SQL style of positional parameter placeholder
+	ColonPhs                           // use :N colon and index sign positional parameter placeholder
+)
+const OdbcPhs = QmarkPhs // use ? as odbc positional parameter placeholder
+
+// return database provider engine
+func (facet Facet) engine() Engine {
+	return Engine(facet >> eShift)
+}
+
+// return style of query positional parameter placeholder, example: ? for ODBC or $N for PostgreSQL
+func (facet Facet) holderStyle() placeHolderStyle {
+	return placeHolderStyle(facet & 0xFF)
+}
 
 // maxTableNameSize return max length of db table or view name.
 // Current max name sizes: PostgreSQL=63 MySQL=64 MSSQL=128 DB2=128 Oracle=128 (Oracle antiques not supported)
 const maxTableNameSize int = 63
-
-const (
-	DefaultFacet Facet = iota // common default db facet
-	SqliteFacet               // SQLite db facet
-	PgSqlFacet                // PostgreSQL db facet
-	MySqlFacet                // MySQL and MariaDB facet
-	MsSqlFacet                // MS SQL db facet
-	OracleFacet               // Oracle db facet
-	Db2Facet                  // DB2 db facet
-)
 
 // String is default printable value of db facet, Stringer implementation
 func (facet Facet) String() string {
@@ -33,7 +75,7 @@ func (facet Facet) String() string {
 		return "Default db facet"
 	case SqliteFacet:
 		return "Sqlite db facet"
-	case PgSqlFacet:
+	case PostgreSqlFacet:
 		return "PostgreSQL db facet"
 	case MySqlFacet:
 		return "MySQL db facet"
@@ -41,15 +83,21 @@ func (facet Facet) String() string {
 		return "MS SQL db facet"
 	case OracleFacet:
 		return "Oracle db facet"
-	case Db2Facet:
-		return "DB2 db facet"
+	case PostgreSqlOdbcFacet:
+		return "PostgreSQL ODBC facet"
+	case MsSqlOdbcFacet:
+		return "MS SQL ODBC facet"
+	case OracleOdbcFacet:
+		return "Oracle ODBC facet"
+	case Db2OdbcFacet:
+		return "DB2 ODBC facet"
 	}
 	return "Unknown db facet"
 }
 
 // bigintType return type name for BIGINT sql type
 func (facet Facet) bigintType() string {
-	if facet == OracleFacet {
+	if facet.engine() == OracleEngine {
 		return "NUMBER(19)"
 	}
 	return "BIGINT"
@@ -57,7 +105,7 @@ func (facet Facet) bigintType() string {
 
 // floatType return type name for FLOAT standard sql type
 func (facet Facet) floatType() string {
-	if facet == OracleFacet {
+	if facet.engine() == OracleEngine {
 		return "BINARY_DOUBLE"
 	}
 	return "FLOAT"
@@ -65,12 +113,12 @@ func (facet Facet) floatType() string {
 
 // textType return column type DDL for long VARCHAR columns, use it for len > 255.
 func (facet Facet) textType(len int) string {
-	switch facet {
-	case MsSqlFacet:
+	switch facet.engine() {
+	case MsSqlEngine:
 		if len > 4000 {
 			return "TEXT"
 		}
-	case OracleFacet:
+	case OracleEngine:
 		if len > 2000 {
 			return "CLOB"
 		}
@@ -81,10 +129,10 @@ func (facet Facet) textType(len int) string {
 // createTableIfNotExist return sql statement to create table if not exists
 func (facet Facet) createTableIfNotExist(tableName string, bodySql string) string {
 
-	switch facet {
-	case SqliteFacet, PgSqlFacet, MySqlFacet:
+	switch facet.engine() {
+	case SqliteEngine, PostgreSqlEngine, MySqlEngine:
 		return "CREATE TABLE IF NOT EXISTS " + tableName + " " + bodySql
-	case MsSqlFacet:
+	case MsSqlEngine:
 		return "IF NOT EXISTS" +
 			" (SELECT * FROM INFORMATION_SCHEMA.TABLES T WHERE T.TABLE_NAME = " + ToQuoted(tableName) + ") " +
 			" CREATE TABLE " + tableName + " " + bodySql
@@ -95,30 +143,54 @@ func (facet Facet) createTableIfNotExist(tableName string, bodySql string) strin
 // createViewIfNotExist return sql statement to create view if not exists
 func (facet Facet) createViewIfNotExist(viewName string, bodySql string) string {
 
-	switch facet {
-	case SqliteFacet:
+	switch facet.engine() {
+	case SqliteEngine:
 		return "CREATE VIEW IF NOT EXISTS " + viewName + " AS " + bodySql
-	case PgSqlFacet, MySqlFacet:
+	case PostgreSqlEngine, MySqlEngine:
 		return "CREATE OR REPLACE VIEW " + viewName + " AS " + bodySql
-	case MsSqlFacet:
+	case MsSqlEngine:
 		return "CREATE VIEW " + viewName + " AS " + bodySql
-	case OracleFacet, Db2Facet:
+	case OracleEngine, Db2Engine:
 		return "CREATE OR REPLACE VIEW " + viewName + " AS " + bodySql
 	}
 	return "CREATE VIEW " + viewName + " AS " + bodySql
 }
 
-// detectFacet obtains db facet by quiering sql server.
-// It may not be always reliable and even not true facet.
-// It is better to use driver information to determine db facet.
-func detectFacet(dbConn *sql.DB) Facet {
+// return query positional parameter placeholder
+func (facet Facet) PlaceHolder(pos int) string {
 
-	facet := DefaultFacet
+	if pos <= 0 {
+		return "" // error: positive paramter position expected
+	}
+	phs := facet.holderStyle()
+
+	if phs == OdbcPhs {
+		return "?"
+	}
+	switch phs {
+	case QmarkPhs:
+		return "?"
+	case DollarPhs:
+		return "$" + strconv.Itoa(pos)
+	case MsSqlPhs:
+		return "@p" + strconv.Itoa(pos)
+	case ColonPhs:
+		return ":" + strconv.Itoa(pos)
+	}
+	return "" // return empty "" string as invalid parameter palceholder
+}
+
+// Detect db provider engine by quiering sql server.
+// It may not be always reliable and even not true engine.
+// It is better to use driver information to determine db provider.
+func detectEngine(dbConn *sql.DB) Engine {
+
+	eng := DefaultEngine
 
 	// check is it PostgreSQL
 	// check is it MySQL (not reliable) or MariaDB
 	// odbc driver bug (?): PostgreSQL 9.2 + odbc 9.5.400 fails forever after first query failed
-	// that means PostgreSQL facet detection must be first
+	// that means PostgreSQL engine detection must be first
 	_ = SelectRows(dbConn,
 		"SELECT LOWER(VERSION())",
 		func(rows *sql.Rows) error {
@@ -129,17 +201,17 @@ func detectFacet(dbConn *sql.DB) Facet {
 			if s.Valid {
 				v := s.String
 				if strings.Contains(v, "postgresql") {
-					facet = PgSqlFacet
+					eng = PostgreSqlEngine
 				}
-				if facet == DefaultFacet &&
+				if eng == DefaultEngine &&
 					(strings.Contains(v, "mysql") || strings.Contains(v, "mariadb") || strings.HasPrefix(v, "5.")) {
-					facet = MySqlFacet
+					eng = MySqlEngine
 				}
 			}
 			return nil
 		})
-	if facet != DefaultFacet {
-		return facet
+	if eng != DefaultEngine {
+		return eng
 	}
 
 	// check is it SQLite
@@ -151,12 +223,12 @@ func detectFacet(dbConn *sql.DB) Facet {
 				return err
 			}
 			if n.Valid {
-				facet = SqliteFacet
+				eng = SqliteEngine
 			}
 			return nil
 		})
-	if facet != DefaultFacet {
-		return facet
+	if eng != DefaultEngine {
+		return eng
 	}
 
 	// check is it MS SQL
@@ -168,12 +240,12 @@ func detectFacet(dbConn *sql.DB) Facet {
 				return err
 			}
 			if s.Valid {
-				facet = MsSqlFacet
+				eng = MsSqlEngine
 			}
 			return nil
 		})
-	if facet != DefaultFacet {
-		return facet
+	if eng != DefaultEngine {
+		return eng
 	}
 
 	// check is it Oracle
@@ -185,12 +257,12 @@ func detectFacet(dbConn *sql.DB) Facet {
 				return err
 			}
 			if s.Valid {
-				facet = OracleFacet
+				eng = OracleEngine
 			}
 			return nil
 		})
-	if facet != DefaultFacet {
-		return facet
+	if eng != DefaultEngine {
+		return eng
 	}
 
 	// check is it IBM DB2
@@ -202,9 +274,9 @@ func detectFacet(dbConn *sql.DB) Facet {
 				return err
 			}
 			if n.Valid {
-				facet = Db2Facet
+				eng = Db2Engine
 			}
 			return nil
 		})
-	return facet
+	return eng
 }

@@ -133,6 +133,7 @@ export default {
     paramDescr () { return Mdf.descrOfDescrNote(this.paramText) },
     fileSelected () { return !(this.uploadFile === null) },
     isEditUpdated () { return this.edt.isUpdated },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',

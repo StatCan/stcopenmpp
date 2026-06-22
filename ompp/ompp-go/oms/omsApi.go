@@ -587,8 +587,12 @@ func apiRunModelRoutes(router *vestigo.Router) {
 
 // add http web-service /api routes to download and manage files at home/io/download folder
 func apiDownloadRoutes(router *vestigo.Router) {
+	if theCfg.isReadonly {
+		return // download disabled
+	}
 
 	// GET /api/download/log-all
+	router.Get("/api/download/log-all", allLogDownloadGetHandler, logRequest)
 
 	// GET /api/download/log/model/:model
 	router.Get("/api/download/log/model/:model", modelLogDownloadGetHandler, logRequest)
@@ -644,6 +648,9 @@ func apiDownloadRoutes(router *vestigo.Router) {
 
 // add http web-service /api routes to upload and manage files at home/io/upload folder
 func apiUploadRoutes(router *vestigo.Router) {
+	if theCfg.isReadonly {
+		return // upload disabled
+	}
 
 	// GET /api/upload/log-all
 	router.Get("/api/upload/log-all", allLogUploadGetHandler, logRequest)
@@ -702,7 +709,7 @@ func apiUploadRoutes(router *vestigo.Router) {
 func apiFilesRoutes(router *vestigo.Router) {
 
 	// disable user files downloads from home/io if download disabled
-	if theCfg.downloadDir != "" || theCfg.filesDir != theCfg.inOutDir {
+	if theCfg.downloadDir != "" || (theCfg.filesDir != theCfg.inOutDir && theCfg.inOutDir != "") {
 
 		// GET /api/files/file-tree/:ext/path/:path
 		// GET /api/files/file-tree/:ext/path/
@@ -713,26 +720,29 @@ func apiFilesRoutes(router *vestigo.Router) {
 		router.Get("/api/files/file-tree/:ext/path", filesTreeGetHandler, logRequest)
 	}
 
-	// disable user files uploads into home/io if uploadload disabled
-	if theCfg.uploadDir != "" || theCfg.filesDir != theCfg.inOutDir {
+	if !theCfg.isReadonly {
 
-		// POST /api/files/file/:path
-		// POST /api/files/file?path=....
-		router.Post("/api/files/file/:path", filesFileUploadPostHandler, logRequest)
-		router.Post("/api/files/file", filesFileUploadPostHandler, logRequest)
+		// disable user files uploads into home/io if upload disabled
+		if theCfg.uploadDir != "" || (theCfg.filesDir != theCfg.inOutDir && theCfg.inOutDir != "") {
 
-		// PUT /api/files/folder/:path
-		// PUT /api/files/folder?path=....
-		router.Put("/api/files/folder/:path", filesFolderCreatePutHandler, logRequest)
-		router.Put("/api/files/folder", filesFolderCreatePutHandler, logRequest)
+			// POST /api/files/file/:path
+			// POST /api/files/file?path=....
+			router.Post("/api/files/file/:path", filesFileUploadPostHandler, logRequest)
+			router.Post("/api/files/file", filesFileUploadPostHandler, logRequest)
 
-		// DELETE /api/files/delete/:path
-		// DELETE /api/files/delete?path=....
-		router.Delete("/api/files/delete/:path", filesDeleteHandler, logRequest)
-		router.Delete("/api/files/delete", filesDeleteHandler, logRequest)
+			// PUT /api/files/folder/:path
+			// PUT /api/files/folder?path=....
+			router.Put("/api/files/folder/:path", filesFolderCreatePutHandler, logRequest)
+			router.Put("/api/files/folder", filesFolderCreatePutHandler, logRequest)
 
-		// DELETE /api/files/delete-all
-		router.Delete("/api/files/delete-all", filesAllDeleteHandler, logRequest)
+			// DELETE /api/files/delete/:path
+			// DELETE /api/files/delete?path=....
+			router.Delete("/api/files/delete/:path", filesDeleteHandler, logRequest)
+			router.Delete("/api/files/delete", filesDeleteHandler, logRequest)
+
+			// DELETE /api/files/delete-all
+			router.Delete("/api/files/delete-all", filesAllDeleteHandler, logRequest)
+		}
 	}
 }
 
@@ -743,13 +753,16 @@ func apiUserRoutes(router *vestigo.Router) {
 	router.Get("/api/user/view/model/:model", userViewGetHandler, logRequest)
 	router.Get("/api/user/view/model/", http.NotFound)
 
-	// PUT  /api/user/view/model/:model
-	router.Put("/api/user/view/model/:model", userViewPutHandler, logRequest)
-	router.Put("/api/user/view/model/", http.NotFound)
+	if !theCfg.isReadonly {
 
-	// DELETE /api/user/view/model/:model
-	router.Delete("/api/user/view/model/:model", userViewDeleteHandler, logRequest)
-	router.Delete("/api/user/view/model/", http.NotFound)
+		// PUT  /api/user/view/model/:model
+		router.Put("/api/user/view/model/:model", userViewPutHandler, logRequest)
+		router.Put("/api/user/view/model/", http.NotFound)
+
+		// DELETE /api/user/view/model/:model
+		router.Delete("/api/user/view/model/:model", userViewDeleteHandler, logRequest)
+		router.Delete("/api/user/view/model/", http.NotFound)
+	}
 }
 
 // add web-service /api routes service state
@@ -767,28 +780,31 @@ func apiServiceRoutes(router *vestigo.Router) {
 	// POST /api/service/disk-use/refresh
 	router.Post("/api/service/disk-use/refresh", serviceRefreshDiskUseHandler, logRequest)
 
-	// GET /api/service/job/active/:job
-	// GET /api/service/job/queue/:job
-	// GET /api/service/job/history/:job
-	router.Get("/api/service/job/active/:job", jobActiveHandler, logRequest)
-	router.Get("/api/service/job/queue/:job", jobQueueHandler, logRequest)
-	router.Get("/api/service/job/history/:job", jobHistoryHandler, logRequest)
-	router.Get("/api/service/job/active/", http.NotFound)
-	router.Get("/api/service/job/queue/", http.NotFound)
-	router.Get("/api/service/job/history/", http.NotFound)
+	if !theCfg.isReadonly {
 
-	// PUT /api/service/job/move/:pos/:job
-	router.Put("/api/service/job/move/:pos/:job", jobMoveHandler, logRequest)
-	router.Put("/api/service/job/move/:pos/", http.NotFound)
-	router.Put("/api/service/job/move/", http.NotFound)
+		// GET /api/service/job/active/:job
+		// GET /api/service/job/queue/:job
+		// GET /api/service/job/history/:job
+		router.Get("/api/service/job/active/:job", jobActiveHandler, logRequest)
+		router.Get("/api/service/job/queue/:job", jobQueueHandler, logRequest)
+		router.Get("/api/service/job/history/:job", jobHistoryHandler, logRequest)
+		router.Get("/api/service/job/active/", http.NotFound)
+		router.Get("/api/service/job/queue/", http.NotFound)
+		router.Get("/api/service/job/history/", http.NotFound)
 
-	// DELETE /api/service/job/delete/history/:job
-	router.Delete("/api/service/job/delete/history/", http.NotFound)
-	router.Delete("/api/service/job/delete/history/:job", jobHistoryDeleteHandler, logRequest)
+		// PUT /api/service/job/move/:pos/:job
+		router.Put("/api/service/job/move/:pos/:job", jobMoveHandler, logRequest)
+		router.Put("/api/service/job/move/:pos/", http.NotFound)
+		router.Put("/api/service/job/move/", http.NotFound)
 
-	// DELETE /api/service/job/delete/history-all/:success
-	router.Delete("/api/service/job/delete/history-all/:success", jobHistoryAllDeleteHandler, logRequest)
-	router.Delete("/api/service/job/delete/history-all/", http.NotFound)
+		// DELETE /api/service/job/delete/history/:job
+		router.Delete("/api/service/job/delete/history/", http.NotFound)
+		router.Delete("/api/service/job/delete/history/:job", jobHistoryDeleteHandler, logRequest)
+
+		// DELETE /api/service/job/delete/history-all/:success
+		router.Delete("/api/service/job/delete/history-all/:success", jobHistoryAllDeleteHandler, logRequest)
+		router.Delete("/api/service/job/delete/history-all/", http.NotFound)
+	}
 }
 
 // add web-service /api routes for oms instance administrative tasks
@@ -796,6 +812,11 @@ func apiAdminRoutes(router *vestigo.Router) {
 
 	// POST /api/admin/all-models/refresh
 	router.Post("/api/admin/all-models/refresh", allModelsRefreshHandler, logRequest)
+
+	// disable any other /api/admin/ routes
+	if theCfg.isReadonly {
+		return
+	}
 
 	// POST /api/admin/all-models/close
 	router.Post("/api/admin/all-models/close", allModelsCloseHandler, logRequest)
