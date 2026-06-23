@@ -52,7 +52,7 @@ To install `stcopenmpp`, download the zip file and extract the source code and b
 
 **Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the .cmd window:
 
-`**setx OM_ROOT 'C:/path/to/your/current/stcopenmpp/instance'**`
+`setx OM_ROOT 'C:/path/to/your/current/stcopenmpp/instance'`
 
 
 ## Steps for running `stcopenmpp` in Linux
@@ -67,7 +67,7 @@ To install `stcopenmpp`, download the zip file and extract the source code and b
 
 **Important note:** If OM_ROOT was previously set as a permanent environment variable and if it differs from the current `stcopenmpp` location, it will need to be changed prior to launching the OMS. Use the following command in the Linux console: 
 
-`**export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance**`
+`export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance`
 
 ## Using `stcopenmpp` with built-in models
 
@@ -163,7 +163,7 @@ Pour installer `stcopenmpp`, téléchargez le fichier compressé et extrayez le 
 
 **Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : 
 
-`**setx OM_ROOT 'C:/path/to/your/current/stcopenmpp/instance'**`
+`setx OM_ROOT 'C:/path/to/your/current/stcopenmpp/instance'`
 
 ## Étapes pour exécuter `stcopenmpp` dans Linux
 
@@ -177,7 +177,7 @@ Pour installer `stcopenmpp`, téléchargez le fichier compressé et extrayez le 
 
 **Note importante:** Si OM_ROOT était auparavant défini comme variable d’environnement permanente et qu’il diffère de l’emplacement actuel de `stcopenmpp`, il devra être modifié avant le lancement du service OMS. Utilisez la commande suivante dans la console Linux : 
 
-`**export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance**`
+`export OM_ROOT=/home/path/to/your/current/stcopenmpp/instance`
 
 ## Utilisation de `stcopenmpp` avec des modèles intégrés
 
