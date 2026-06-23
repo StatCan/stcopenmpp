@@ -9,9 +9,9 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // match user language to the list of model languages, if no match then return empty "" model language code

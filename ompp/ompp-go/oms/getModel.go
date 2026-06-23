@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 	"golang.org/x/text/language"
 )
 
@@ -186,7 +186,7 @@ func (mc *ModelCatalog) loadModelText(dn string) bool {
 	}
 
 	// read model text metadata from database and update catalog
-	txt, err := db.GetModelText(dbConn, mdRow.ModelId, "", true)
+	txt, err := db.GetModelText(dbConn.DB, mdRow.ModelId, "", true)
 	if err != nil {
 		omppLog.Log("Error at get model text metadata:", dn, ":", err)
 		return false

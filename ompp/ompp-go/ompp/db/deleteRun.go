@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // Delete model run: delete metadata, parameters run values and output tables run values from database.

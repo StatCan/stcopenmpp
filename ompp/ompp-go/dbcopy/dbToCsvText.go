@@ -7,8 +7,8 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // toModelTextCsv writes model text metadata (description and notes) into csv files.

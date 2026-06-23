@@ -489,6 +489,7 @@
           <q-separator />
 
           <q-item
+            :disable="isReadonlyServer"
             @click="onSaveDefaultView"
             clickable
             v-close-popup
@@ -1027,6 +1028,7 @@
     <q-separator vertical inset spaced="sm" color="secondary" />
 
     <q-btn
+      :disable="isReadonlyServer"
       @click="onSaveDefaultView"
       flat
       dense

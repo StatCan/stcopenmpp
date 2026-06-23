@@ -730,9 +730,9 @@ CREATE TABLE run_parameter_import
   from_model_digest  VARCHAR(32)  NOT NULL, -- source model digest
   from_run_id        INT          NOT NULL, -- source run id
   from_run_digest    VARCHAR(32)  NOT NULL, -- source run digest
-  PRIMARY KEY (run_id, parameter_hid),
-  CONSTRAINT run_parameter_import_mk
-             FOREIGN KEY (run_id, parameter_hid) REFERENCES run_parameter (run_id, parameter_hid)
+  PRIMARY KEY (run_id, parameter_hid)
+  -- CONSTRAINT run_parameter_import_mk
+  --           FOREIGN KEY (from_run_id, parameter_hid) REFERENCES run_parameter (run_id, parameter_hid)
 );
 
 --
@@ -813,6 +813,7 @@ CREATE TABLE run_entity
   run_id         INT         NOT NULL, -- master key
   entity_gen_hid INT         NOT NULL, -- entity generation unique id
   base_run_id    INT         NOT NULL, -- source run id to select entity attribute values
+  row_count      INT         NOT NULL, -- if not zero then entity microdata row count
   value_digest   VARCHAR(32),          -- if not NULL then digest of attribute values for the run
   PRIMARY KEY (run_id, entity_gen_hid),
   CONSTRAINT run_entity_mk

@@ -26,17 +26,26 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
+
+	_ "github.com/mattn/go-sqlite3"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/microsoft/go-mssqldb"
 )
 
 // Database connection values
 const (
-	SQLiteDbDriver  = "SQLite"  // default db driver name
-	SQLiteTimeout   = 86400     // default SQLite busy timeout
-	Sqlite3DbDriver = "sqlite3" // SQLite db driver name
-	OdbcDbDriver    = "odbc"    // ODBC db driver name
+	SQLiteDbDriver     = "SQLite"    // default db driver name
+	Sqlite3DbDriver    = "sqlite3"   // actual SQLite db driver name
+	OdbcDbDriver       = "odbc"      // ODBC db driver name
+	PostgreSqlDbDriver = "postgres"  // PostgreSQL db driver name
+	MySqlDbDriver      = "mysql"     // MySQL and MariaDB db driver name
+	MsSqlDbDriver      = "sqlserver" // MS SQL Server db driver name
 )
+const SQLiteTimeout = 86400 // default SQLite busy timeout
 
 // MinSchemaVersion is a minimal compatible db schema version
 const MinSchemaVersion = 105
@@ -44,36 +53,53 @@ const MinSchemaVersion = 105
 // MaxSchemaVersion is a maximum compatible db schema version
 const MaxSchemaVersion = 105
 
+// database connections pool and database engine facet
+type Dbc struct {
+	*sql.DB
+	Dbf Facet // database engine and driver facets
+}
+
+// database transaction and database engine facet
+type DbTrx struct {
+	*sql.Tx
+	Dbf Facet // database engine and driver facets
+}
+
 // Open database connection.
 //
-// Default driver name: "SQLite" and connection string is compatible with model connection, ie:
+// Default driver name: "SQLite" and connection string is compatible with model connection, e.g:
 //
-//	Database=modelName.sqlite; Timeout=86400; OpenMode=ReadWrite;
+//	driver name: "" empty
+//	driver name: SQLite
+//	Database=modelName.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadWrite;
 //
-// Otherwise it is expected to be driver-specific connection string, ie:
+// Otherwise it is expected to be driver name and connection string, e.g:
 //
+//	driver name: odbc
 //	DSN=ms2014; UID=sa; PWD=secret;
-//	file:m1.sqlite?mode=rw&_busy_timeout=86400000
 //
-// If isFacetRequired is true then database facet determined
-func Open(dbConnStr, dbDriver string, isFacetRequired bool) (*sql.DB, Facet, error) {
+//	driver name: sqlite3
+//	file:m1.sqlite?mode=rw&_foreign_keys=on&_busy_timeout=86400000
+func Open(dbConnStr, dbDriver string) (Dbc, error) {
+
+	// detect driver name
+	if dbDriver == "" && strings.HasPrefix(dbConnStr, "postgresql") {
+		dbDriver = PostgreSqlDbDriver
+	}
+	if dbDriver == "" && (strings.HasPrefix(dbConnStr, "mysql") || strings.HasPrefix(dbConnStr, "mariadb")) {
+		dbDriver = MySqlDbDriver
+	}
+	if dbDriver == "" && strings.HasPrefix(dbConnStr, "sqlserver") {
+		dbDriver = MsSqlDbDriver
+	}
 
 	// convert default SQLite connection string into sqlite3 format
 	// delete existing sqlite file if required
-	facet := DefaultFacet
 	if dbDriver == "" || dbDriver == SQLiteDbDriver {
 		var err error
 		if dbConnStr, dbDriver, err = prepareSqlite(dbConnStr); err != nil {
-			return nil, DefaultFacet, err
+			return Dbc{Dbf: DefaultFacet}, err
 		}
-	}
-	if dbDriver == Sqlite3DbDriver { // at this point SQLite pseudo name replaced by "sqlite3" db-driver name
-		facet = SqliteFacet
-	}
-
-	// check if ODBC compiled in, use go install -tags odbc to do this
-	if !IsOdbcSupported && dbDriver == OdbcDbDriver {
-		return nil, DefaultFacet, helper.ErrorNew("ODBC database connection not supported (executable build without ODBC library)")
 	}
 
 	// empty connection string likely produce error message "invalid openM++ database", explain to the user source of the problem
@@ -86,17 +112,93 @@ func Open(dbConnStr, dbDriver string, isFacetRequired bool) (*sql.DB, Facet, err
 
 	dbConn, err := sql.Open(dbDriver, dbConnStr)
 	if err != nil {
-		return nil, DefaultFacet, err
+		return Dbc{Dbf: DefaultFacet}, err
 	}
 
 	// determine db facet if requered and not defined by driver (example: odbc)
-	if isFacetRequired && facet == DefaultFacet {
-		facet = detectFacet(dbConn)
-	}
-	if isFacetRequired {
-		omppLog.LogSql(facet.String())
+	facet := DefaultFacet
+
+	switch strings.ToLower(dbDriver) {
+	case Sqlite3DbDriver: // at this point "SQLite" pseudo name replaced by "sqlite3" db-driver name
+		facet = SqliteFacet
+	case PostgreSqlDbDriver:
+		facet = PostgreSqlFacet
+	case MySqlDbDriver:
+		facet = MySqlFacet
+	case MsSqlDbDriver:
+		facet = MsSqlFacet
+	case OdbcDbDriver: // check if ODBC compiled in, use go install -tags odbc to do this
+		if !IsOdbcSupported {
+			return Dbc{Dbf: DefaultFacet}, helper.ErrorNew("ODBC database connection not supported (executable build without ODBC library)")
+		}
+	default: // at this point "" empty driver name replaced by "sqlite3" db-driver name
+		return Dbc{Dbf: DefaultFacet}, helper.ErrorNew("Invalid database driver name")
 	}
 
+	if facet == DefaultFacet {
+		if dbDriver != "odbc" {
+			return Dbc{Dbf: DefaultFacet}, helper.ErrorNew("Invalid database driver name", dbDriver)
+		}
+
+		engine := detectEngine(dbConn)
+
+		switch engine {
+		case SqliteEngine:
+			facet = SqliteFacet
+		case PostgreSqlEngine:
+			facet = PostgreSqlOdbcFacet
+		case MySqlEngine:
+			facet = MySqlOdbcFacet
+		case MsSqlEngine:
+			facet = MsSqlOdbcFacet
+		case OracleEngine:
+			facet = OracleOdbcFacet
+		case Db2Engine:
+			facet = Db2OdbcFacet
+		}
+	}
+	omppLog.LogSql(facet.String())
+
+	err = connectionSetup(dbDriver, facet.engine(), dbConn) // apply provider-specific connecton settings
+	if err != nil {
+		return Dbc{Dbf: DefaultFacet}, err
+	}
+
+	return Dbc{DB: dbConn, Dbf: facet}, nil
+}
+
+// set connection properties using OM_DB_SET_{vendor-or-driver-name} environment variable, for example MySQL:
+//
+//	set OM_DB_SET_mysql=SET @@SQL_MODE = CONCAT(@@SQL_MODE, ',PIPES_AS_CONCAT,ANSI_QUOTES,NO_BACKSLASH_ESCAPES'), AUTOCOMMIT = 0
+//
+// names are: driver name or one of: sqlite3, mysql, postgresql, sqlserver, oracle, db2
+func connectionSetup(dbDriver string, engine Engine, dbConn *sql.DB) error {
+
+	s := ""
+	switch engine {
+	case SqliteEngine:
+		s = os.Getenv("OM_DB_SET_sqlite3")
+	case MySqlEngine:
+		s = os.Getenv("OM_DB_SET_mysql")
+	case PostgreSqlEngine:
+		s = os.Getenv("OM_DB_SET_postgresql")
+	case MsSqlEngine:
+		s = os.Getenv("OM_DB_SET_sqlserver")
+	case OracleEngine:
+		s = os.Getenv("OM_DB_SET_oracle")
+	case Db2Engine:
+		s = os.Getenv("OM_DB_SET_db2")
+	default:
+		s = os.Getenv("OM_DB_SET_" + dbDriver)
+	}
+
+	if s != "" {
+		err := Update(dbConn, s)
+		if err != nil {
+			omppLog.LogSql(err.Error())
+			return err
+		}
+	}
 	/*
 		// to avoid database lock issues for SQLite with SQLITE_THREADSAFE=1
 		if facet == SqliteFacet || dbDriver == Sqlite3DbDriver {
@@ -104,12 +206,12 @@ func Open(dbConnStr, dbDriver string, isFacetRequired bool) (*sql.DB, Facet, err
 		}
 	*/
 
-	return dbConn, facet, nil
+	return nil
 }
 
 // return SQLite connection string and driver name based on model name:
 //
-//	Database=modelName.sqlite; Timeout=86400; OpenMode=ReadWrite;
+//	Database=modelName.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadWrite;
 func IfEmptyMakeDefault(modelName, sqlitePath, dbConnStr, dbDriver string) (string, string) {
 	if dbDriver == "" {
 		dbDriver = SQLiteDbDriver
@@ -126,7 +228,7 @@ func IfEmptyMakeDefault(modelName, sqlitePath, dbConnStr, dbDriver string) (stri
 
 // return read-only SQLite connection string and driver name based on model name:
 //
-//	Database=modelName.sqlite; Timeout=86400; OpenMode=ReadWrite;
+//	Database=modelName.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadWrite;
 func IfEmptyMakeDefaultReadOnly(modelName, sqlitePath, dbConnStr, dbDriver string) (string, string) {
 	if dbDriver == "" {
 		dbDriver = SQLiteDbDriver
@@ -143,16 +245,16 @@ func IfEmptyMakeDefaultReadOnly(modelName, sqlitePath, dbConnStr, dbDriver strin
 
 // return default SQLite connection string based on model.sqlite file path:
 //
-//	Database=model.sqlite; Timeout=86400; OpenMode=ReadWrite;
+//	Database=model.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadWrite;
 func MakeSqliteDefault(sqlitePath string) string {
-	return "Database=" + sqlitePath + "; Timeout=" + strconv.Itoa(SQLiteTimeout) + "; OpenMode=ReadWrite;"
+	return "Database=" + sqlitePath + "; Timeout=" + strconv.Itoa(SQLiteTimeout) + "; ForeignKeys = 1; OpenMode=ReadWrite;"
 }
 
 // return default read-only SQLite connection string based on model.sqlite file path:
 //
-//	Database=model.sqlite; Timeout=86400; OpenMode=ReadOnly;
+//	Database=model.sqlite; Timeout=86400; ForeignKeys = 1; OpenMode=ReadOnly;
 func MakeSqliteDefaultReadOnly(sqlitePath string) string {
-	return "Database=" + sqlitePath + "; Timeout=" + strconv.Itoa(SQLiteTimeout) + "; OpenMode=ReadOnly;"
+	return "Database=" + sqlitePath + "; Timeout=" + strconv.Itoa(SQLiteTimeout) + "; ForeignKeys = 1; OpenMode=ReadOnly;"
 }
 
 // Convert SQLite connection string into "sqlite3" format and delete existing db.slite file if required.
@@ -163,6 +265,7 @@ func MakeSqliteDefaultReadOnly(sqlitePath string) string {
 //	Timeout - (optional) table lock "busy" timeout in seconds, default=0
 //	OpenMode - (optional) database file open mode: ReadOnly, ReadWrite, Create, default=ReadOnly
 //	DeleteExisting - (optional) if true then delete existing database file, default: false
+//	ForeignKeys - (optional) boolean to control foreign_keys, by default: PRAGMA foreign_keys = on
 func prepareSqlite(dbConnStr string) (string, string, error) {
 
 	// parse SQLite connection string
@@ -205,6 +308,20 @@ func prepareSqlite(dbConnStr string) (string, string, error) {
 		}
 	}
 
+	// if foreign key true/false explicitly specified, by default: "PRAGMA foreign_keys = on"
+	fk := ""
+	s = kv["ForeignKeys"]
+	if s != "" {
+		isFk, err := strconv.ParseBool(s)
+		if err != nil {
+			return "", "", err
+		}
+		fk = "on"
+		if !isFk {
+			fk = "off"
+		}
+	}
+
 	// if required delete source file
 	s = kv["DeleteExisting"]
 	if s != "" {
@@ -221,6 +338,9 @@ func prepareSqlite(dbConnStr string) (string, string, error) {
 	s3Conn := "file:" + dbPath + "?mode=" + m
 	if t != 0 {
 		s3Conn += "&_busy_timeout=" + strconv.Itoa(1000*t)
+	}
+	if fk != "" {
+		s3Conn += "&_foreign_keys=" + fk
 	}
 
 	return s3Conn, Sqlite3DbDriver, nil

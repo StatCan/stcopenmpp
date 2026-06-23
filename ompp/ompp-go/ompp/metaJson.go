@@ -8,8 +8,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // model type metadata, "unpacked" during marshaled to json (range enums restored)

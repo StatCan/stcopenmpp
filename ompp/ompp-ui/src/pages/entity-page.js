@@ -154,13 +154,15 @@ export default {
       const mv = this?.modelViewSelected(this.digest)
       return !!mv && Array.isArray(mv?.digestCompareList) && mv.digestCompareList.length > 0
     },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',
       'theModelUpdated'
     ]),
     ...mapState(useServerStateStore, {
-      omsUrl: 'omsUrl'
+      omsUrl: 'omsUrl',
+      serverConfig: 'config'
     }),
     ...mapState(useUiStateStore, [
       'uiLang',

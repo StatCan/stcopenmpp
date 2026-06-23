@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // UpdateWorksetParameterFrom add new or replace existing workset parameter.
@@ -22,7 +22,7 @@ import (
 // Set name is used to find workset and set id updated with actual database value.
 // Workset must be read-write for replace or merge.
 func (meta *WorksetMeta) UpdateWorksetParameterFrom(
-	dbConn *sql.DB, modelDef *ModelMeta, isReplaceMeta bool, param *ParamRunSetPub, langDef *LangMeta, from func() (interface{}, error),
+	dbConn Dbc, modelDef *ModelMeta, isReplaceMeta bool, param *ParamRunSetPub, langDef *LangMeta, from func() (interface{}, error),
 ) (int, error) {
 
 	// validate parameters
@@ -72,7 +72,7 @@ func (meta *WorksetMeta) UpdateWorksetParameterFrom(
 			return 0, errors.New("parameter not found: " + param.Name)
 		}
 
-		err = doWriteSetParameterFrom(trx, pm, meta.Set.SetId, param.SubCount, param.DefaultSubId, false, from, "")
+		err = doWriteSetParameterFrom(DbTrx{Tx: trx, Dbf: dbConn.Dbf}, pm, meta.Set.SetId, param.SubCount, param.DefaultSubId, false, from, "")
 		if err != nil {
 			trx.Rollback()
 			return 0, err

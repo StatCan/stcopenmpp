@@ -4,9 +4,7 @@
 package main
 
 import (
-	"database/sql"
-
-	"github.com/stcopenmpp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
 	"golang.org/x/text/language"
 )
 
@@ -18,6 +16,7 @@ func (mc *ModelCatalog) toPublicConfig() ModelCatalogConfig {
 	return ModelCatalogConfig{
 		ModelDir:        mc.modelDir,
 		ModelLogDir:     mc.modelLogDir,
+		ModelDocDir:     theCfg.docDir,
 		IsLogDirEnabled: mc.isLogDirEnabled,
 		LastTimeStamp:   mc.lastTimeStamp,
 	}
@@ -95,15 +94,15 @@ func (mc *ModelCatalog) modelBasicByDigestOrName(dn string) (modelBasic, bool) {
 
 // modelMeta return model metadata and database connection by digest or model name.
 // It is also return boolean success flag if both model metadata pointer and connection pointer are not nil.
-func (mc *ModelCatalog) modelMeta(dn string) (*db.ModelMeta, *sql.DB, bool) {
+func (mc *ModelCatalog) modelMeta(dn string) (*db.ModelMeta, db.Dbc, bool) {
 	mc.theLock.Lock()
 	defer mc.theLock.Unlock()
 
 	idx, ok := mc.indexByDigestOrName(dn)
 	if !ok {
-		return nil, nil, false // model not found, empty result
+		return nil, db.Dbc{DB: nil, Dbf: db.DefaultFacet}, false // model not found, empty result
 	}
-	return mc.modelLst[idx].meta, mc.modelLst[idx].dbConn, (mc.modelLst[idx].meta != nil && mc.modelLst[idx].dbConn != nil)
+	return mc.modelLst[idx].meta, mc.modelLst[idx].dbConn, (mc.modelLst[idx].meta != nil && mc.modelLst[idx].dbConn.DB != nil)
 }
 
 // modelTextMeta return model text metadata:

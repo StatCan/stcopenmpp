@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // return service configuration: model catalog, run catalog, job service and disk use configuartion.
@@ -32,6 +32,7 @@ func serviceConfigHandler(w http.ResponseWriter, r *http.Request) {
 		IsDiskUse      bool               // if true then storage usage control enabled
 		IsDiskCleanup  bool               // if true then disk cleanup enabled
 		IsAdminAll     bool               // if true then it is global admin service
+		IsReadonly     bool               // if true then only read API enabled, no update, download, upload, model run or admin API allowed
 		JobServicePub                     // jobs service state: paused, resources usage and limits
 		DiskUse        diskUseConfig      // disk use config
 		Env            map[string]string  // server config environmemt variables for UI
@@ -48,6 +49,7 @@ func serviceConfigHandler(w http.ResponseWriter, r *http.Request) {
 		AllowMicrodata: theCfg.isMicrodata,
 		IsJobControl:   theCfg.isJobControl,
 		IsAdminAll:     theCfg.isAdminAll,
+		IsReadonly:     theCfg.isReadonly,
 		JobServicePub:  theRunCatalog.getJobServicePub(),
 		IsModelDoc:     theCfg.docDir != "",
 		IsDiskUse:      theCfg.isDiskUse,

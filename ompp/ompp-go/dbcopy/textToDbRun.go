@@ -4,17 +4,16 @@
 package main
 
 import (
-	"database/sql"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy model run from text json and csv files into database
@@ -109,36 +108,32 @@ func textToDbRun(modelName string, modelDigest string, runOpts *config.RunOption
 	}
 
 	// open source database connection and check is it valid
-	dn := runOpts.String(toDbDriverArgKey)
-	if dn == "" && runOpts.IsExist(dbDriverArgKey) {
-		dn = runOpts.String(dbDriverArgKey)
-	}
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), dn)
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
-	dstDb, dbFacet, err := db.Open(cs, dn, true)
+	dstDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(dstDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// get full list of languages
-	langDef, err := db.GetLanguages(dstDb)
+	langDef, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
 
 	// read from metadata json and csv files and update target database
-	dstId, err := fromRunTextToDb(dstDb, dbFacet, modelDef, langDef, runName, metaPath)
+	dstId, err := fromRunTextToDb(dstDb, modelDef, langDef, runName, metaPath)
 	if err != nil {
 		return err
 	}
@@ -153,8 +148,7 @@ func textToDbRun(modelName string, modelDigest string, runOpts *config.RunOption
 // from csv and json files, convert it to db cells and insert into database.
 // Double format is used for float model types digest calculation, if non-empty format supplied
 func fromRunTextListToDb(
-	dbConn *sql.DB,
-	dbFacet db.Facet,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	langDef *db.LangMeta,
 	inpDir string,
@@ -176,7 +170,7 @@ func fromRunTextListToDb(
 	// update model run digest
 	for k := range fl {
 
-		_, err := fromRunTextToDb(dbConn, dbFacet, modelDef, langDef, "", fl[k])
+		_, err := fromRunTextToDb(dbConn, modelDef, langDef, "", fl[k])
 		if err != nil {
 			return err
 		}
@@ -192,8 +186,7 @@ func fromRunTextListToDb(
 // Double format is used for float model types digest calculation, if non-empty format supplied
 // it return source run id (run id from metadata json file) and destination run id
 func fromRunTextToDb(
-	dbConn *sql.DB,
-	dbFacet db.Facet,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	langDef *db.LangMeta,
 	srcName string,
@@ -255,7 +248,7 @@ func fromRunTextToDb(
 	}
 
 	// save model run
-	isExist, err = meta.UpdateRun(dbConn, modelDef, langDef, theCfg.doubleFmt)
+	isExist, err = meta.UpdateRun(dbConn.DB, modelDef, langDef, theCfg.doubleFmt)
 	if err != nil {
 		return 0, err
 	}
@@ -300,7 +293,7 @@ func fromRunTextToDb(
 			omppLog.Log("Cleanup on error: delete model run", srcName, dstId)
 
 			// delete model run on error to rollback results of UpdateRun() call above
-			e := db.DeleteRun(dbConn, dstId)
+			e := db.DeleteRun(dbConn.DB, dstId)
 			if e != nil {
 				omppLog.LogFmt("Failed to delete model run %s id: %d: %v", srcName, dstId, e)
 			}
@@ -348,24 +341,22 @@ func fromRunTextToDb(
 
 		err := writeTableFromCsvFiles(dbConn, modelDef, tblLt, tableCsvDir, cvtExpr, cvtAcc)
 		if err != nil {
-			if err != nil {
-				omppLog.Log("Error at:", tblLt.Name, ":", err)
-				omppLog.Log("Cleanup on error: delete model run", srcName, dstId)
+			omppLog.Log("Error at:", tblLt.Name, ":", err)
+			omppLog.Log("Cleanup on error: delete model run", srcName, dstId)
 
-				// delete model run on error to rollback results of UpdateRun() call above
-				e := db.DeleteRun(dbConn, dstId)
-				if e != nil {
-					omppLog.LogFmt("Failed to delete model run %s id: %d: %v", srcName, dstId, e)
-				}
-				return 0, err // return original error
+			// delete model run on error to rollback results of UpdateRun() call above
+			e := db.DeleteRun(dbConn.DB, dstId)
+			if e != nil {
+				omppLog.LogFmt("Failed to delete model run %s id: %d: %v", srcName, dstId, e)
 			}
+			return 0, err // return original error
 		}
 	}
 
 	// update model run digest
 	if meta.Run.ValueDigest == "" {
 
-		svd, err := db.UpdateRunValueDigest(dbConn, dstId)
+		svd, err := db.UpdateRunValueDigest(dbConn.DB, dstId)
 		if err != nil {
 			return 0, err
 		}
@@ -397,13 +388,13 @@ func fromRunTextToDb(
 
 			logT = omppLog.LogIfTime(logT, logPeriod, helper.Fmt("    %d of %d: %s", j, nMd, microLt.Name))
 
-			err := writeMicroFromCsvFile(dbConn, dbFacet, modelDef, meta, microLt, microCsvDir, cvtMicro)
+			err := writeMicroFromCsvFile(dbConn, modelDef, meta, microLt, microCsvDir, cvtMicro)
 			if err != nil {
 				omppLog.Log("Error at:", pub.Entity[j].Name, ":", err)
 				omppLog.Log("Cleanup on error: delete model run", srcName, dstId)
 
 				// delete model run on error to rollback results of UpdateRun() call above
-				e := db.DeleteRun(dbConn, dstId)
+				e := db.DeleteRun(dbConn.DB, dstId)
 				if e != nil {
 					omppLog.Log("Failed to delete model run %s id: %d: %v", srcName, dstId, e)
 				}

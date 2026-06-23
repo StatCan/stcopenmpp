@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // copy modeling task metadata and run history from json files into database
@@ -82,30 +82,26 @@ func textToDbTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	}
 
 	// open source database connection and check is it valid
-	dn := runOpts.String(toDbDriverArgKey)
-	if dn == "" && runOpts.IsExist(dbDriverArgKey) {
-		dn = runOpts.String(dbDriverArgKey)
-	}
-	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), dn)
+	cs, dn := db.IfEmptyMakeDefault(modelName, runOpts.String(toSqliteArgKey), runOpts.String(toDbConnStrArgKey), theCfg.dstDbDriver)
 
-	dstDb, dbFacet, err := db.Open(cs, dn, true)
+	dstDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer dstDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(dstDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dstDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(dstDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(dstDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
 
 	// get full list of languages
-	langDef, err := db.GetLanguages(dstDb)
+	langDef, err := db.GetLanguages(dstDb.DB)
 	if err != nil {
 		return err
 	}
@@ -202,7 +198,7 @@ func textToDbTask(modelName string, modelDigest string, runOpts *config.RunOptio
 			}
 
 			// read from metadata json and csv files and update target database
-			dstId, err := fromRunTextToDb(dstDb, dbFacet, modelDef, langDef, runName, jsonPath)
+			dstId, err := fromRunTextToDb(dstDb, modelDef, langDef, runName, jsonPath)
 			if err != nil {
 				return err
 			}
@@ -216,7 +212,7 @@ func textToDbTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	var wsLst []string
 	isSetNotFound := false
 
-	var fws = func(dbConn *sql.DB, setName string) error {
+	var fws = func(dbConn db.Dbc, setName string) error {
 
 		// check is workset already processed
 		for i := range wsLst {
@@ -325,7 +321,7 @@ func textToDbTask(modelName string, modelDigest string, runOpts *config.RunOptio
 	}
 
 	// insert or update modeling task and task run history into database
-	dstId, err := fromTaskJsonToDb(dstDb, modelDef, langDef, &pub)
+	dstId, err := fromTaskJsonToDb(dstDb.DB, modelDef, langDef, &pub)
 	if err != nil {
 		return err
 	}

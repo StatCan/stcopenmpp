@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 	"golang.org/x/text/language"
 )
 
@@ -31,7 +31,7 @@ func (mc *ModelCatalog) WorksetByName(dn string, wsn string) (*db.WorksetRow, bo
 	}
 
 	// get workset_lst db row
-	ws, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wsn)
+	ws, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wsn)
 	if err != nil {
 		omppLog.Log("Workset not found or error at get workset status: ", meta.Model.Name, ": ", wsn, ": ", err.Error())
 		return nil, false // return empty result: workset select error
@@ -61,7 +61,7 @@ func (mc *ModelCatalog) WorksetDefaultStatus(dn string) (*db.WorksetRow, bool) {
 	}
 
 	// get workset_lst db row for default workset
-	w, err := db.GetDefaultWorkset(dbConn, meta.Model.ModelId)
+	w, err := db.GetDefaultWorkset(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get default workset status: ", dn, ": ", err.Error())
 		return &db.WorksetRow{}, false // return empty result: workset select error
@@ -91,7 +91,7 @@ func (mc *ModelCatalog) WorksetRowListByModelDigest(digest string) ([]db.Workset
 	}
 
 	// get workset list
-	wl, err := db.GetWorksetList(dbConn, meta.Model.ModelId)
+	wl, err := db.GetWorksetList(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get workset list: ", digest, ": ", err.Error())
 		return []db.WorksetRow{}, false // return empty result: workset select error
@@ -117,7 +117,7 @@ func (mc *ModelCatalog) WorksetPubList(dn string) ([]db.WorksetPub, bool) {
 	}
 
 	// read model workset list
-	wl, err := db.GetWorksetList(dbConn, meta.Model.ModelId)
+	wl, err := db.GetWorksetList(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get workset list: ", dn, ": ", err.Error())
 		return []db.WorksetPub{}, false // return empty result: workset select error
@@ -132,7 +132,7 @@ func (mc *ModelCatalog) WorksetPubList(dn string) ([]db.WorksetPub, bool) {
 
 	for ni := range wl {
 
-		p, err := (&db.WorksetMeta{Set: wl[ni]}).ToPublic(dbConn, meta)
+		p, err := (&db.WorksetMeta{Set: wl[ni]}).ToPublic(dbConn.DB, meta)
 		if err != nil {
 			omppLog.Log("Error at workset conversion: ", dn, ": ", err.Error())
 			return []db.WorksetPub{}, false // return empty result: conversion error
@@ -170,7 +170,7 @@ func (mc *ModelCatalog) WorksetListText(dn string, preferredLang []language.Tag)
 	}
 
 	// get workset_txt db row for each workset_lst using matched preferred language
-	wl, wt, err := db.GetWorksetListText(dbConn, meta.Model.ModelId, lc)
+	wl, wt, err := db.GetWorksetListText(dbConn.DB, meta.Model.ModelId, lc)
 	if err != nil {
 		omppLog.Log("Error at get workset list: ", dn, ": ", err.Error())
 		return []db.WorksetPub{}, false // return empty result: workset select error
@@ -200,9 +200,9 @@ func (mc *ModelCatalog) WorksetListText(dn string, preferredLang []language.Tag)
 		var err error
 
 		if isFound && nt < len(wt) {
-			p, err = (&db.WorksetMeta{Set: wl[ni], Txt: []db.WorksetTxtRow{wt[nt]}}).ToPublic(dbConn, meta)
+			p, err = (&db.WorksetMeta{Set: wl[ni], Txt: []db.WorksetTxtRow{wt[nt]}}).ToPublic(dbConn.DB, meta)
 		} else {
-			p, err = (&db.WorksetMeta{Set: wl[ni]}).ToPublic(dbConn, meta)
+			p, err = (&db.WorksetMeta{Set: wl[ni]}).ToPublic(dbConn.DB, meta)
 		}
 		if err != nil {
 			omppLog.Log("Error at workset conversion: ", dn, ": ", err.Error())
@@ -239,7 +239,7 @@ func (mc *ModelCatalog) WorksetTextFull(dn, wsn string, isAllLang bool, preferre
 	}
 
 	// get workset_lst db row by name
-	w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wsn)
+	w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wsn)
 	if err != nil {
 		omppLog.Log("Error at get workset status: ", dn, ": ", wsn, ": ", err.Error())
 		return &db.WorksetPub{}, false, err // return empty result: workset select error
@@ -260,14 +260,14 @@ func (mc *ModelCatalog) WorksetTextFull(dn, wsn string, isAllLang bool, preferre
 		}
 	}
 
-	wm, err := db.GetWorksetFull(dbConn, w, lc)
+	wm, err := db.GetWorksetFull(dbConn.DB, w, lc)
 	if err != nil {
 		omppLog.Log("Error at get workset metadata: ", dn, ": ", w.Name, ": ", err.Error())
 		return &db.WorksetPub{}, false, err // return empty result: workset select error
 	}
 
 	// convert to "public" model workset format
-	wp, err := wm.ToPublic(dbConn, meta)
+	wp, err := wm.ToPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at workset conversion: ", dn, ": ", w.Name, ": ", err.Error())
 		return &db.WorksetPub{}, false, err // return empty result: conversion error

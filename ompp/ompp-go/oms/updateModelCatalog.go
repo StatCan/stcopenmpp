@@ -14,10 +14,10 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // RefreshSqlite open db-connection to model.sqlite files in model directory and read model_dic row for each model.
@@ -148,12 +148,12 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 	}
 
 	// open db connection and check version of openM++ database
-	dbc, _, err := db.Open(db.MakeSqliteDefault(srcPath), db.SQLiteDbDriver, false)
+	dbc, err := db.Open(db.MakeSqliteDefault(srcPath), db.SQLiteDbDriver)
 	if err != nil {
 		omppLog.Log("Error: ", srcPath, " : ", err.Error())
 		return nil, err
 	}
-	if err := db.CheckOpenmppSchemaVersion(dbc); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(dbc.DB); err != nil {
 		omppLog.Log("Error: invalid database, likely not an openM++ database: ", srcPath)
 		dbc.Close()
 		return nil, err
@@ -171,7 +171,7 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 	}
 
 	// read list of models: model_dic rows
-	dicLst, err := db.GetModelList(dbc)
+	dicLst, err := db.GetModelList(dbc.DB)
 	if err != nil || len(dicLst) <= 0 {
 		omppLog.Log("Error: ", srcPath, " : ", err.Error())
 		dbc.Close()
@@ -183,7 +183,7 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 		return nil, nil
 	}
 
-	langDef, err := db.GetLanguages(dbc)
+	langDef, err := db.GetLanguages(dbc.DB)
 	if err != nil {
 		omppLog.Log("Error: ", srcPath, " : ", err.Error())
 		dbc.Close()
@@ -214,7 +214,7 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 		}
 
 		// read metadata from database
-		meta, err := db.GetModelById(dbc, dicLst[idx].ModelId)
+		meta, err := db.GetModelById(dbc.DB, dicLst[idx].ModelId)
 		if err != nil {
 			omppLog.Log("Error at get model metadata: ", dicLst[idx].Name, " ", dicLst[idx].Digest, ": ", err.Error())
 			dbc.Close()
@@ -222,7 +222,7 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 		}
 
 		// read model_dic_txt rows from database
-		txt, err := db.GetModelTextRowById(dbc, dicLst[idx].ModelId, "")
+		txt, err := db.GetModelTextRowById(dbc.DB, dicLst[idx].ModelId, "")
 		if err != nil {
 			omppLog.Log("Error at get model_dic_txt: ", dicLst[idx].Name, " ", dicLst[idx].Digest, ": ", err.Error())
 			dbc.Close()
@@ -235,7 +235,7 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 			ModelTxt:    txt}
 
 		// read model_word from database
-		wLst, err := db.GetModelWord(dbc, dicLst[idx].ModelId, "")
+		wLst, err := db.GetModelWord(dbc.DB, dicLst[idx].ModelId, "")
 		if err != nil {
 			omppLog.Log("Error at get model language-specific stirngs: ", dicLst[idx].Name, " ", dicLst[idx].Digest, ": ", err.Error())
 			dbc.Close()

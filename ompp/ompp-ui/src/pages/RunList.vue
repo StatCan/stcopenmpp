@@ -34,7 +34,7 @@
             <q-separator />
 
             <q-item
-              :disable="isShowNoteEditor || isCompare || uploadFileSelect || isRunDeleted(runCurrent.Status, runCurrent.Name)"
+              :disable="isShowNoteEditor || isReadonlyServer || isCompare || uploadFileSelect || isRunDeleted(runCurrent.Status, runCurrent.Name)"
               @click="onEditRunNote(runDigestSelected)"
               clickable
               >
@@ -45,7 +45,7 @@
             </q-item>
 
             <q-item
-              :disable="isNewWorksetDisabled()"
+              :disable="isReadonlyServer || isNewWorksetDisabled()"
               @click="onNewWorksetClick"
               clickable
               >
@@ -55,7 +55,7 @@
               <q-item-section>{{ paramDiff.length > 0 ? ($t('Create new input scenario with {count} parameter(s) from: ', { count: paramDiff.length }) + firstCompareName) : $t('Create new input scenario') }}</q-item-section>
             </q-item>
 
-            <template v-if="serverConfig.AllowUpload">
+            <template v-if="serverConfig.AllowUpload && !isReadonlyServer">
               <q-item
                 :disable="isShowNoteEditor || isDiskOver"
                 @click="doShowFileSelect()"
@@ -96,7 +96,7 @@
       <q-separator vertical inset spaced="sm" color="secondary" />
 
       <q-btn
-        :disable="isShowNoteEditor || isCompare || uploadFileSelect || isRunDeleted(runCurrent.Status, runCurrent.Name)"
+        :disable="isShowNoteEditor || isReadonlyServer || isCompare || uploadFileSelect || isRunDeleted(runCurrent.Status, runCurrent.Name)"
         @click="onEditRunNote(runDigestSelected)"
         flat
         dense
@@ -106,7 +106,7 @@
         :title="$t('Edit notes for') + ' ' + runCurrent.Name"
         />
       <q-btn
-        :disable="isNewWorksetDisabled()"
+        :disable="isReadonlyServer || isNewWorksetDisabled()"
         @click="onNewWorksetClick"
         flat
         dense
@@ -115,7 +115,7 @@
         :title="paramDiff.length > 0 ? ($t('Create new input scenario with {count} parameter(s) from: ', { count: paramDiff.length }) + firstCompareName) : $t('Create new input scenario')"
         />
 
-      <template v-if="serverConfig.AllowUpload">
+      <template v-if="serverConfig.AllowUpload && !isReadonlyServer">
         <q-btn
           :disable="isShowNoteEditor || isDiskOver"
           @click="doShowFileSelect()"
@@ -391,6 +391,7 @@
             >
             <div class="col-auto">
               <q-btn
+                v-if="!isReadonlyServer"
                 :disable="!runTreeTicked.length"
                 @click.stop="onRunMultipleDelete"
                 :round="!runTreeTicked.length"
@@ -467,6 +468,7 @@
               :title="(isDigestCompare(prop.node.digest) ? $t('Clear run comparison with') : $t('Compare this model run with')) + ' ' + runCurrent.Name"
               />
             <q-btn
+              v-if="!isReadonlyServer"
               :disable="!prop.node.digest"
               @click.stop="onRunDelete(prop.node.label, prop.node.digest, prop.node.status)"
               flat
@@ -479,7 +481,7 @@
               :title="$t('Delete: ') + prop.node.label"
               />
             <q-btn
-              v-if="serverConfig.AllowDownload"
+              v-if="serverConfig.AllowDownload && !isReadonlyServer"
               :disable="!isSuccess(prop.node.status) || isRunDeleted(prop.node.status, prop.node.label)"
               @click.stop="onDownloadRun(prop.node.digest)"
               flat

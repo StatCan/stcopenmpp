@@ -10,9 +10,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // UpdateWorksetReadonly update workset read-only status by model digest-or-name and workset name.
@@ -34,7 +34,7 @@ func (mc *ModelCatalog) UpdateWorksetReadonly(dn, wsn string, isReadonly bool) (
 	}
 
 	// find workset in database
-	w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wsn)
+	w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wsn)
 	if err != nil {
 		omppLog.Log("Error at get workset status: ", dn, ": ", wsn, ": ", err.Error())
 		return "", &db.WorksetRow{}, false, err // return empty result: workset select error
@@ -45,14 +45,14 @@ func (mc *ModelCatalog) UpdateWorksetReadonly(dn, wsn string, isReadonly bool) (
 	}
 
 	// update workset readonly status
-	err = db.UpdateWorksetReadonly(dbConn, w.SetId, isReadonly)
+	err = db.UpdateWorksetReadonly(dbConn.DB, w.SetId, isReadonly)
 	if err != nil {
 		omppLog.Log("Error at update workset status: ", dn, ": ", wsn, ": ", err.Error())
 		return "", &db.WorksetRow{}, false, err // return empty result: workset select error
 	}
 
 	// get workset status
-	w, err = db.GetWorkset(dbConn, w.SetId)
+	w, err = db.GetWorkset(dbConn.DB, w.SetId)
 	if err != nil {
 		omppLog.Log("Error at get workset status: ", dn, ": ", w.SetId, ": ", err.Error())
 		return "", &db.WorksetRow{}, false, err // return empty result: workset select error
@@ -95,7 +95,7 @@ func (mc *ModelCatalog) UpdateWorkset(isReplace bool, wp *db.WorksetPub) (bool, 
 	}
 
 	// find workset in database: it must be read-write if exists
-	w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wp.Name)
+	w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wp.Name)
 	if err != nil {
 		omppLog.Log("Error at get workset status: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, false, nil, err
@@ -113,7 +113,7 @@ func (mc *ModelCatalog) UpdateWorkset(isReplace bool, wp *db.WorksetPub) (bool, 
 	}
 
 	// convert workset from "public" into db rows
-	wm, err := wp.FromPublic(dbConn, meta)
+	wm, err := wp.FromPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at workset json conversion: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, isEraseParam, nil, err
@@ -142,14 +142,14 @@ func (mc *ModelCatalog) UpdateWorkset(isReplace bool, wp *db.WorksetPub) (bool, 
 	}
 
 	// update workset metadata
-	err = wm.UpdateWorkset(dbConn, meta, isReplace, langMeta)
+	err = wm.UpdateWorkset(dbConn.DB, meta, isReplace, langMeta)
 	if err != nil {
 		omppLog.Log("Error at update workset: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, isEraseParam, nil, err
 	}
 
 	// get updated workset status: it must exist
-	w, err = db.GetWorksetByName(dbConn, meta.Model.ModelId, wp.Name)
+	w, err = db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wp.Name)
 	if err != nil {
 		omppLog.Log("Error at update workset: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, isEraseParam, nil, err
@@ -181,7 +181,7 @@ func (mc *ModelCatalog) DeleteWorkset(dn, wsn string) (bool, error) {
 	}
 
 	// find workset in database
-	w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wsn)
+	w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wsn)
 	if err != nil {
 		omppLog.Log("Error at get workset status: ", dn, ": ", wsn, ": ", err.Error())
 		return false, err
@@ -191,7 +191,7 @@ func (mc *ModelCatalog) DeleteWorkset(dn, wsn string) (bool, error) {
 	}
 
 	// delete workset from database
-	err = db.DeleteWorkset(dbConn, w.SetId)
+	err = db.DeleteWorkset(dbConn.DB, w.SetId)
 	if err != nil {
 		omppLog.Log("Error at delete workset: ", dn, ": ", wsn, ": ", err.Error())
 		return false, err
@@ -236,7 +236,7 @@ func (mc *ModelCatalog) UpdateWorksetParameter(
 	}
 
 	// convert workset from "public" into db rows
-	wm, err := wp.FromPublic(dbConn, meta)
+	wm, err := wp.FromPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at workset json conversion: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, err
@@ -289,7 +289,7 @@ func (mc *ModelCatalog) UpdateWorksetParameter(
 func (mc *ModelCatalog) UpdateWorksetParameterText(dn, wsn string, pvtLst []db.ParamRunSetTxtPub) (bool, error) {
 
 	// validate parameters
-	if pvtLst == nil || len(pvtLst) <= 0 {
+	if len(pvtLst) <= 0 {
 		omppLog.Log("Warning: empty list of run parameters to update value notes")
 		return false, nil
 	}
@@ -311,7 +311,7 @@ func (mc *ModelCatalog) UpdateWorksetParameterText(dn, wsn string, pvtLst []db.P
 	}
 
 	// find workset in database: it must be read-write if exists
-	w, err := db.GetWorksetByName(dbConn, meta.Model.ModelId, wsn)
+	w, err := db.GetWorksetByName(dbConn.DB, meta.Model.ModelId, wsn)
 	if err != nil {
 		return false, errors.New("Workset not found: " + dn + ": " + wsn + ": " + err.Error())
 	}
@@ -323,7 +323,7 @@ func (mc *ModelCatalog) UpdateWorksetParameterText(dn, wsn string, pvtLst []db.P
 	}
 
 	// get workset parameters list
-	hIds, _, _, err := db.GetWorksetParamList(dbConn, w.SetId)
+	hIds, _, _, err := db.GetWorksetParamList(dbConn.DB, w.SetId)
 
 	// check: parameter must in workset parametrs list
 	// match languages from request into model languages
@@ -348,7 +348,7 @@ func (mc *ModelCatalog) UpdateWorksetParameterText(dn, wsn string, pvtLst []db.P
 	}
 
 	// update workset parameter notes
-	err = db.UpdateWorksetParameterText(dbConn, meta, wsn, pvtLst, langMeta)
+	err = db.UpdateWorksetParameterText(dbConn.DB, meta, wsn, pvtLst, langMeta)
 	if err != nil {
 		return false, errors.New("Error at update workset parameter notes: " + dn + ": " + wsn + ": " + err.Error())
 	}
@@ -389,7 +389,7 @@ func (mc *ModelCatalog) UpdateWorksetParameterCsv(
 	}
 
 	// convert workset from "public" into db rows
-	wm, err := wp.FromPublic(dbConn, meta)
+	wm, err := wp.FromPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at workset json conversion: ", dn, ": ", wp.Name, ": ", err.Error())
 		return false, err
@@ -515,7 +515,7 @@ func (mc *ModelCatalog) UpdateWorksetParameterPage(dn, wsn, name string, from fu
 	}
 
 	// parameter must be in workset already
-	nSub, _, err := db.GetWorksetParam(dbConn, ws.SetId, pHid)
+	nSub, _, err := db.GetWorksetParam(dbConn.DB, ws.SetId, pHid)
 	if err != nil {
 		return errors.New("Error at get workset parameters list: " + wsn + ": " + err.Error())
 	}
@@ -552,7 +552,7 @@ func (mc *ModelCatalog) DeleteWorksetParameter(dn, wsn, name string) (bool, erro
 	}
 
 	// delete workset from database
-	hId, err := db.DeleteWorksetParameter(dbConn, meta.Model.ModelId, wsn, name)
+	hId, err := db.DeleteWorksetParameter(dbConn.DB, meta.Model.ModelId, wsn, name)
 	if err != nil {
 		omppLog.Log("Error at update workset: ", dn, ": ", wsn, ": ", err.Error())
 		return false, err
@@ -605,7 +605,7 @@ func (mc *ModelCatalog) CopyParameterToWsFromRun(dn, wsn, name string, isReplace
 
 	// if it is not merge and parameter already then return error
 	if !isReplace {
-		nSub, _, e := db.GetWorksetParam(dbConn, ws.SetId, pHid)
+		nSub, _, e := db.GetWorksetParam(dbConn.DB, ws.SetId, pHid)
 		if e != nil {
 			return errors.New("Error at get workset parameters list: " + wsn + ": " + e.Error())
 		}
@@ -621,7 +621,7 @@ func (mc *ModelCatalog) CopyParameterToWsFromRun(dn, wsn, name string, isReplace
 	}
 
 	// copy parameter into workset from model run
-	err := db.CopyParameterFromRun(dbConn, meta, ws, name, isReplace, r)
+	err := db.CopyParameterFromRun(dbConn.DB, meta, ws, name, isReplace, r)
 	if err != nil {
 		return errors.New("Parameter copy failed: " + wsn + ": " + name + ": " + err.Error())
 	}
@@ -673,7 +673,7 @@ func (mc *ModelCatalog) CopyParameterBetweenWs(dn, dstWsName, name string, isRep
 
 	// if it is not merge and parameter already then return error
 	if !isReplace {
-		nSub, _, e := db.GetWorksetParam(dbConn, dstWs.SetId, pHid)
+		nSub, _, e := db.GetWorksetParam(dbConn.DB, dstWs.SetId, pHid)
 		if e != nil {
 			return errors.New("Error at get workset parameters list: " + dstWsName + ": " + e.Error())
 		}
@@ -692,7 +692,7 @@ func (mc *ModelCatalog) CopyParameterBetweenWs(dn, dstWsName, name string, isRep
 	}
 
 	// copy parameter from one workset to another
-	err := db.CopyParameterFromWorkset(dbConn, meta, dstWs, name, isReplace, srcWs)
+	err := db.CopyParameterFromWorkset(dbConn.DB, meta, dstWs, name, isReplace, srcWs)
 	if err != nil {
 		return errors.New("Parameter copy failed: " + dstWsName + ": " + name + ": " + err.Error())
 	}

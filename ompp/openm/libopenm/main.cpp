@@ -162,7 +162,7 @@ int main(int argc, char ** argv)
 
             string connectionStr = argOpts.strOption(
                 RunOptionsKey::dbConnStr,
-                string("Database=") + dbSqlite + "; Timeout=86400; OpenMode=ReadWrite;"
+                string("Database=") + dbSqlite + "; Timeout=86400; ForeignKeys=true; OpenMode=ReadWrite;"
             );
 
             // open db-connection
@@ -484,10 +484,10 @@ void logVersion(const IMsgExec * i_msgExec, const RunController * i_runCtrl)
     theLog->logMsg("Model version  ", i_runCtrl->meta()->modelRow->version.c_str());
     theLog->logMsg("Model created  ", i_runCtrl->meta()->modelRow->createDateTime.c_str());
     theLog->logMsg("Model digest   ", OM_MODEL_DIGEST);
-#ifdef OM_RUNTIME_VERSION
-    theLog->logMsg("OpenM++ version", OM_RUNTIME_VERSION);
-#endif
-    theLog->logFormatted("OpenM++ build  : %s %s %s", libTargetOsName, libTargetConfigName, libTargetMpiUseName);
+	#ifdef OM_RUNTIME_VERSION
+    theLog->logMsg("stcopenmpp runtime version", OM_RUNTIME_VERSION);
+	#endif
+    theLog->logFormatted("stcopenmpp runtime configuration  : %s %s %s", libTargetOsName, libTargetConfigName, libTargetMpiUseName);
 
     if (!IS_MPI_USED && i_runCtrl->threadCount > 1) {
         theLog->logFormatted("Run model with %d modeling thread(s)", i_runCtrl->threadCount);

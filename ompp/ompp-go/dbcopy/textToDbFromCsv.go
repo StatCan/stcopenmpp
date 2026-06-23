@@ -4,20 +4,19 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/csv"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // writeParamFromCsvFile read parameter csv file and write into db parameter value table.
 func writeParamFromCsvFile(
-	dbConn *sql.DB,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	layout db.WriteParamLayout,
 	csvDir string,
@@ -64,7 +63,7 @@ func writeParamFromCsvFile(
 
 // writeTableFromCsvFiles read output table csv files (accumulators and expressions) and write it into db output tables.
 func writeTableFromCsvFiles(
-	dbConn *sql.DB,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	layout db.WriteTableLayout,
 	csvDir string,
@@ -139,8 +138,7 @@ func writeTableFromCsvFiles(
 
 // writeMicroFromCsvFile read microdata csv file and write into db enity generation value table.
 func writeMicroFromCsvFile(
-	dbConn *sql.DB,
-	dbFacet db.Facet,
+	dbConn db.Dbc,
 	modelDef *db.ModelMeta,
 	runMeta *db.RunMeta,
 	layout db.WriteMicroLayout,
@@ -178,7 +176,7 @@ func writeMicroFromCsvFile(
 	}
 
 	// write each csv row into microdata entity generation table
-	err = db.WriteMicrodataFrom(dbConn, dbFacet, modelDef, runMeta, &layout, from)
+	err = db.WriteMicrodataFrom(dbConn, modelDef, runMeta, &layout, from)
 	if err != nil {
 		return err
 	}
@@ -206,8 +204,8 @@ func makeFromCsvReader(
 	switch {
 	case e == io.EOF:
 		return nil, helper.ErrorNew("invalid (empty) csv file:", fileName)
-	case err != nil:
-		return nil, helper.ErrorNew("csv file read error:", fileName, ":", err)
+	case e != nil:
+		return nil, helper.ErrorNew("csv file read error:", fileName, ":", e)
 	}
 	fh := strings.Join(fhs, ",")
 	if strings.HasPrefix(fh, string(helper.Utf8bom)) {

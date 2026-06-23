@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // WriteParameterFrom insert or update parameter values in workset or insert parameter values into model run until from() return not nil CellParam value.
@@ -25,7 +25,7 @@ import (
 // then each row deleted by primary key before insert else all rows deleted by one delete by set id.
 //
 // Double format is used for float model types digest calculation, if non-empty format supplied.
-func WriteParameterFrom(dbConn *sql.DB, modelDef *ModelMeta, layout *WriteParamLayout, from func() (interface{}, error)) error {
+func WriteParameterFrom(dbConn Dbc, modelDef *ModelMeta, layout *WriteParamLayout, from func() (interface{}, error)) error {
 
 	// validate parameters
 	if modelDef == nil {
@@ -60,7 +60,7 @@ func WriteParameterFrom(dbConn *sql.DB, modelDef *ModelMeta, layout *WriteParamL
 
 	var defSubId int = 0
 	if !layout.IsToRun {
-		n, defId, e := GetWorksetParam(dbConn, layout.ToId, param.ParamHid)
+		n, defId, e := GetWorksetParam(dbConn.DB, layout.ToId, param.ParamHid)
 		if e != nil {
 			return e
 		}
@@ -76,9 +76,9 @@ func WriteParameterFrom(dbConn *sql.DB, modelDef *ModelMeta, layout *WriteParamL
 		return err
 	}
 	if layout.IsToRun {
-		err = doWriteRunParameterFrom(trx, modelDef, param, layout.ToId, layout.SubCount, from, layout.DoubleFmt)
+		err = doWriteRunParameterFrom(DbTrx{Tx: trx, Dbf: dbConn.Dbf}, modelDef, param, layout.ToId, layout.SubCount, from, layout.DoubleFmt)
 	} else {
-		err = doWriteSetParameterFrom(trx, param, layout.ToId, layout.SubCount, defSubId, layout.IsPage, from, layout.DoubleFmt)
+		err = doWriteSetParameterFrom(DbTrx{Tx: trx, Dbf: dbConn.Dbf}, param, layout.ToId, layout.SubCount, defSubId, layout.IsPage, from, layout.DoubleFmt)
 	}
 	if err != nil {
 		trx.Rollback()
@@ -95,12 +95,12 @@ func WriteParameterFrom(dbConn *sql.DB, modelDef *ModelMeta, layout *WriteParamL
 // Model run should not already contain parameter values: parameter can be inserted only once in model run and cannot be updated after.
 // Double format is used for float model types digest calculation, if non-empty format supplied
 func doWriteRunParameterFrom(
-	trx *sql.Tx, modelDef *ModelMeta, param *ParamMeta, runId int, subCount int, from func() (interface{}, error), doubleFmt string,
+	trx DbTrx, modelDef *ModelMeta, param *ParamMeta, runId int, subCount int, from func() (interface{}, error), doubleFmt string,
 ) error {
 
 	// update model run master record to prevent run use
 	srId := strconv.Itoa(runId)
-	err := TrxUpdate(trx,
+	err := TrxUpdate(trx.Tx,
 		"UPDATE run_lst SET sub_restart = sub_restart - 1 WHERE run_id = "+srId)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func doWriteRunParameterFrom(
 
 	// check if model run exist and status is completed
 	st := ""
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT status FROM run_lst WHERE run_id = "+srId,
 		func(row *sql.Row) error {
 			if err := row.Scan(&st); err != nil {
@@ -129,7 +129,7 @@ func doWriteRunParameterFrom(
 	// check if parameter values not already exist for that run
 	sHid := strconv.Itoa(param.ParamHid)
 	n := 0
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT COUNT(*) FROM run_parameter"+" WHERE run_id = "+srId+" AND parameter_hid = "+sHid,
 		func(row *sql.Row) error {
 			if err := row.Scan(&n); err != nil {
@@ -146,7 +146,7 @@ func doWriteRunParameterFrom(
 	}
 
 	// insert into run_parameter with current run id as base run id and NULL digest
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"INSERT INTO run_parameter (run_id, parameter_hid, base_run_id, sub_count, value_digest)"+
 			" VALUES ("+
 			srId+", "+sHid+", "+srId+", "+strconv.Itoa(subCount)+", NULL)")
@@ -162,11 +162,11 @@ func doWriteRunParameterFrom(
 
 	// make sql to insert parameter values into model run
 	// prepare put() closure to convert each cell into insert sql statement parameters
-	q := makeSqlInsertParamValue(param.DbRunTable, "run_id", param.Dim, runId)
+	q := makeSqlInsertParamValue(trx.Dbf, param.DbRunTable, "run_id", param.Dim, runId)
 	put := putInsertParamFrom(param, subCount, 0, from, digestFrom)
 
 	// execute sql insert using put() above for each row
-	if err = TrxUpdateStatement(trx, q, put); err != nil {
+	if err = TrxUpdateStatement(trx.Tx, q, put); err != nil {
 		return errors.New("insert parameter failed: " + param.Name + " " + err.Error())
 	}
 
@@ -193,7 +193,7 @@ func doWriteRunParameterFrom(
 			return err
 		}
 
-		err = trxReadParameterTo(trx, param, q, digestFrom)
+		err = trxReadParameterTo(trx.Tx, param, q, digestFrom)
 		if err != nil {
 			return errors.New("digest parameter failed: " + param.Name + " " + err.Error())
 		}
@@ -202,7 +202,7 @@ func doWriteRunParameterFrom(
 	// update parameter digest with actual value
 	dgst := fmt.Sprintf("%x", hMd5.Sum(nil))
 
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"UPDATE run_parameter SET value_digest = "+ToQuoted(dgst)+
 			" WHERE run_id = "+srId+
 			" AND parameter_hid ="+sHid)
@@ -212,7 +212,7 @@ func doWriteRunParameterFrom(
 
 	// find base run by digest, it must exist
 	nBase := 0
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT MIN(run_id) FROM run_parameter"+
 			" WHERE parameter_hid = "+sHid+
 			" AND value_digest = "+ToQuoted(dgst),
@@ -232,21 +232,21 @@ func doWriteRunParameterFrom(
 	// and remove duplicate values
 	if runId != nBase {
 
-		err = TrxUpdate(trx,
+		err = TrxUpdate(trx.Tx,
 			"UPDATE run_parameter SET base_run_id = "+strconv.Itoa(nBase)+
 				" WHERE run_id = "+srId+
 				" AND parameter_hid = "+sHid)
 		if err != nil {
 			return err
 		}
-		err = TrxUpdate(trx, "DELETE FROM "+param.DbRunTable+" WHERE run_id = "+srId)
+		err = TrxUpdate(trx.Tx, "DELETE FROM "+param.DbRunTable+" WHERE run_id = "+srId)
 		if err != nil {
 			return err
 		}
 	}
 
 	// completed OK, restore run_lst values
-	err = TrxUpdate(trx,
+	err = TrxUpdate(trx.Tx,
 		"UPDATE run_lst SET sub_restart = sub_restart + 1 WHERE run_id = "+srId)
 	if err != nil {
 		return err
@@ -258,12 +258,12 @@ func doWriteRunParameterFrom(
 // It does insert as part of transaction
 // If workset already contain parameter values then values updated else inserted.
 func doWriteSetParameterFrom(
-	trx *sql.Tx, param *ParamMeta, setId int, subCount int, defaultSubId int, isPage bool, from func() (interface{}, error), doubleFmt string,
+	trx DbTrx, param *ParamMeta, setId int, subCount int, defaultSubId int, isPage bool, from func() (interface{}, error), doubleFmt string,
 ) error {
 
 	// start workset update
 	sId := strconv.Itoa(setId)
-	err := TrxUpdate(trx,
+	err := TrxUpdate(trx.Tx,
 		"UPDATE workset_lst"+
 			" SET is_readonly = is_readonly + 1, update_dt = "+ToQuoted(helper.MakeDateTime(time.Now()))+
 			" WHERE set_id = "+sId)
@@ -273,7 +273,7 @@ func doWriteSetParameterFrom(
 
 	// check if workset exist and not readonly
 	nRd := 0
-	err = TrxSelectFirst(trx,
+	err = TrxSelectFirst(trx.Tx,
 		"SELECT is_readonly FROM workset_lst WHERE set_id = "+sId,
 		func(row *sql.Row) error {
 			if err := row.Scan(&nRd); err != nil {
@@ -293,30 +293,30 @@ func doWriteSetParameterFrom(
 
 	// delete existing parameter values and insert new values
 	if !isPage {
-		if err = TrxUpdate(trx, "DELETE FROM "+param.DbSetTable+" WHERE set_id = "+sId); err != nil {
+		if err = TrxUpdate(trx.Tx, "DELETE FROM "+param.DbSetTable+" WHERE set_id = "+sId); err != nil {
 			return err
 		}
 
 		// make sql to insert parameter values into workset
 		// prepare put() closure to convert each cell into insert sql statement parameters
-		sql := makeSqlInsertParamValue(param.DbSetTable, "set_id", param.Dim, setId)
+		sql := makeSqlInsertParamValue(trx.Dbf, param.DbSetTable, "set_id", param.Dim, setId)
 		put := putInsertParamFrom(param, subCount, defaultSubId, from, nil)
 
 		// execute sql insert using put() above for each row
-		if err = TrxUpdateStatement(trx, sql, put); err != nil {
+		if err = TrxUpdateStatement(trx.Tx, sql, put); err != nil {
 			return errors.New("insert parameter failed: " + param.Name + " " + err.Error())
 		}
 
 	} else { // page of data: parameter page updated, typically json from UI
 
-		err = doDeleteInsertParamRows(trx, param, setId, subCount, defaultSubId, from, doubleFmt)
+		err = doDeleteInsertParamRows(trx.Tx, param, setId, subCount, defaultSubId, from, doubleFmt)
 		if err != nil {
 			return errors.New("update parameter failed: " + param.Name + " " + err.Error())
 		}
 	}
 
 	// update completed: reset readonly status to "read-write"
-	err = TrxUpdate(trx, "UPDATE workset_lst SET is_readonly = 0 WHERE set_id = "+sId)
+	err = TrxUpdate(trx.Tx, "UPDATE workset_lst SET is_readonly = 0 WHERE set_id = "+sId)
 	if err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ func doWriteSetParameterFrom(
 }
 
 // make sql to insert parameter values into model run or workset
-func makeSqlInsertParamValue(dbTable string, runSetCol string, dims []ParamDimsRow, toId int) string {
+func makeSqlInsertParamValue(facet Facet, dbTable string, runSetCol string, dims []ParamDimsRow, toId int) string {
 
 	// INSERT INTO ageSex_w2012817 (set_id, sub_id, dim0, dim1, param_value) VALUES (2, ?, ?, ?, ?)
 	q := "INSERT INTO " + dbTable +
@@ -334,12 +334,12 @@ func makeSqlInsertParamValue(dbTable string, runSetCol string, dims []ParamDimsR
 		q += dims[k].colName + ", "
 	}
 
-	q += "param_value) VALUES (" + strconv.Itoa(toId) + ", ?, "
+	q += "param_value) VALUES (" + strconv.Itoa(toId) + ", " + facet.PlaceHolder(1) // ", $1"
 
 	for k := 0; k < len(dims); k++ {
-		q += "?, "
+		q += ", " + facet.PlaceHolder(k+2) // ", $2"
 	}
-	q += "?)"
+	q += ", " + facet.PlaceHolder(len(dims)+2) + ")" // ", $3)"
 
 	return q
 }

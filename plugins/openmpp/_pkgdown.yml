@@ -1,0 +1,21 @@
+url: https://mattwarkentin.github.io/openmpp/
+template:
+  bootstrap: 5
+reference:
+- title: API Connections
+  contents:
+    - use_OpenMpp_local
+    - use_OpenMpp_custom
+    - use_OpenMpp_CPAC
+- title: Class Accessors
+  contents:
+    - load_model
+    - load_workset
+    - load_scenario
+    - load_model_run
+    - load_run
+    - load_model_runs
+    - load_runs
+- title: All Functions
+  contents:
+      - matches('.*')

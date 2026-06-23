@@ -113,9 +113,6 @@ if not exist stcopenmpp/ompp (
   REM move all contents from %OMPP_GIT_URL%/ompp to ompp
   robocopy "C:\build\stcopenmpp\ompp" "C:\build\ompp" /E /MOVE
   
-  REM copy select files from the root of %OMPP_GIT_URL% to ompp
-  robocopy "C:\build\stcopenmpp" "C:\build\ompp" "CODE_OF_CONDUCT.md" "CONTRIBUTING.md" "LICENSE.md" "README.md" "RELEASE_NOTES.md" "SECURITY.md"
-  
   REM move all contents from %OMPP_GIT_URL%/plugins to ompp/plugins
   robocopy "C:\build\stcopenmpp\plugins" "C:\build\ompp\plugins" /E /MOVE
   

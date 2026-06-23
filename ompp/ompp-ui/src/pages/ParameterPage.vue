@@ -17,8 +17,8 @@
         <workset-bar
           :model-digest="digest"
           :workset-name="worksetName"
-          :is-readonly-button="true"
-          :is-new-run-button="isModelTab"
+          :is-readonly-button="!isReadonlyServer"
+          :is-new-run-button="isModelTab && !isReadonlyServer"
           :is-show-menu="true"
           @set-info-click="doShowWorksetNote"
           @set-update-readonly="onWorksetReadonlyToggle"
@@ -73,7 +73,7 @@
           <template v-if="!isFromRun">
             <q-item
               @click="doEditToogle"
-              :disable="!edt.isEnabled || noteEditorShow"
+              :disable="!edt.isEnabled || noteEditorShow || isReadonlyServer"
               clickable
               >
               <q-item-section avatar>
@@ -83,7 +83,7 @@
             </q-item>
             <q-item
               @click="onEditSave"
-              :disable="!edt.isEnabled || !edt.isUpdated"
+              :disable="!edt.isEnabled || !edt.isUpdated || isReadonlyServer"
               clickable
               >
               <q-item-section avatar>
@@ -117,7 +117,7 @@
           <q-item
             v-if="!noteEditorShow"
             @click="onEditParamNote()"
-            :disable="!isFromRun && (!edt.isEnabled || edt.isEdit)"
+            :disable="!isFromRun && (!edt.isEnabled || edt.isEdit) || isReadonlyServer"
             clickable
             >
             <q-item-section avatar>
@@ -168,7 +168,7 @@
             <q-item-section>{{ $t('Download') + ' '  + parameterName + ' ' + $t('as CSV') }}</q-item-section>
           </q-item>
           <q-item
-            v-if="!isFromRun"
+            v-if="!isFromRun && !isReadonlyServer"
             @click="doShowFileSelect()"
             v-show="!uploadFileSelect"
             :disable="!isUploadEnabled || edt.isEdit"
@@ -293,7 +293,7 @@
 
           <q-item
             @click="onSaveDefaultView"
-            :disable="edt.isEdit"
+            :disable="isReadonlyServer || edt.isEdit"
             clickable
             >
             <q-item-section avatar>
@@ -409,7 +409,7 @@
     <template v-if="!isFromRun">
       <q-btn
         @click="doEditToogle"
-        :disable="!edt.isEnabled || uploadFileSelect || noteEditorShow"
+        :disable="!edt.isEnabled || uploadFileSelect || noteEditorShow || isReadonlyServer"
         flat
         dense
         class="col-auto bg-primary text-white rounded-borders"
@@ -418,7 +418,7 @@
         />
       <q-btn
         @click="onEditSave"
-        :disable="!edt.isEnabled || !edt.isUpdated"
+        :disable="!edt.isEnabled || !edt.isUpdated || isReadonlyServer"
         flat
         dense
         class="col-auto bg-primary text-white rounded-borders q-ml-xs"
@@ -447,7 +447,7 @@
     </template>
 
     <q-btn
-      v-if="!noteEditorShow"
+      v-if="!noteEditorShow && !isReadonlyServer"
       @click="onEditParamNote()"
       :disable="!isFromRun && (!edt.isEnabled || edt.isEdit)"
       flat
@@ -495,7 +495,7 @@
       />
 
     <q-btn
-      v-if="!isFromRun"
+      v-if="!isFromRun && !isReadonlyServer"
       @click="doShowFileSelect()"
       v-show="!uploadFileSelect"
       :disable="!isUploadEnabled || edt.isEdit || noteEditorShow"
@@ -615,7 +615,7 @@
 
     <q-btn
       @click="onSaveDefaultView"
-      :disable="edt.isEdit"
+      :disable="edt.isEdit || isReadonlyServer"
       flat
       dense
       class="col-auto bg-primary text-white rounded-borders q-mr-xs"

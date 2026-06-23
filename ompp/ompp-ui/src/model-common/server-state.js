@@ -13,6 +13,7 @@ export const emptyConfig = () => {
     AllowMicrodata: false,
     IsJobControl: false,
     IsAdminAll: false,
+    IsReadonly: false,
     MpiMaxThreads: 0,
     MpiRes: {
       Cpu: 0,
@@ -874,7 +875,7 @@ Past shadow history array of file names or directory names info
   }
 ]
 */
-// return true if this is not empty global admin shadoe past history array
+// return true if this is not empty global admin shadow past history array
 export const isPastHistory = (pLst) => {
   if (!Array.isArray(pLst) || pLst.length <= 0) return false
   return isPastRunItem(pLst[0])

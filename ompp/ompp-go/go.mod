@@ -1,14 +1,25 @@
-module github.com/stcopenmpp/ompp-go
+module github.com/statcan/stcopenmpp/ompp/ompp-go
 
-go 1.24.0
+go 1.26.1
 
 require (
 	github.com/alexbrainman/odbc v0.0.0-20250601004241-49e6b2bc0cf0
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/husobee/vestigo v1.1.1
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade
 	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19
-	github.com/mattn/go-sqlite3 v1.14.32
-	golang.org/x/text v0.29.0
+	github.com/lib/pq v1.12.3
+	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/microsoft/go-mssqldb v1.9.8
+	golang.org/x/text v0.36.0
 )
 
-require golang.org/x/sys v0.36.0 // indirect
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+)

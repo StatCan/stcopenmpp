@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 	"golang.org/x/text/language"
 )
 
@@ -27,7 +27,7 @@ func (mc *ModelCatalog) TaskList(dn string) ([]db.TaskPub, bool) {
 	}
 
 	// get model task list
-	tl, err := db.GetTaskList(dbConn, meta.Model.ModelId)
+	tl, err := db.GetTaskList(dbConn.DB, meta.Model.ModelId)
 	if err != nil {
 		omppLog.Log("Error at get task list: ", dn, ": ", err.Error())
 		return []db.TaskPub{}, false // return empty result: task select error
@@ -41,7 +41,7 @@ func (mc *ModelCatalog) TaskList(dn string) ([]db.TaskPub, bool) {
 
 	for ni := range tl {
 
-		p, err := (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni]}}).ToPublic(dbConn, meta)
+		p, err := (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni]}}).ToPublic(dbConn.DB, meta)
 		if err != nil {
 			omppLog.Log("Error at task conversion: ", dn, ": ", err.Error())
 			return []db.TaskPub{}, false // return empty result: conversion error
@@ -78,7 +78,7 @@ func (mc *ModelCatalog) TaskListText(dn string, preferredLang []language.Tag) ([
 		return []db.TaskPub{}, false // return empty result: model default language cannot be empty
 	}
 
-	tl, txl, err := db.GetTaskListText(dbConn, meta.Model.ModelId, lc)
+	tl, txl, err := db.GetTaskListText(dbConn.DB, meta.Model.ModelId, lc)
 	if err != nil {
 		omppLog.Log("Error at get task list: ", dn, ": ", err.Error())
 		return []db.TaskPub{}, false // return empty result: task select error
@@ -107,9 +107,9 @@ func (mc *ModelCatalog) TaskListText(dn string, preferredLang []language.Tag) ([
 		var err error
 
 		if isFound && nt < len(txl) {
-			p, err = (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni], Txt: []db.TaskTxtRow{txl[nt]}}}).ToPublic(dbConn, meta)
+			p, err = (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni], Txt: []db.TaskTxtRow{txl[nt]}}}).ToPublic(dbConn.DB, meta)
 		} else {
-			p, err = (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni]}}).ToPublic(dbConn, meta)
+			p, err = (&db.TaskMeta{TaskDef: db.TaskDef{Task: tl[ni]}}).ToPublic(dbConn.DB, meta)
 		}
 		if err != nil {
 			omppLog.Log("Error at task conversion: ", dn, ": ", err.Error())
@@ -144,7 +144,7 @@ func (mc *ModelCatalog) TaskSets(dn, tn string) (*db.TaskPub, bool) {
 	}
 
 	// find modeling task: get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: task select error
@@ -155,14 +155,14 @@ func (mc *ModelCatalog) TaskSets(dn, tn string) (*db.TaskPub, bool) {
 	}
 
 	// get list of task set_id's from task_set
-	setIds, err := db.GetTaskSetIds(dbConn, tr.TaskId)
+	setIds, err := db.GetTaskSetIds(dbConn.DB, tr.TaskId)
 	if err != nil {
 		omppLog.Log("Error at get modeling task list of input sets: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: task set id's select error
 	}
 
 	// convert to "public" modeling task format
-	tp, err := (&db.TaskMeta{TaskDef: db.TaskDef{Task: *tr, Set: setIds}}).ToPublic(dbConn, meta)
+	tp, err := (&db.TaskMeta{TaskDef: db.TaskDef{Task: *tr, Set: setIds}}).ToPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at modeling task conversion: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: error to convert task to pulic format
@@ -193,7 +193,7 @@ func (mc *ModelCatalog) TaskRuns(dn, tn string) (*db.TaskPub, bool) {
 	}
 
 	// find modeling task: get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: task select error
@@ -204,14 +204,14 @@ func (mc *ModelCatalog) TaskRuns(dn, tn string) (*db.TaskPub, bool) {
 	}
 
 	// get task run history
-	tm, err := db.GetTaskRunList(dbConn, tr)
+	tm, err := db.GetTaskRunList(dbConn.DB, tr)
 	if err != nil {
 		omppLog.Log("Error at get modeling task run history: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: select error
 	}
 
 	// convert to "public" modeling task format
-	tp, err := tm.ToPublic(dbConn, meta)
+	tp, err := tm.ToPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at modeling task conversion: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, false // return empty result: error to convert task to pulic format
@@ -245,7 +245,7 @@ func (mc *ModelCatalog) TaskRunStatus(dn, tn, trsn string) (*db.TaskRunRow, bool
 	}
 
 	// find modeling task: get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskRunRow{}, false // return empty result: task select error
@@ -256,7 +256,7 @@ func (mc *ModelCatalog) TaskRunStatus(dn, tn, trsn string) (*db.TaskRunRow, bool
 	}
 
 	// get task run row by run stamp or run name and task id
-	rst, err := db.GetTaskRunByStampOrName(dbConn, tr.TaskId, trsn)
+	rst, err := db.GetTaskRunByStampOrName(dbConn.DB, tr.TaskId, trsn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task run status: ", dn, ": ", tn, ": ", trsn, ": ", err.Error())
 		return &db.TaskRunRow{}, false // return empty result: select error
@@ -294,7 +294,7 @@ func (mc *ModelCatalog) TaskRunStatusList(dn, tn, trsn string) ([]db.TaskRunRow,
 	}
 
 	// find modeling task: get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return []db.TaskRunRow{}, false // return empty result: task select error
@@ -305,7 +305,7 @@ func (mc *ModelCatalog) TaskRunStatusList(dn, tn, trsn string) ([]db.TaskRunRow,
 	}
 
 	// get task run row by run stamp or run name and task id
-	rLst, err := db.GetTaskRunListByStampOrName(dbConn, tr.TaskId, trsn)
+	rLst, err := db.GetTaskRunListByStampOrName(dbConn.DB, tr.TaskId, trsn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task run status: ", dn, ": ", tn, ": ", trsn, ": ", err.Error())
 		return []db.TaskRunRow{}, false // return empty result: select error
@@ -339,7 +339,7 @@ func (mc *ModelCatalog) FirstOrLastTaskRunStatus(dn, tn string, isFirst, isCompl
 	}
 
 	// find modeling task: get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskRunRow{}, false // return empty result: task select error
@@ -352,12 +352,12 @@ func (mc *ModelCatalog) FirstOrLastTaskRunStatus(dn, tn string, isFirst, isCompl
 	// get first or last task run row
 	rst := &db.TaskRunRow{}
 	if isFirst {
-		rst, err = db.GetTaskFirstRun(dbConn, tr.TaskId)
+		rst, err = db.GetTaskFirstRun(dbConn.DB, tr.TaskId)
 	} else {
 		if isCompleted {
-			rst, err = db.GetTaskLastCompletedRun(dbConn, tr.TaskId)
+			rst, err = db.GetTaskLastCompletedRun(dbConn.DB, tr.TaskId)
 		} else {
-			rst, err = db.GetTaskLastRun(dbConn, tr.TaskId)
+			rst, err = db.GetTaskLastRun(dbConn.DB, tr.TaskId)
 		}
 	}
 	if err != nil {
@@ -392,7 +392,7 @@ func (mc *ModelCatalog) TaskTextFull(dn, tn string, isAllLang bool, preferredLan
 	}
 
 	// get task_lst db row by task name
-	tr, err := db.GetTaskByName(dbConn, meta.Model.ModelId, tn)
+	tr, err := db.GetTaskByName(dbConn.DB, meta.Model.ModelId, tn)
 	if err != nil {
 		omppLog.Log("Error at get modeling task: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, nil, false // return empty result: task select error
@@ -412,21 +412,21 @@ func (mc *ModelCatalog) TaskTextFull(dn, tn string, isAllLang bool, preferredLan
 		}
 	}
 
-	tm, err := db.GetTaskFull(dbConn, tr, false, lc)
+	tm, err := db.GetTaskFull(dbConn.DB, tr, false, lc)
 	if err != nil {
 		omppLog.Log("Error at get modeling task text: ", dn, ": ", tr.Name, ": ", err.Error())
 		return &db.TaskPub{}, nil, false // return empty result: run select error
 	}
 
 	// convert to "public" model run format
-	tp, err := tm.ToPublic(dbConn, meta)
+	tp, err := tm.ToPublic(dbConn.DB, meta)
 	if err != nil {
 		omppLog.Log("Error at modeling task conversion: ", dn, ": ", tn, ": ", err.Error())
 		return &db.TaskPub{}, nil, false // return empty result: conversion error
 	}
 
 	// get additinal task text: description and notes for worksets and model runs
-	at, err := db.GetTaskRunSetText(dbConn, tr.TaskId, false, lc)
+	at, err := db.GetTaskRunSetText(dbConn.DB, tr.TaskId, false, lc)
 	if err != nil {
 		omppLog.Log("Error at get additional modeling task text: ", dn, ": ", tr.Name, ": ", err.Error())
 		return &db.TaskPub{}, nil, false // return empty result: conversion error

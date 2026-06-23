@@ -11,7 +11,7 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 func TestIni(t *testing.T) {

@@ -532,7 +532,7 @@ CREATE TABLE group_txt
   PRIMARY KEY (model_id, group_id, lang_id),
   CONSTRAINT group_txt_mk
              FOREIGN KEY (model_id, group_id) REFERENCES group_lst (model_id, group_id),
-  CONSTRAINT parameter_group_txt_lang_fk
+  CONSTRAINT group_txt_lang_fk
              FOREIGN KEY (lang_id) REFERENCES lang_lst (lang_id)
 );
 
@@ -730,9 +730,9 @@ CREATE TABLE run_parameter_import
   from_model_digest  VARCHAR(32)  NOT NULL, -- source model digest
   from_run_id        INT          NOT NULL, -- source run id
   from_run_digest    VARCHAR(32)  NOT NULL, -- source run digest
-  PRIMARY KEY (run_id, parameter_hid),
-  CONSTRAINT run_parameter_import_mk
-             FOREIGN KEY (run_id, parameter_hid) REFERENCES run_parameter (run_id, parameter_hid)
+  PRIMARY KEY (run_id, parameter_hid)
+  -- CONSTRAINT run_parameter_import_mk
+  --           FOREIGN KEY (from_run_id, parameter_hid) REFERENCES run_parameter (run_id, parameter_hid)
 );
 
 --

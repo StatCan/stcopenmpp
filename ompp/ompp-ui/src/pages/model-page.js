@@ -135,7 +135,9 @@ export default {
     initalView () {
       this.doTabAdd('run-list', { digest: this.digest })
       this.doTabAdd('set-list', { digest: this.digest })
-      this.doTabAdd('new-run', { digest: this.digest })
+      if (!this.serverConfig.IsReadonly) {
+        this.doTabAdd('new-run', { digest: this.digest })
+      }
     },
     doRefresh () {
       if (!this.tabItems || !this.tabItems.length) this.initalView() // add standard tabs

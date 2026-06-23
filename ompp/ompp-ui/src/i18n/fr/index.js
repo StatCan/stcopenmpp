@@ -423,6 +423,7 @@ export default {
   'Model run': "Modèle de l'exécution",
   'Model run description': "Description de l'exécution du modèle",
   'Model run description and notes saved': "Description de l'exécution du modèle et notes enregistrées",
+  'Model run disabled on the server': "L'exécution du modèle est désactivée sur le serveur",
   'Model run download started': "Le téléchargement de l'exécution du modèle a commencé",
   'Model run Jobs disabled on the server': 'Model run Jobs désactivé sur le serveur',
   'Model run list is empty or invalid': "La liste d'exécution du modèle est vide ou non valide",

@@ -6,8 +6,8 @@ It contains oms web-service, dbcopy utility and openM++ Go libraries.
 ## Build
 
 ```
-git clone https://github.com/stcopenmpp/ompp-go ompp-go
-cd ompp-go
+git clone https://github.com/statcan/stcopenmpp
+cd ompp/ompp-go
 go install -tags sqlite_math_functions,sqlite_omit_load_extension ./dbcopy
 go install -tags sqlite_math_functions,sqlite_omit_load_extension ./oms
 go install -tags sqlite_math_functions,sqlite_omit_load_extension ./dbget

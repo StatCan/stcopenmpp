@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 const logPeriod = 5 // seconds, log periodically if copy take long time
@@ -22,20 +22,20 @@ const logPeriod = 5 // seconds, log periodically if copy take long time
 func dbToTextRun(modelName string, modelDigest string, runOpts *config.RunOptions) error {
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func dbToTextRun(modelName string, modelDigest string, runOpts *config.RunOption
 		return helper.ErrorFmt("dbcopy invalid argument(s) run id: %s, run name: %s, run digest: %s",
 			runOpts.String(runIdArgKey), runOpts.String(runNameArgKey), runOpts.String(runDigestArgKey))
 	}
-	runRow, e := findModelRunByIdDigestName(srcDb, modelDef.Model.ModelId, runId, runDigest, runName, isFirst, isLast)
+	runRow, e := findModelRunByIdDigestName(srcDb.DB, modelDef.Model.ModelId, runId, runDigest, runName, isFirst, isLast)
 	if e != nil {
 		return e
 	}
@@ -66,7 +66,7 @@ func dbToTextRun(modelName string, modelDigest string, runOpts *config.RunOption
 	}
 
 	// get full model run metadata
-	meta, err := db.GetRunFullText(srcDb, runRow, true, "")
+	meta, err := db.GetRunFullText(srcDb.DB, runRow, true, "")
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func dbToTextRun(modelName string, modelDigest string, runOpts *config.RunOption
 	fileCreated := make(map[string]bool)
 
 	// write model run metadata into json, parameters and output result values into csv files
-	if err = toRunText(srcDb, modelDef, meta, outDir, csvName, fileCreated, isUseIdNames); err != nil {
+	if err = toRunText(srcDb.DB, modelDef, meta, outDir, csvName, fileCreated, isUseIdNames); err != nil {
 		return err
 	}
 

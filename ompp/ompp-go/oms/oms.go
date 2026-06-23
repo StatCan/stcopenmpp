@@ -109,6 +109,10 @@ Following arguments supporetd by oms:
 
 	if true then log HTTP requests on console and/or log file.
 
+-oms.Readonly
+
+	if true then only read API enabled, no update, upload, model run or admin API allowed, download partially disabled
+
 -oms.NoAdmin
 
 	if true then disable administrative routes: /admin/ and /admin-all/
@@ -168,12 +172,11 @@ import (
 
 	"github.com/husobee/vestigo"
 	"github.com/jeandeaual/go-locale"
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/text/language"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // config keys to get values from ini-file or command line arguments.
@@ -197,6 +200,7 @@ const (
 	isMicrodataArgKey  = "oms.AllowMicrodata"    // if true then allow model run microdata
 	logRequestArgKey   = "oms.LogRequest"        // if true then log http request
 	apiOnlyArgKey      = "oms.ApiOnly"           // if true then API only web-service, no web UI
+	readOnlyArgKey     = "oms.Readonly"          // if true then only read API enabled, no update, download, upload, model run or admin API allowed
 	adminAllArgKey     = "oms.AdminAll"          // if true then allow global administrative routes: /admin-all/
 	noAdminArgKey      = "oms.NoAdmin"           // if true then disable administrative routes: /admin/ and /admin-all/
 	noShutdownArgKey   = "oms.NoShutdown"        // if true then disable shutdown route: /shutdown/
@@ -224,6 +228,7 @@ var theCfg = struct {
 	isJobPast    bool              // if true then do job history shadow copy
 	isDiskUse    bool              // if true then control disk space usage, it enabled if etc/disk.ini exists
 	isAdminAll   bool              // if true then allow global administrative routes: /admin-all
+	isReadonly   bool              // if true then only read API enabled, no update, upload, model run or admin API allowed, download partially disabled
 	jobDir       string            // job control directory
 	omsName      string            // oms instance name, if empty then derived from address to listen
 	dbcopyPath   string            // if download or upload allowed then it is path to dbcopy.exe
@@ -240,6 +245,7 @@ var theCfg = struct {
 	uploadDir:    "",
 	filesDir:     "",
 	docDir:       "",
+	isReadonly:   false,
 	isJobControl: false,
 	jobDir:       "",
 	omsName:      "",
@@ -289,6 +295,7 @@ func mainBody(args []string) error {
 	_ = flag.String(omsNameArgKey, "", "instance name, automatically generated if empty")
 	_ = flag.Bool(logRequestArgKey, false, "if true then log HTTP requests")
 	_ = flag.Bool(apiOnlyArgKey, false, "if true then API only web-service, no web UI")
+	_ = flag.Bool(readOnlyArgKey, false, "if true then only read API enabled, no update, upload, model run or admin API")
 	_ = flag.Bool(adminAllArgKey, false, "if true then allow global administrative routes: /admin-all/")
 	_ = flag.Bool(noAdminArgKey, false, "if true then disable administrative routes: /admin/ and /admin-all/")
 	_ = flag.Bool(noShutdownArgKey, false, "if true then disable shutdown route: /shutdown/")
@@ -311,9 +318,10 @@ func mainBody(args []string) error {
 	isLogRequest = runOpts.Bool(logRequestArgKey)
 	isApiOnly := runOpts.Bool(apiOnlyArgKey)
 	theCfg.isMicrodata = runOpts.Bool(isMicrodataArgKey)
+	theCfg.isReadonly = runOpts.Bool(readOnlyArgKey)
 	isAdmin := !runOpts.Bool(noAdminArgKey)
-	theCfg.isAdminAll = isAdmin && runOpts.Bool(adminAllArgKey)
-	isShutdown := !runOpts.Bool(noShutdownArgKey)
+	theCfg.isAdminAll = !theCfg.isReadonly && isAdmin && runOpts.Bool(adminAllArgKey)
+	isShutdown := !theCfg.isReadonly && !runOpts.Bool(noShutdownArgKey)
 	theCfg.doubleFmt = runOpts.String(doubleFormatArgKey)
 	theCfg.encodingName = runOpts.String(encodingArgKey)
 
@@ -438,12 +446,6 @@ func mainBody(args []string) error {
 
 		if theCfg.isHome {
 			omppLog.Log("User Home directory:  ", theCfg.homeDir)
-
-			theCfg.inOutDir = filepath.Join(theCfg.homeDir, "io") // download and upload directory for web-server, to serve static content
-
-			if theCfg.inOutDir == "." || !helper.IsDirExist(theCfg.inOutDir) {
-				theCfg.inOutDir = ""
-			}
 		}
 	}
 
@@ -452,60 +454,70 @@ func mainBody(args []string) error {
 	isDownload := false
 	isUpload := false
 
-	theCfg.dbcopyPath = dbcopyPath(theCfg.omsBinDir)
+	if !theCfg.isReadonly {
 
-	if runOpts.Bool(isDownloadArgKey) {
-		if theCfg.inOutDir != "" && theCfg.dbcopyPath != "" {
+		if theCfg.homeDir != "" {
+			theCfg.inOutDir = filepath.Join(theCfg.homeDir, "io") // download and upload directory for web-server, to serve static content
+			if theCfg.inOutDir == "." || !helper.IsDirExist(theCfg.inOutDir) {
+				theCfg.inOutDir = ""
+			}
+		}
 
-			theCfg.downloadDir = filepath.Join(theCfg.inOutDir, "download") // download directory UI
+		theCfg.dbcopyPath = dbcopyPath(theCfg.omsBinDir)
 
-			if !helper.IsDirExist(theCfg.downloadDir) {
+		if runOpts.Bool(isDownloadArgKey) {
+			if theCfg.inOutDir != "" && theCfg.dbcopyPath != "" {
+
+				theCfg.downloadDir = filepath.Join(theCfg.inOutDir, "download") // download directory UI
+
+				if !helper.IsDirExist(theCfg.downloadDir) {
+					theCfg.downloadDir = ""
+				}
+			}
+			isDownload = theCfg.downloadDir != ""
+			if !isDownload {
 				theCfg.downloadDir = ""
+				omppLog.Log("Warning: user home download directory not found or dbcopy not found, download disabled")
+			} else {
+				omppLog.Log("Download directory:   ", theCfg.downloadDir)
 			}
 		}
-		isDownload = theCfg.downloadDir != ""
-		if !isDownload {
-			theCfg.downloadDir = ""
-			omppLog.Log("Warning: user home download directory not found or dbcopy not found, download disabled")
-		} else {
-			omppLog.Log("Download directory:   ", theCfg.downloadDir)
-		}
-	}
-	if runOpts.Bool(isUploadArgKey) {
-		if theCfg.inOutDir != "" && theCfg.dbcopyPath != "" {
+		if runOpts.Bool(isUploadArgKey) {
+			if theCfg.inOutDir != "" && theCfg.dbcopyPath != "" {
 
-			theCfg.uploadDir = filepath.Join(theCfg.inOutDir, "upload") // upload directory UI
+				theCfg.uploadDir = filepath.Join(theCfg.inOutDir, "upload") // upload directory UI
 
-			if !helper.IsDirExist(theCfg.uploadDir) {
+				if !helper.IsDirExist(theCfg.uploadDir) {
+					theCfg.uploadDir = ""
+				}
+			}
+			isUpload = theCfg.uploadDir != ""
+			if !isUpload {
 				theCfg.uploadDir = ""
+				omppLog.Log("Warning: user home upload directory not found or dbcopy not found, upload disabled")
+			} else {
+				omppLog.Log("Upload directory:     ", theCfg.uploadDir)
 			}
 		}
-		isUpload = theCfg.uploadDir != ""
-		if !isUpload {
-			theCfg.uploadDir = ""
-			omppLog.Log("Warning: user home upload directory not found or dbcopy not found, upload disabled")
+
+		// user files directory can be explicitly specified or be the home/io
+		if runOpts.IsExist(filesDirArgKey) {
+
+			theCfg.filesDir = filepath.Clean(runOpts.String(filesDirArgKey))
+			theCfg.filesDir = strings.TrimSuffix(theCfg.filesDir, string(filepath.Separator))
+
+			if theCfg.filesDir == "." || !helper.IsDirExist(theCfg.filesDir) {
+				omppLog.Log("Warning: user files directory not found or invalid:", theCfg.filesDir)
+				theCfg.filesDir = ""
+			}
 		} else {
-			omppLog.Log("Upload directory:     ", theCfg.uploadDir)
+			if theCfg.inOutDir != "" && (isDownload || isUpload) {
+				theCfg.filesDir = theCfg.inOutDir
+			}
 		}
-	}
-
-	// user files directory can be explicitly specified or be the home/io
-	if runOpts.IsExist(filesDirArgKey) {
-
-		theCfg.filesDir = filepath.Clean(runOpts.String(filesDirArgKey))
-		theCfg.filesDir = strings.TrimSuffix(theCfg.filesDir, string(filepath.Separator))
-
-		if theCfg.filesDir == "." || !helper.IsDirExist(theCfg.filesDir) {
-			omppLog.Log("Warning: user files directory not found or invalid:", theCfg.filesDir)
-			theCfg.filesDir = ""
+		if theCfg.filesDir != "" {
+			omppLog.Log("User Files directory: ", theCfg.filesDir)
 		}
-	} else {
-		if theCfg.inOutDir != "" && (isDownload || isUpload) {
-			theCfg.filesDir = theCfg.inOutDir
-		}
-	}
-	if theCfg.filesDir != "" {
-		omppLog.Log("User Files directory: ", theCfg.filesDir)
 	}
 
 	// if UI required then server root directory must have html subdir
@@ -533,23 +545,29 @@ func mainBody(args []string) error {
 	}
 
 	// check if storage control enabled by presence of etc/disk.ini
-	dini := filepath.Join(theCfg.etcDir, "disk.ini")
-	theCfg.isDiskUse = helper.IsFileExist(dini)
-	if theCfg.isDiskUse {
-		omppLog.Log("Storage control:      ", dini)
+	if !theCfg.isReadonly {
+
+		dini := filepath.Join(theCfg.etcDir, "disk.ini")
+		theCfg.isDiskUse = helper.IsFileExist(dini)
+		if theCfg.isDiskUse {
+			omppLog.Log("Storage control:      ", dini)
+		}
 	}
 
 	// check if job control is required:
-	theCfg.jobDir = runOpts.String(jobDirArgKey)
-	theCfg.isJobControl, theCfg.isJobPast, err = jobDirValid(theCfg.jobDir)
-	if err != nil {
-		return helper.ErrorNew("Error: invalid job control directory:", err)
-	}
-	if !theCfg.isJobControl && theCfg.jobDir != "" {
-		return helper.ErrorNew("Error: invalid job control directory:" + theCfg.jobDir)
-	}
-	if theCfg.isJobControl {
-		omppLog.Log("Jobs directory:       ", theCfg.jobDir)
+	if !theCfg.isReadonly {
+
+		theCfg.jobDir = runOpts.String(jobDirArgKey)
+		theCfg.isJobControl, theCfg.isJobPast, err = jobDirValid(theCfg.jobDir)
+		if err != nil {
+			return helper.ErrorNew("Error: invalid job control directory:", err)
+		}
+		if !theCfg.isJobControl && theCfg.jobDir != "" {
+			return helper.ErrorNew("Error: invalid job control directory:" + theCfg.jobDir)
+		}
+		if theCfg.isJobControl {
+			omppLog.Log("Jobs directory:       ", theCfg.jobDir)
+		}
 	}
 
 	// make instance name, use address to listen if name not specified
@@ -596,22 +614,30 @@ func mainBody(args []string) error {
 	apiGetRoutes(router)     // web-service /api routes to get metadata
 	apiReadRoutes(router)    // web-service /api routes to read values
 	apiReadCsvRoutes(router) // web-service /api routes to read values into csv stream
-	if isDownload {
-		apiDownloadRoutes(router) // web-service /api routes to download and manage files at home/io/download folder
-	}
-	if isUpload {
-		apiUploadRoutes(router) // web-service /api routes to upload and manage files at home/io/upload folder
-	}
-	// disable user files downloads from home/io if download disabled
-	if theCfg.filesDir != "" && (isDownload || theCfg.filesDir != theCfg.inOutDir) {
 
-		router.Get("/files/*", filesHandler, logRequest) // serve static content at /files/ url from user files folders, default: home/io
-		apiFilesRoutes(router)                           // web-service /api routes to upload and manage files at home/io/upload folder
+	if !theCfg.isReadonly {
+
+		if isDownload {
+			apiDownloadRoutes(router) // web-service /api routes to download and manage files at home/io/download folder
+		}
+		if isUpload {
+			apiUploadRoutes(router) // web-service /api routes to upload and manage files at home/io/upload folder
+		}
+		// disable user files downloads from home/io if download disabled
+		if theCfg.filesDir != "" && (isDownload || theCfg.filesDir != theCfg.inOutDir) {
+
+			router.Get("/files/*", filesHandler, logRequest) // serve static content at /files/ url from user files folders, default: home/io
+			apiFilesRoutes(router)                           // web-service /api routes to upload and manage files at home/io/upload folder
+		}
 	}
-	apiUpdateRoutes(router)   // web-service /api routes to update metadata
-	apiRunModelRoutes(router) // web-service /api routes to run the model
-	apiUserRoutes(router)     // web-service /api routes for user-specific requests
-	apiServiceRoutes(router)  // web-service /api routes for service state
+
+	if !theCfg.isReadonly {
+		apiUpdateRoutes(router)   // web-service /api routes to update metadata
+		apiRunModelRoutes(router) // web-service /api routes to run the model
+	}
+
+	apiUserRoutes(router)    // web-service /api routes for user-specific requests
+	apiServiceRoutes(router) // web-service /api routes for service state
 	if isAdmin {
 		apiAdminRoutes(router) // web-service /api routes for oms instance administrative tasks
 	}
@@ -660,7 +686,7 @@ func mainBody(args []string) error {
 
 		cancel() // send shutdown completed to the main
 	}
-	if isShutdown {
+	if !theCfg.isReadonly && isShutdown {
 		router.Put("/shutdown", shutdownHandler, logRequest)
 	}
 

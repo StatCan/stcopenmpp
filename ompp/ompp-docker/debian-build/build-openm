@@ -113,13 +113,6 @@ if [ ! -d stcopenmpp/ompp ]; then
 	
 	# Move all contents from $OMPP_GIT_URL/ompp to /$OMPP_USER/ompp
 	mv /home/$OMPP_USER/stcopenmpp/ompp /home/$OMPP_USER/ompp 
-	
-	# Copy select files from the root of %OMPP_GIT_URL% to ompp
-	cp /home/$OMPP_USER/stcopenmpp/CODE_OF_CONDUCT.md /home/$OMPP_USER/ompp/CODE_OF_CONDUCT.md
-	cp /home/$OMPP_USER/stcopenmpp/LICENSE.md /home/$OMPP_USER/ompp/LICENSE.md
-	cp /home/$OMPP_USER/stcopenmpp/README.md /home/$OMPP_USER/ompp/README.md
-	cp /home/$OMPP_USER/stcopenmpp/RELEASE_NOTES.md /home/$OMPP_USER/ompp/RELEASE_NOTES.md
-	cp /home/$OMPP_USER/stcopenmpp/SECURITY.md /home/$OMPP_USER/ompp/SECURITY.md
 
 	# Move all contents from $OMPP_GIT_URL/plugins to /$OMPP_USER/ompp/plugins
     mv /home/$OMPP_USER/stcopenmpp/plugins /home/$OMPP_USER/ompp/plugins

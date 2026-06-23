@@ -4,8 +4,8 @@
 package main
 
 import (
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // ReplaceProfile replace existing or insert new profile and all profile options.
@@ -26,7 +26,7 @@ func (mc *ModelCatalog) ReplaceProfile(dn string, pm *db.ProfileMeta) (bool, err
 		return false, nil
 	}
 
-	err := db.UpdateProfile(dbConn, pm)
+	err := db.UpdateProfile(dbConn.DB, pm)
 	if err != nil {
 		omppLog.Log("Error at update profile: ", dn, ": ", pm.Name, ": ", err.Error())
 		return false, err
@@ -55,7 +55,7 @@ func (mc *ModelCatalog) DeleteProfile(dn, profile string) (bool, error) {
 		return false, nil
 	}
 
-	err := db.DeleteProfile(dbConn, profile)
+	err := db.DeleteProfile(dbConn.DB, profile)
 	if err != nil {
 		omppLog.Log("Error at update profile: ", dn, ": ", profile, ": ", err.Error())
 		return false, err
@@ -88,7 +88,7 @@ func (mc *ModelCatalog) ReplaceProfileOption(dn, profile, key, val string) (bool
 		return false, nil
 	}
 
-	err := db.UpdateProfileOption(dbConn, profile, key, val)
+	err := db.UpdateProfileOption(dbConn.DB, profile, key, val)
 	if err != nil {
 		omppLog.Log("Error at update profile option: ", dn, ": ", profile, ": ", ": ", key, err.Error())
 		return false, err
@@ -121,7 +121,7 @@ func (mc *ModelCatalog) DeleteProfileOption(dn, profile, key string) (bool, erro
 		return false, nil
 	}
 
-	err := db.DeleteProfileOption(dbConn, profile, key)
+	err := db.DeleteProfileOption(dbConn.DB, profile, key)
 	if err != nil {
 		omppLog.Log("Error at delete profile option: ", dn, ": ", profile, ": ", ": ", key, err.Error())
 		return false, err

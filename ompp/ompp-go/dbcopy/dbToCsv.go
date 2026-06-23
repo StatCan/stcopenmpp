@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // lineCsvConverter return csv file row []string or isEof = true
@@ -24,20 +24,20 @@ type lineCsvConverter func() (isEof bool, row []string, err error)
 func dbToCsv(modelName string, modelDigest string, isAllInOne bool, runOpts *config.RunOptions) error {
 
 	// open source database connection and check is it valid
-	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), runOpts.String(dbDriverArgKey))
+	cs, dn := db.IfEmptyMakeDefaultReadOnly(modelName, runOpts.String(fromSqliteArgKey), runOpts.String(dbConnStrArgKey), theCfg.srcDbDriver)
 
-	srcDb, _, err := db.Open(cs, dn, false)
+	srcDb, err := db.Open(cs, dn)
 	if err != nil {
 		return err
 	}
 	defer srcDb.Close()
 
-	if err := db.CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := db.CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		return err
 	}
 
 	// get model metadata
-	modelDef, err := db.GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := db.GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		return err
 	}
@@ -57,27 +57,27 @@ func dbToCsv(modelName string, modelDigest string, isAllInOne bool, runOpts *con
 	fileCreated := make(map[string]bool)
 
 	// write model definition into csv files
-	if err = toModelCsv(srcDb, modelDef, outDir); err != nil {
+	if err = toModelCsv(srcDb.DB, modelDef, outDir); err != nil {
 		return err
 	}
 
 	// write list of languages into csv file
-	if err = toLanguageCsv(srcDb, outDir); err != nil {
+	if err = toLanguageCsv(srcDb.DB, outDir); err != nil {
 		return err
 	}
 
 	// write model language-specific strings into csv file
-	if err = toModelWordCsv(srcDb, modelDef.Model.ModelId, outDir); err != nil {
+	if err = toModelWordCsv(srcDb.DB, modelDef.Model.ModelId, outDir); err != nil {
 		return err
 	}
 
 	// write model text (description and notes) into csv file
-	if err = toModelTextCsv(srcDb, modelDef.Model.ModelId, outDir); err != nil {
+	if err = toModelTextCsv(srcDb.DB, modelDef.Model.ModelId, outDir); err != nil {
 		return err
 	}
 
 	// write model profile into csv file
-	if err = toModelProfileCsv(srcDb, modelName, outDir); err != nil {
+	if err = toModelProfileCsv(srcDb.DB, modelName, outDir); err != nil {
 		return err
 	}
 
@@ -95,17 +95,17 @@ func dbToCsv(modelName string, modelDigest string, isAllInOne bool, runOpts *con
 	isIdNames := false
 
 	// write all model run data into csv files: parameters, output expressions and accumulators
-	if isIdNames, err = toRunListCsv(srcDb, modelDef, outDir, fileCreated, doUseIdNames, isAllInOne); err != nil {
+	if isIdNames, err = toRunListCsv(srcDb.DB, modelDef, outDir, fileCreated, doUseIdNames, isAllInOne); err != nil {
 		return err
 	}
 
 	// write all readonly workset data into csv files: input parameters
-	if err = toWorksetListCsv(srcDb, modelDef, outDir, fileCreated, isIdNames, isAllInOne); err != nil {
+	if err = toWorksetListCsv(srcDb.DB, modelDef, outDir, fileCreated, isIdNames, isAllInOne); err != nil {
 		return err
 	}
 
 	// write all modeling tasks and task run history into csv files
-	if err = toTaskListCsv(srcDb, modelDef.Model.ModelId, outDir); err != nil {
+	if err = toTaskListCsv(srcDb.DB, modelDef.Model.ModelId, outDir); err != nil {
 		return err
 	}
 

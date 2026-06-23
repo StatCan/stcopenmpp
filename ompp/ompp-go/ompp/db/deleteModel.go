@@ -854,6 +854,22 @@ func doDeleteModel(trx *sql.Tx, modelId int) error {
 	}
 
 	// delete model entities:
+	// delete model entity groups
+	err = TrxUpdate(trx, "DELETE FROM entity_group_pc WHERE model_id = "+smId)
+	if err != nil {
+		return err
+	}
+
+	err = TrxUpdate(trx, "DELETE FROM entity_group_txt WHERE model_id = "+smId)
+	if err != nil {
+		return err
+	}
+
+	err = TrxUpdate(trx, "DELETE FROM entity_group_lst WHERE model_id = "+smId)
+	if err != nil {
+		return err
+	}
+
 	// delete model entity master rows
 	err = TrxUpdate(trx, "DELETE FROM model_entity_dic WHERE model_id = "+smId)
 	if err != nil {

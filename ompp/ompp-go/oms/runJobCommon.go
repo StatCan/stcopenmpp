@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // jobDirValid checking job control configuration
@@ -895,6 +895,9 @@ func isPausedJobAllQueue() bool {
 
 // read job control state from the file, return empty state on error or if state file not exist
 func jobStateRead() (*jobControlState, bool) {
+	if !theCfg.isJobControl {
+		return &jobControlState{Queue: []string{}}, false // job control disabled
+	}
 
 	var jcs jobControlState
 	isOk, err := helper.FromJsonFile(jobStatePath(), &jcs)

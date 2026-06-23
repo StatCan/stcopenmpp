@@ -7,8 +7,8 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 // toTaskListCsv writes all successfully completed tasks and tasks run history into csv files.

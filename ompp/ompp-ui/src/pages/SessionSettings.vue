@@ -12,7 +12,7 @@
       <tbody>
 
         <tr>
-          <td class="settings-cell q-pa-sm">
+          <td class="om-light-border q-pa-sm">
             <q-btn
               @click="onModelListClear"
               :disable="!modelCount"
@@ -23,12 +23,12 @@
               :title="$t('Clear models list')"
               />
           </td>
-          <td class="settings-cell q-pa-sm om-text-secondary">{{ $t('List of Models') }}:</td>
-          <td class="settings-cell q-pa-sm">{{ modelCount ? modelCount.toLocaleString() + ' ' + $t('model(s)') : $t('Empty') }}</td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('List of Models') }}:</td>
+          <td class="om-light-border q-pa-sm">{{ modelCount ? modelCount.toLocaleString() + ' ' + $t('model(s)') : $t('Empty') }}</td>
         </tr>
 
         <tr>
-          <td class="settings-cell q-pa-sm">
+          <td class="om-light-border q-pa-sm">
             <q-btn
               @click="onModelClear"
               :disable="!isModel"
@@ -39,12 +39,12 @@
               :title="$t('Clear model')"
               />
           </td>
-          <td class="settings-cell q-pa-sm om-text-secondary">{{ $t('Current Model') }}:</td>
-          <td class="settings-cell q-pa-sm">{{ modelTitle }}</td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('Current Model') }}:</td>
+          <td class="om-light-border q-pa-sm">{{ modelTitle }}</td>
         </tr>
 
         <tr>
-          <td class="settings-cell q-pa-sm">
+          <td class="om-light-border q-pa-sm">
             <q-btn
               @click="onRunTextListClear"
               :disable="!runCount"
@@ -55,12 +55,12 @@
               :title="$t('Clear list of model runs')"
               />
           </td>
-          <td class="settings-cell q-pa-sm om-text-secondary">{{ $t('Model Runs') }}:</td>
-          <td class="settings-cell q-pa-sm">{{ runCount ? runCount.toLocaleString() + ' ' + $t('run result(s)') : $t('Empty') }}</td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('Model Runs') }}:</td>
+          <td class="om-light-border q-pa-sm">{{ runCount ? runCount.toLocaleString() + ' ' + $t('run result(s)') : $t('Empty') }}</td>
         </tr>
 
         <tr>
-          <td class="settings-cell q-pa-sm">
+          <td class="om-light-border q-pa-sm">
             <q-btn
               @click="onWorksetTextListClear"
               :disable="!worksetCount"
@@ -71,12 +71,12 @@
               :title="$t('Clear list of input scenarios')"
               />
           </td>
-          <td class="settings-cell q-pa-sm om-text-secondary">{{ $t('Input Scenarios') }}:</td>
-          <td class="settings-cell q-pa-sm">{{ worksetCount ? worksetCount.toLocaleString() + ' ' + $t('scenario(s)') : $t('Empty') }}</td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('Input Scenarios') }}:</td>
+          <td class="om-light-border q-pa-sm">{{ worksetCount ? worksetCount.toLocaleString() + ' ' + $t('scenario(s)') : $t('Empty') }}</td>
         </tr>
 
         <tr>
-          <td class="settings-cell q-pa-sm">
+          <td class="om-light-border q-pa-sm">
             <q-btn
               @click="onUiLanguageClear"
               :disable="!uiLang"
@@ -87,13 +87,13 @@
               :title="$t('Reset language to default value')"
               />
           </td>
-          <td class="settings-cell q-pa-sm om-text-secondary">{{ $t('Language') }}:</td>
-          <td class="settings-cell q-pa-sm">{{ uiLangTitle }} <span class="om-text-secondary">[{{ this.$q.lang.getLocale() }}]</span></td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('Language') }}:</td>
+          <td class="om-light-border q-pa-sm">{{ uiLangTitle }} <span class="om-text-secondary">[{{ this.$q.lang.getLocale() }}]</span></td>
         </tr>
 
         <tr>
-          <td colspan="2" class="settings-cell q-pa-sm om-text-secondary">{{ $t('Model Downloads') }}:</td>
-          <td class="settings-cell q-pa-sm">
+          <td colspan="2" class="om-light-border q-pa-sm om-text-secondary">{{ $t('Model Downloads') }}:</td>
+          <td class="om-light-border q-pa-sm">
             <q-radio v-model="fastDownload" val="yes" :disable="!serverConfig.AllowDownload" :label="$t('Fast, only to analyze output values')" />
             <br />
             <q-radio v-model="fastDownload" val="no" :disable="!serverConfig.AllowDownload" :label="$t('Full, compatible with desktop model')" />
@@ -106,8 +106,8 @@
           </td>
         </tr>
         <tr>
-          <td colspan="2" class="settings-cell q-pa-sm om-text-secondary">{{ $t('Tree Labels') }}:</td>
-          <td class="settings-cell q-pa-sm">
+          <td colspan="2" class="om-light-border q-pa-sm om-text-secondary">{{ $t('Tree Labels') }}:</td>
+          <td class="om-light-border q-pa-sm">
             <q-radio v-model="labelKind" val="name-only"  :label="$t('Show only name')" />
             <br />
             <q-radio v-model="labelKind" val="descr-only" :label="$t('Show only description')" />
@@ -152,7 +152,7 @@
           <span class="col-auto">
             <q-btn
               @click="onUploadViews"
-              :disable="!isModel || !isUploadFile"
+              :disable="!isModel || !isUploadFile || isReadonlyServer"
               flat
               dense
               class="bg-primary text-white rounded-borders"
@@ -163,7 +163,7 @@
           <span class="col-grow q-pl-sm">
             <q-file
               v-model="uploadFile"
-              :disable="!isModel"
+              :disable="!isModel || isReadonlyServer"
               accept=".view.json"
               outlined
               dense
@@ -188,6 +188,7 @@
         <q-item v-for="pName of paramNames" :key="pName">
           <q-item-section avatar>
             <q-btn
+             :disable="isReadonlyServer"
               @click="onRemoveParamView(pName)"
               flat
               dense
@@ -215,6 +216,7 @@
         <q-item v-for="tName of tableNames" :key="tName">
           <q-item-section avatar>
             <q-btn
+              :disable="isReadonlyServer"
               @click="onRemoveTableView(tName)"
               flat
               dense
@@ -243,6 +245,7 @@
           <q-item v-for="eName of entityNames" :key="eName">
             <q-item-section avatar>
               <q-btn
+                :disable="isReadonlyServer"
                 @click="onRemoveMicrodataView(eName)"
                 flat
                 dense
@@ -301,6 +304,7 @@ export default {
     isUploadFile () {
       return this.uploadFile instanceof File && (this.uploadFile?.name || '') !== '' && this.uploadFile?.type === 'application/json'
     },
+    isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
     ...mapState(useModelStore, [
       'theModel',
@@ -627,8 +631,5 @@ export default {
 <style lang="scss" scoped>
   .settings-table {
     border-collapse: collapse;
-  }
-  .settings-cell {
-    border: 1px solid lightgrey;
   }
 </style>

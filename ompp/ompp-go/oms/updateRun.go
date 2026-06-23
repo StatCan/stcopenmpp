@@ -8,8 +8,8 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/stcopenmpp/ompp-go/ompp/db"
-	"github.com/stcopenmpp/ompp-go/ompp/omppLog"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/omppLog"
 )
 
 // UpdateRunStatus updates run status to the one of run completed: s=success, x=exit, e=error.
@@ -31,7 +31,7 @@ func (mc *ModelCatalog) UpdateRunStatus(dn, rdsn string, status string) (bool, e
 	}
 
 	// find model run by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get model run: ", dn, ": ", rdsn, ": ", err.Error())
 		return false, err
@@ -41,7 +41,7 @@ func (mc *ModelCatalog) UpdateRunStatus(dn, rdsn string, status string) (bool, e
 	}
 
 	// update run status
-	err = db.UpdateRunStatus(dbConn, r.RunId, status)
+	err = db.UpdateRunStatus(dbConn.DB, r.RunId, status)
 	if err != nil {
 		omppLog.Log("Error at run status update: ", dn, ": ", rdsn, ": ", err.Error())
 		return false, err
@@ -68,7 +68,7 @@ func (mc *ModelCatalog) DeleteRunStart(dn, rdsn string) (bool, error) {
 	}
 
 	// find model run by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get model run: ", dn, ": ", rdsn, ": ", err.Error())
 		return false, err
@@ -86,7 +86,7 @@ func (mc *ModelCatalog) DeleteRunStart(dn, rdsn string) (bool, error) {
 		} else {
 			omppLog.Log("Deleted model run: ", dn, ": ", rdsn)
 		}
-	}(dbConn, r.RunId, dn, rdsn)
+	}(dbConn.DB, r.RunId, dn, rdsn)
 
 	return true, nil
 }
@@ -114,7 +114,7 @@ func (mc *ModelCatalog) DeleteRunListStart(dn string, rdsnLst []string) (bool, e
 
 	for _, rdsn := range rdsnLst {
 
-		rLst, err := db.GetRunListByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+		rLst, err := db.GetRunListByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 		if err != nil {
 			omppLog.Log("Error at get model run: ", dn, ": ", rdsn, ": ", err.Error())
 			return false, err
@@ -147,7 +147,7 @@ func (mc *ModelCatalog) DeleteRunListStart(dn string, rdsnLst []string) (bool, e
 		}
 		omppLog.Log("Deleted multiple model runs: ", n, ": ", modelDn)
 
-	}(dbConn, dn, rIds, rm)
+	}(dbConn.DB, dn, rIds, rm)
 
 	return true, nil
 }
@@ -196,7 +196,7 @@ func (mc *ModelCatalog) UpdateRunText(rp *db.RunPub) (bool, string, string, erro
 	}
 
 	// find model run by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		omppLog.Log("Error at get model run: ", dn, ": ", rdsn, ": ", err.Error())
 		return false, dn, rdsn, err
@@ -235,7 +235,7 @@ func (mc *ModelCatalog) UpdateRunText(rp *db.RunPub) (bool, string, string, erro
 	}
 
 	// update model run text and run parameter notes
-	err = rm.UpdateRunText(dbConn, meta, r.RunId, langMeta)
+	err = rm.UpdateRunText(dbConn.DB, meta, r.RunId, langMeta)
 	if err != nil {
 		omppLog.Log("Error at update model run: ", dn, ": ", rdsn, ": ", err.Error())
 		return false, dn, rdsn, err
@@ -248,7 +248,7 @@ func (mc *ModelCatalog) UpdateRunText(rp *db.RunPub) (bool, string, string, erro
 func (mc *ModelCatalog) UpdateRunParameterText(dn, rdsn string, pvtLst []db.ParamRunSetTxtPub) (bool, error) {
 
 	// validate parameters
-	if pvtLst == nil || len(pvtLst) <= 0 {
+	if len(pvtLst) <= 0 {
 		omppLog.Log("Warning: empty list of run parameters to update value notes")
 		return false, nil
 	}
@@ -277,7 +277,7 @@ func (mc *ModelCatalog) UpdateRunParameterText(dn, rdsn string, pvtLst []db.Para
 	}
 
 	// find model run by digest, stamp or run name
-	r, err := db.GetRunByDigestStampName(dbConn, meta.Model.ModelId, rdsn)
+	r, err := db.GetRunByDigestStampName(dbConn.DB, meta.Model.ModelId, rdsn)
 	if err != nil {
 		return false, errors.New("Model run not found: " + dn + ": " + rdsn + ": " + err.Error())
 	}
@@ -301,7 +301,7 @@ func (mc *ModelCatalog) UpdateRunParameterText(dn, rdsn string, pvtLst []db.Para
 	}
 
 	// update run parameter notes
-	err = db.UpdateRunParameterText(dbConn, meta, r.RunId, pvtLst, langMeta)
+	err = db.UpdateRunParameterText(dbConn.DB, meta, r.RunId, pvtLst, langMeta)
 	if err != nil {
 		return false, errors.New("Error at update run parameter notes: " + dn + ": " + rdsn + ": " + err.Error())
 	}

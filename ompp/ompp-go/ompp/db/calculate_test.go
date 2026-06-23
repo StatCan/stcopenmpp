@@ -13,8 +13,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/stcopenmpp/ompp-go/ompp/config"
-	"github.com/stcopenmpp/ompp-go/ompp/helper"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/config"
+	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/helper"
 )
 
 func TestTransalteAccAggrToSql(t *testing.T) {
@@ -34,18 +34,18 @@ func TestTransalteAccAggrToSql(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestTransalteAccAggrToSql(t *testing.T) {
 	if k, ok := modelDef.OutTableByName(tableName); ok {
 		table = &modelDef.Table[k]
 	} else {
-		t.Errorf("output table not found: " + tableName)
+		t.Errorf("output table not found: %s", tableName)
 	}
 
 	validLst := []struct {
@@ -99,10 +99,6 @@ func TestTransalteAccAggrToSql(t *testing.T) {
 		}
 		sql += mainSql
 
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		if sql != v.valid {
 			t.Error("Expected:", v.valid)
 			t.Error("****FAIL:", sql)
@@ -129,18 +125,18 @@ func TestTranslateTableCalcToSql(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +150,7 @@ func TestTranslateTableCalcToSql(t *testing.T) {
 	if k, ok := modelDef.OutTableByName(tableName); ok {
 		table = &modelDef.Table[k]
 	} else {
-		t.Errorf("output table not found: " + tableName)
+		t.Errorf("output table not found: %s", tableName)
 	}
 
 	t.Log("Check calculation SQL")
@@ -265,18 +261,18 @@ func TestCalculateOutputTable(t *testing.T) {
 	cs := MakeSqliteDefaultReadOnly(modelSqliteDbPath)
 	t.Log(cs)
 
-	srcDb, _, err := Open(cs, SQLiteDbDriver, false)
+	srcDb, err := Open(cs, SQLiteDbDriver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srcDb.Close()
 
-	if err := CheckOpenmppSchemaVersion(srcDb); err != nil {
+	if err := CheckOpenmppSchemaVersion(srcDb.DB); err != nil {
 		t.Fatal(err)
 	}
 
 	// get model metadata
-	modelDef, err := GetModel(srcDb, modelName, modelDigest)
+	modelDef, err := GetModel(srcDb.DB, modelName, modelDigest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +282,7 @@ func TestCalculateOutputTable(t *testing.T) {
 	t.Log("Model:", modelDef.Model.Name, " ", modelDef.Model.Digest)
 
 	// create csv converter by including all model runs (test only)
-	rLst, err := GetRunList(srcDb, modelDef.Model.ModelId)
+	rLst, err := GetRunList(srcDb.DB, modelDef.Model.ModelId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +364,7 @@ func TestCalculateOutputTable(t *testing.T) {
 		}
 
 		// read table
-		cLst, rdLt, err := CalculateOutputTable(srcDb, modelDef, tableLt, runIds)
+		cLst, rdLt, err := CalculateOutputTable(srcDb.DB, modelDef, tableLt, runIds)
 		if err != nil {
 			t.Fatal(err)
 		}

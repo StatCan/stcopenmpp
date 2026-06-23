@@ -13,6 +13,13 @@ FROM mcr.microsoft.com/windows/servercore:20H2
 # Ensure C:\Temp exists
 RUN mkdir C:\Temp
 
+# Download 7-Zip
+ADD https://www.7-zip.org/a/7z2601-x64.exe C:\Temp\7z_setup.exe
+
+# Install 7-Zip
+RUN C:\Temp\7z_setup.exe /S /D=C:\7zip\ && `
+  del C:\Temp\7z_setup.exe
+
 # Download Microsoft Visual Studio Build Tools
 RUN curl -L "https://aka.ms/vs/17/release.ltsc.17.4/vs_buildtools.exe" `
   --output C:\Temp\vs_buildtools.exe
@@ -27,6 +34,10 @@ RUN C:\Temp\vs_buildtools.exe --quiet --wait --norestart `
   
 # Delete installer
 RUN del C:\Temp\vs_buildtools.exe
+
+# Set toolset
+ARG PLATFORM_TOOLSET=v143
+ENV PLATFORM_TOOLSET ${PLATFORM_TOOLSET}
 
 # Download Microsoft MPI
 RUN curl -L "https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisetup.exe" `
@@ -47,6 +58,10 @@ RUN msiexec /i C:\Temp\msmpisdk.msi /q /norestart /L* C:\Temp\msmpisdk.log && `
 # Download Git
 RUN curl -L "https://github.com/git-for-windows/git/releases/download/v2.52.0.windows.1/Git-2.52.0-64-bit.exe" `
   --output C:\Temp\git_setup.exe
+  
+# Install Git
+RUN C:\Temp\git_setup.exe /SILENT /SUPPRESSMSGBOXES /DIR=C:\Git /LOG && `
+  del C:\Temp\git_setup.exe
 
 # Set BISON_FLEX_DIR for openM++ build
 ENV BISON_FLEX_DIR=C:\bison_flex
@@ -56,8 +71,8 @@ RUN curl -L "https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/
   --output C:\Temp\winflexbison.zip
 
 # Install WinFlexBison
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\winflexbison.zip' -DestinationPath 'C:\bison_flex'; Remove-Item 'C:\Temp\winflexbison.zip' -Force"
+RUN C:\7zip\7z.exe x -o%BISON_FLEX_DIR% C:\Temp\winflexbison.zip && `
+  del C:\Temp\winflexbison.zip
     
 # Set SQLITE_EXE_DIR for openM++ build
 ENV SQLITE_EXE_DIR=C:\sqlite
@@ -67,32 +82,33 @@ RUN curl -L "https://www.sqlite.org/2025/sqlite-tools-win-x64-3510100.zip" `
   --output C:\Temp\sqlite_bin.zip
 
 # Install SQLite command line tools for Windows
-RUN powershell -NoProfile -Command `
-  "New-Item -ItemType Directory -Force -Path 'C:\sqlite' | Out-Null; Expand-Archive -Path 'C:\Temp\sqlite_bin.zip' -DestinationPath 'C:\sqlite_tmp'; Get-ChildItem 'C:\sqlite_tmp' -File | Move-Item -Destination 'C:\sqlite' -Force; Remove-Item 'C:\sqlite_tmp' -Recurse -Force; Remove-Item 'C:\Temp\sqlite_bin.zip' -Force"
+RUN C:\7zip\7z.exe e -o%SQLITE_EXE_DIR% C:\Temp\sqlite_bin.zip && `
+  del C:\Temp\sqlite_bin.zip
 
 # Download Go
-RUN curl -L "https://go.dev/dl/go1.25.5.windows-amd64.zip" `
+RUN curl -L "https://go.dev/dl/go1.26.1.windows-amd64.zip" `
   --output C:\Temp\go_setup.zip
   
 # Install Go
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\go_setup.zip' -DestinationPath 'C:\'; Remove-Item 'C:\Temp\go_setup.zip' -Force"
+RUN C:\7zip\7z.exe x -oC:\ C:\Temp\go_setup.zip && `
+  del C:\Temp\go_setup.zip
 
 # Download MinGW
 RUN curl -L "https://nuwen.net/files/mingw/history/mingw-20.0.exe" `
   --output C:\Temp\mingw_setup.exe
   
 # Install MinGW
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\mingw_setup.exe' -DestinationPath 'C:\'; Remove-Item 'C:\Temp\mingw_setup.exe' -Force"
-
+RUN C:\7zip\7z.exe x -oC:\ C:\Temp\mingw_setup.exe && `
+  del C:\Temp\mingw_setup.exe
+  
 # Download Node.js
-RUN curl -L "https://nodejs.org/dist/v24.14.0/node-v24.14.0-win-x64.zip" `
+RUN curl -L "https://nodejs.org/dist/v24.14.1/node-v24.14.1-win-x64.zip" `
   --output C:\Temp\node.zip
 
 # Install Node.js
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\node.zip' -DestinationPath 'C:\'; Rename-Item 'C:\node-v24.14.0-win-x64' 'node'; Remove-Item 'C:\Temp\node.zip' -Force"
+RUN C:\7zip\7z.exe x -oC:\ C:\Temp\node.zip && `
+  rename C:\node-v24.14.1-win-x64 node && `
+  del C:\Temp\node.zip
 
 # Download Perl portal release (x86)
 # Note: 5.32.1.1 is the last x86 release, after that only x64 releases available
@@ -100,17 +116,17 @@ RUN curl -L "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-no64-5
   --output C:\Temp\perl32_setup.zip
   
 # Install Perl portable release (x86)
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\perl32_setup.zip' -DestinationPath 'C:\perl32'; Remove-Item 'C:\Temp\perl32_setup.zip' -Force"
+RUN C:\7zip\7z.exe x -oC:\perl32 C:\Temp\perl32_setup.zip && `
+  del C:\Temp\perl32_setup.zip
 
 # Download Perl portal release (x64)
 RUN curl -L "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip" `
   --output C:\Temp\perl64_setup.zip
   
 # Install Perl portable release (x64)
-RUN powershell -NoProfile -Command `
-  "Expand-Archive -Path 'C:\Temp\perl64_setup.zip' -DestinationPath 'C:\perl64'; Remove-Item 'C:\Temp\perl64_setup.zip' -Force"
-
+RUN C:\7zip\7z.exe x -oC:\perl64 C:\Temp\perl64_setup.zip && `
+  del C:\Temp\perl64_setup.zip
+    
 # Install CPAN modules (x86)
 RUN C:\perl32\portableshell /SETENV && `
   SET TEMP=C:\Temp&&SET TMP=C:\Temp&&cpanm Getopt::Long::Descriptive && cpanm Config::Tiny && cpanm pp
@@ -153,7 +169,4 @@ ARG OMPP_GIT_URL=https://github.com/statcan/stcopenmpp
 WORKDIR /build
 
 # Entry point initializes all required build environments:
-ENTRYPOINT ["cmd.exe", "/S", "/C", "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat && C:\\MinGW\\set_distro_paths.bat && C:\\node\\nodevars.bat && %OM_SCRIPTS_DIR%\\copy_scripts.bat &&"]
-
-# Default CMD opens cmd.exe
-CMD ["cmd.exe"]
+ENTRYPOINT ["cmd.exe", "/S", "/C", "call C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat && call C:\\MinGW\\set_distro_paths.bat && call C:\\node\\nodevars.bat && call %OM_SCRIPTS_DIR%\\copy_scripts.bat && cmd.exe"]

@@ -311,7 +311,7 @@
           clickable
           tag="a"
           target="_blank"
-          :href="'/download/' + encodeURIComponent(uds.ZipFileName)"
+          :href="'./download/' + encodeURIComponent(uds.ZipFileName)"
           class="q-pl-none"
           :title="$t('Download') + ' ' + uds.ZipFileName"
           >
@@ -381,7 +381,7 @@
               <a
                 v-if="!prop.node.isGroup"
                 @click="onFolderLeafClick(prop.node.label, '/download/' + prop.node.link)"
-                :href="'/download/' + prop.node.link"
+                :href="'./download/' + prop.node.link"
                 target="_blank"
                 :download="prop.node.label"
                 class="row no-wrap items-center full-width cursor-pointer om-tree-leaf file-link"
@@ -493,7 +493,7 @@
           clickable
           tag="a"
           target="_blank"
-          :href="'/upload/' + encodeURIComponent(uds.ZipFileName)"
+          :href="'./upload/' + encodeURIComponent(uds.ZipFileName)"
           class="q-pl-none"
           :title="$t('Download') + ' ' + uds.ZipFileName"
           >
@@ -563,7 +563,7 @@
               <a
                 v-if="!prop.node.isGroup"
                 @click="onFolderLeafClick(prop.node.label, '/upload/' + prop.node.link)"
-                :href="'/upload/' + prop.node.link"
+                :href="'./upload/' + prop.node.link"
                 target="_blank"
                 :download="prop.node.label"
                 class="row no-wrap items-center full-width cursor-pointer om-tree-leaf file-link"
