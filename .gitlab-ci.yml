@@ -30,26 +30,9 @@ release_artifacts:
       apk add --no-cache curl > /dev/null 2>&1
 
       echo "Downloading artifacts from Artifactory..."
-      for file in $ARTIFACTORY_FILES; do
-        # Determine OS folder based on filename
-        case "$file" in
-          *windows*)
-            folder="windows"
-            ;;
-          *debian*|*ubuntu*)
-            folder="linux"
-            ;;
-          *)
-            folder=""
-            ;;
-        esac
-        
+      for file in $ARTIFACTORY_FILES; do        
         # Build URL safely (handles empty folder)
-        if [ -n "$folder" ]; then
-          url="$ARTIFACTORY_URL/$folder/$file"
-        else
-          url="$ARTIFACTORY_URL/$file"
-        fi
+        url="$ARTIFACTORY_URL/$VERSION-internal/$file"
 
         curl --fail -H "Authorization: Bearer $ARTIFACTORY_TOKEN" -L "$url" -o "$file"
         echo "Downloaded $file"
