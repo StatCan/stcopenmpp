@@ -1,4 +1,4 @@
-module github.com/openmpp/go
+module github.com/statcan/stcopenmpp/ompp/ompp-go
 
 go 1.26.5
 
