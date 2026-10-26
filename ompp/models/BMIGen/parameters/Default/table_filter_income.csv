@@ -1,0 +1,5 @@
+﻿sub_id,Income_quartile,param_value
+0,Income_quartile_1_poorest,true
+0,Income_quartile_2_lower_middle,true
+0,Income_quartile_3_upper_middle,true
+0,Income_quartile_4_richest,true

@@ -17,17 +17,17 @@ import (
 const modelRunsScanInterval = 4021 // timeout in msec, sleep interval between scanning run list in database
 
 // find model run state by model digest and submission stamp, if not found then return false and empty RunState
-func (rsc *RunCatalog) getRunStateBySubmitStamp(digest, submitStamp string) (bool, RunState) {
-	if digest == "" || submitStamp == "" {
-		return false, RunState{}
+func (rsc *RunCatalog) getRunStateBySubmitStamp(modelDigest, submitStamp string) (bool, RunStatePub) {
+	if modelDigest == "" || submitStamp == "" {
+		return false, RunStatePub{}
 	}
 	rsc.rscLock.Lock()
 	defer rsc.rscLock.Unlock()
 
 	// find model run state by submit stamp
-	ml, isFound := rsc.modelRuns[digest]
+	ml, isFound := rsc.modelRuns[modelDigest]
 	if !isFound {
-		return false, RunState{} // model digest not found
+		return false, RunStatePub{} // model digest not found
 	}
 
 	var rsl *runStateLog
@@ -39,10 +39,26 @@ func (rsc *RunCatalog) getRunStateBySubmitStamp(digest, submitStamp string) (boo
 		}
 	}
 	if rsl == nil {
-		return false, RunState{} // submit stamp not found or invalid run state
+		return false, RunStatePub{} // submit stamp not found or invalid run state
 	}
 
-	return true, rsl.RunState
+	return true, rsl.RunStatePub
+}
+
+// find model run state by model  digest and run stamp or submit stamp, if not found then return false and empty RunState
+func (rsc *RunCatalog) getRunStateByStamp(modelDigest, stamp string) (bool, RunStatePub) {
+	if modelDigest == "" || stamp == "" {
+		return false, RunStatePub{}
+	}
+	rsc.rscLock.Lock()
+	defer rsc.rscLock.Unlock()
+
+	// find model run state by digest and run-or-submit stamp
+	rsl := rsc.findRunStateLog(modelDigest, stamp)
+	if rsl == nil {
+		return false, RunStatePub{}
+	}
+	return true, rsl.RunStatePub
 }
 
 // find runStateLog by model digest and run stamp or submit stamp
@@ -256,12 +272,14 @@ func scanModelRuns(doneC <-chan bool) {
 			for k := range rl {
 
 				rsLst[k] = RunState{
-					ModelName:      it.name,
-					ModelDigest:    dgst,
-					RunStamp:       rl[k].RunStamp,
-					IsFinal:        db.IsRunCompleted(rl[k].Status),
-					UpdateDateTime: rl[k].UpdateDateTime,
-					RunName:        rl[k].Name,
+					RunStatePub: RunStatePub{
+						ModelName:      it.name,
+						ModelDigest:    dgst,
+						RunStamp:       rl[k].RunStamp,
+						IsFinal:        db.IsRunCompleted(rl[k].Status),
+						UpdateDateTime: rl[k].UpdateDateTime,
+						RunName:        rl[k].Name,
+					},
 				}
 				if helper.IsUnderscoreTimeStamp(rl[k].RunStamp) {
 					rsLst[k].SubmitStamp = rl[k].RunStamp
@@ -329,7 +347,7 @@ func scanModelRuns(doneC <-chan bool) {
 // update model runs list with db run rows data:
 // add new db run state to model runs list if not exist
 // if run already exist then replace run state with more recent db run data
-// if existing run not in current db run list then remove it if state is final and kill channel is empty nil
+// if existing run not in current db run list then remove it if state is final and kill channel is empty nil value
 func (rsc *RunCatalog) updateModelRuns(digest string, runStateLst []RunState) {
 	rsc.rscLock.Lock()
 	defer rsc.rscLock.Unlock()
@@ -379,7 +397,7 @@ func (rsc *RunCatalog) updateModelRuns(digest string, runStateLst []RunState) {
 		}
 	}
 
-	// remove runs from the list if db run not exist and status is final and kill channel is empty nil
+	// remove runs from the list if db run not exist and status is final and kill channel is empty nil value
 	for stamp, r := range rsc.modelRuns[digest] {
 
 		if !r.IsFinal || r.killC != nil { // skip: model still running

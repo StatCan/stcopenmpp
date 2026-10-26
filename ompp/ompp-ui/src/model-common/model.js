@@ -37,69 +37,18 @@ export const modelByDigest = (dgst, mLst) => {
 
 // return model folder by digest from model list
 export const modelDirByDigest = (dgst, mLst) => {
-  if (!dgst || typeof dgst !== typeof 'string') return ''
-  if (!mLst || !Array.isArray(mLst)) return ''
-  for (const m of mLst) {
-    if (isModel(m) && modelDigest(m) === dgst) {
-      return (!m?.Dir || m.Dir === '.' || m.Dir === '/' || m.Dir === './') ? '' : m.Dir
-    }
-  }
-  return ''
+  return modelDir(modelByDigest(dgst, mLst))
 }
 
 // return model extra properties by digest from model list
 export const modelExtraByDigest = (dgst, mLst) => {
-  if (!dgst || typeof dgst !== typeof 'string') return ''
-  if (!mLst || !Array.isArray(mLst)) return ''
-  for (const m of mLst) {
-    if (isModel(m) && modelDigest(m) === dgst) {
-      if (!m.hasOwnProperty('Extra') || typeof m.Extra !== 'object' || !m.Extra) return {}
-      return m.Extra
-    }
-  }
-  return {}
+  return modelExtra(modelByDigest(dgst, mLst))
 }
 
-// get link to model documentation in current language from ModelName.extra.json
+// find model by digest and return link to model documentation in current language from ModelName.Extra
 export const modelDocLinkByDigest = (dgst, mLst, uiLang, modelLang) => {
-  const me = modelExtraByDigest(dgst, mLst) // content of ModelName.extra.json file
-
-  const docLst = me?.ModelDoc
-  if (!Array.isArray(docLst) || docLst.length <= 0) return ''
-
-  const ui2p = Mlang.splitLangCode(uiLang)
-  let docLink = ''
-  let fLink = ''
-
-  for (let k = 0; k < docLst.length; k++) {
-    const dlc = (docLst[k]?.LangCode || '')
-    if (typeof dlc === typeof 'string') {
-      if (dlc.toLowerCase() === ui2p.lower) {
-        docLink = docLst[k]?.Link || ''
-        break
-      }
-      if (fLink === '') fLink = (dlc.toLowerCase() === ui2p.first) ? (docLst[k]?.Link || '') : ''
-    }
-  }
-  if (docLink === '' && fLink !== '') {
-    docLink = fLink // match UI language by code: en-US => en
-  }
-  if (docLink !== '') return docLink
-
-  const mlc = modelLang.LangCode.toLowerCase() // find link to model documentation in model language
-
-  for (let k = 0; k < docLst.length; k++) {
-    const dlc = (docLst[k]?.LangCode || '')
-    if ((typeof dlc === typeof 'string') && dlc.toLowerCase() === mlc) {
-      docLink = docLst[k]?.Link || ''
-      break
-    }
-  }
-
-  // if link to model documentation not found by language then use first link
-  if (docLink === '') docLink = docLst[0]?.Link || ''
-
-  return docLink
+  const me = modelExtraByDigest(dgst, mLst)
+  return modelDocLink(me, uiLang, modelLang)
 }
 
 // return empty Model and additional properties of model list
@@ -162,4 +111,58 @@ export const modelTitle = (md) => {
   if (!isModel(md)) return ''
   const descr = Dnf.descrOfDescrNote(md)
   return md.Model.Name + ((md.Model.Version || '') ? ': ' + md.Model.Version : '') + ((descr !== '') ? ': ' + descr : '')
+}
+
+// return model folder
+export const modelDir = (md) => {
+    if (!isModel(md)) return ''
+    return (!md?.Dir || md.Dir === '.' || md.Dir === '/' || md.Dir === './') ? '' : md.Dir
+}
+
+
+// return model Extra properties
+export const modelExtra = (md) => {
+  if (!isModel(md)) return {}
+  if (!md.hasOwnProperty('Extra') || typeof md.Extra !== 'object' || !md.Extra) return {}
+
+  return md.Extra
+}
+
+// get link to model documentation in current language from ModelName.Extra
+export const modelDocLink = (me, uiLang, modelLang) => {
+  const docLst = me?.ModelDoc
+  if (!Array.isArray(docLst) || docLst.length <= 0) return ''
+
+  const ui2p = Mlang.splitLangCode(uiLang)
+  let docLink = ''
+  let fLink = ''
+
+  for (let k = 0; k < docLst.length; k++) {
+    const dlc = (docLst[k]?.LangCode || '')
+    if (typeof dlc === typeof 'string') {
+      if (dlc.toLowerCase() === ui2p.lower) {
+        docLink = docLst[k]?.Link || ''
+        break
+      }
+      if (fLink === '') fLink = (dlc.toLowerCase() === ui2p.first) ? (docLst[k]?.Link || '') : ''
+    }
+  }
+  if (docLink === '' && fLink !== '') {
+    docLink = fLink // match UI language by code: en-US => en
+  }
+  if (docLink !== '') return docLink
+
+  const mlc = modelLang.LangCode.toLowerCase() // find link to model documentation in model language
+
+  for (let k = 0; k < docLst.length; k++) {
+    const dlc = (docLst[k]?.LangCode || '')
+    if ((typeof dlc === typeof 'string') && dlc.toLowerCase() === mlc) {
+      docLink = docLst[k]?.Link || ''
+      break
+    }
+  }
+  // if link to model documentation not found by language then use first link
+  if (docLink === '') docLink = docLst[0]?.Link || ''
+
+  return docLink
 }

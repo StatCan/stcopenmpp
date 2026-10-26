@@ -234,11 +234,11 @@ func (cellCvt *CellAllAccConverter) ToCsvIdRow() (func(interface{}, []string) (b
 			}
 		}
 
-		// use "null" string for db NULL values and format for model float types
+		// use "" string for db NULL values and format for model float types
 		for k := 0; k < nAcc; k++ {
 
 			if cell.IsNull[k] {
-				row[1+nRank+k] = "null"
+				row[1+nRank+k] = ""
 			} else {
 
 				row[1+nRank+k] = "0"
@@ -325,11 +325,11 @@ func (cellCvt *CellAllAccConverter) ToCsvRow() (func(interface{}, []string) (boo
 			}
 		}
 
-		// use "null" string for db NULL values and format for model float types
+		// use "" string for db NULL values and format for model float types
 		for k := 0; k < nAcc; k++ {
 
 			if cell.IsNull[k] {
-				row[1+nRank+k] = "null"
+				row[1+nRank+k] = ""
 			} else {
 
 				row[1+nRank+k] = "0"
@@ -420,11 +420,11 @@ func (cellCvt *CellAllAccLocaleConverter) ToCsvRow() (func(interface{}, []string
 			}
 		}
 
-		// use "null" string for db NULL values and format for model float types
+		// use "" string for db NULL values and format for model float types
 		for k := 0; k < nAcc; k++ {
 
 			if cell.IsNull[k] {
-				row[1+nRank+k] = "null"
+				row[1+nRank+k] = ""
 			} else {
 
 				row[1+nRank+k] = "0"

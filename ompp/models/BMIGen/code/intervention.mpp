@@ -1,0 +1,284 @@
+﻿//LABEL(intervention, EN) Risk Factor Interventions
+/* NOTE(intervention, EN)
+	This file implements interventions on BMI that are applied one-time when Person is created,
+	and/or every year on birthday.
+*/
+
+classification cad_risk_factor_t { //EN Risk factors
+    c_bmi //EN Body Mass Index
+};
+
+classification rf_switch_t { //EN Risk Factor Switches
+    rf_evolution_model,  //EN Baseline Evolution
+    rf_relative_change,  //EN Relative Change
+    rf_change_to_value,  //EN Apply Change to Value
+    rf_reintervention    //EN Allow re-intervention
+};
+
+classification rf_intervention_parameter_t { //EN RF Intervention Parameters
+    c_amount_of_change,        //EN Amount of change
+    c_high_risk_lower_cutoff,  //EN Risk group lower cut-off
+    c_high_risk_upper_cutoff,  //EN Risk group upper cut-off
+    c_result_lower_limit,      //EN Floor
+    c_lower_buffer,            //EN Floor buffer size
+    c_result_upper_limit,      //EN Ceiling
+    c_upper_buffer             //EN Ceiling buffer size
+};
+
+classification rf_intervention_time_parameter_t { //EN Time Parameters for RF Interventions
+    c_intervention_start_year,  //EN Intervention start year
+    c_intervention_end_year,    //EN Intervention end year
+    c_max_intervention_years    //EN Max interventions per person
+};
+
+parameter_group pg_intervention_parameters { //EN Intervention parameters
+    pg_risk_factor_interventions
+};
+
+parameter_group pg_risk_factor_interventions { //EN Risk Factor Controls
+    p_rf_interventions,
+    p_rf_intervention_time_period,
+    p_rf_intervention_age_groups,
+    pg_expert_risk_factor_interventions
+};
+
+parameter_group pg_expert_risk_factor_interventions { //EN Experts only
+    p_risk_factor_control_panel,
+    p_risk_factor_evolution_off_age_range
+};
+
+parameters {
+    /* NOTE(p_risk_factor_control_panel, EN)
+	Four "switches" that allow control over
+	>(1) which models of evolution of risk factors are used (see detailed notes below),
+	>(2) how the reductions in risk factors for intervention scenarios are applied (relatively or absolutely), and
+	>(3) whether the reduction is applied to the value of the risk factor or to the proportion in a category.
+	>(4) whether interventions can be applied again after they have once been successful (the person have fallen
+		 out of the target risk group as a result of original intervention)
+
+	>See parameter p_rf_interventions for value of % reduction specified.
+	> ---------------------------------
+	>Base Case Evolution Model
+	> DEFAULT: set all to TRUE for Base scenario
+	> ---------------------------------
+	>BMI
+	> TRUE  : NPHS regressions used (with age restrictions-see p_risk_factor_evolution_off_age_range)
+	> FALSE : No evolution (BMI keeps its initial value)
+	> ---------------------------------
+	*/
+
+    //EN Risk factor control panel
+    logical p_risk_factor_control_panel[cad_risk_factor_t][rf_switch_t];
+
+    /* NOTE(p_rf_interventions, EN)
+	>Risk factor intervention parameter is used to reduce or increase prevalence
+	of risk factors for targeted high risk categories (by sex and age group).
+	The amount can represent a RELATIVE change (interpreted as a percent)
+	or an ABSOLUTE change (interpreted as a value).
+	See p_risk_factor_control_panel to specify if it is to be interpretted as RELATIVE or ABSOLUTE.
+	>
+	>DEFAULT: Set Amount of Change to 0 (Base case scenario).
+	>
+	> AS A PERCENT CHANGE:
+	> Example : -0.1 means 10% reduction in risk factor ("beneficial" intervention)
+	> Example : 0.1 means 10% increase in risk factor ("harmful" intervention)
+	> Range   : -1.0 to 1.0
+	>
+	> AS A ABSOLUTE CHANGE:
+	> Example : 2 means reduce the risk factor value by 2 units
+	> Range   : user discretion
+	> Default : 0.0 (no intervention)
+	>
+	> HIGH RISK CUTOFF (UPPER, LOWER)
+	> Example: apply the BMI reduction % to all persons with BMI falling between the two specified values
+	> Range   : varies by risk factor
+	> Default : none.
+	>
+	> FLOOR, CEILING and BUFFERS
+	> As of May 2011, these are the new controls to restrict RF values resulting from interventions. The
+	total of 4 controls: 2 for specifying the actual limits, above which or below which the RF value is not
+	allowed to fall, and 2 - for the size of the buffer intervals adjacent to floor and ceiling respectively.
+	The buffers serve to prevent having too many people ending up "at the border" as a result of interventions.
+	Whenever a risk factor crosses the midpoint of the buffer interval (up for upper buffer and down for lower
+	buffer) as a result of an intervention, the person is assigned a value drawn uniformly from the buffer
+	interval instead of the value that would be computed without restrictions.
+	>
+	>
+	*/
+
+    //EN Risk factor interventions
+    double p_rf_interventions[cad_risk_factor_t][rf_intervention_parameter_t];
+
+    /* NOTE(p_rf_intervention_time_period, EN)
+	Parameter that defines when and for how long RF interventions are applied. Interventions, as defined by
+	p_rf_interventions are applied annually within the interval [start year, end year). The third parameter
+	restricts the total number of annnual interventions for one person. This parameter is only meaningful if
+	it is set to less than the difference between end year and start year.
+	Nb: Interventions are NOT applied in the end year.
+	*/
+
+    //EN Time period for risk factor interventions
+    double p_rf_intervention_time_period[cad_risk_factor_t][rf_intervention_time_parameter_t];
+
+    /* NOTE(p_rf_intervention_age_groups, EN)
+	As of May 2011, the p_rf_interventions parameter is no longer tabulated by age and sex. Instead, this
+	separate table of logical switches is used to indicate, to which age/sex groups RF interventions (as
+	specified by p_risk_factor_control_panel, p_rf_interventions and p_rf_intervention_time_period) are applied.
+
+	Caveat: compound change in BMI and baseline evolution switch shall not be affected by this parameter
+	*/
+
+    //EN Target age/sex groups for risk factor interventions
+    logical p_rf_intervention_age_groups[sex_t][age_group_rfi_t][cad_risk_factor_t];
+
+    /* NOTE(p_risk_factor_evolution_off_age_range, EN)
+	Only meaningful when p_risk_factor_control_panel[x][rf_evolution_model]
+	is TRUE for risk factor x.
+	Used to interupt the modeled evolution of RISK FACTORS for
+	a period determined by an age range
+	>NB: Only used for BMI
+	>NB: Always set second parameter to 999 (cannot restart yet).
+	*/
+
+    //EN Risk factor evolution off age ranges
+    int p_risk_factor_evolution_off_age_range[cad_risk_factor_t][c_lower_upper_bounds_t];
+};
+
+actor person
+{
+    void intervene_on_bmi();
+
+    void risk_factor_interventions();
+    hook risk_factor_interventions, birthday_event, 30;
+    hook risk_factor_interventions, start, 20;
+
+    int n_interventions_applied[cad_risk_factor_t];
+    logical l_intervention_succeeded[cad_risk_factor_t];
+};
+
+/* NOTE(person.risk_factor_interventions, EN)
+	These INTERVENTIONS are performed after Start and each birthday.
+	They are potentially applied more than once (depending on parameter choices).
+
+	INTERVENTION : BMI (p_rf_interventions and related parameters)
+	INTERVENTION : BMI (PHAC elasticity factors, p_bmi_intervention and p_bmi_elasticity)
+*/
+
+void person::risk_factor_interventions()
+{
+    if (truncated_age == lifespan_age_start)
+    {
+        for (int n_rf = 0; n_rf < SIZE(cad_risk_factor_t); n_rf++)
+        {
+            n_interventions_applied[n_rf] = 0;
+            l_intervention_succeeded[n_rf] = FALSE;
+        }
+    }
+
+    intervene_on_bmi();
+    update_bmi_intervention_factor();
+
+    hook_risk_factor_interventions();
+}
+
+void person::intervene_on_bmi()
+{
+    double d_amount_of_change = { 0.0 };
+    int n_age_group_rfi = SPLIT(truncated_age, age_group_rfi_t);
+    double d_lower_trigger = { 0.0 };
+    double d_upper_trigger = { 0.0 };
+    double bmi_altered = g_bmi;
+
+    d_amount_of_change = p_rf_interventions[c_bmi][c_amount_of_change];
+
+    if ((calendar_year >= p_rf_intervention_time_period[c_bmi][c_intervention_start_year]) &&
+        (calendar_year < p_rf_intervention_time_period[c_bmi][c_intervention_end_year]) &&
+        (p_rf_intervention_age_groups[sex][n_age_group_rfi][c_bmi] == TRUE) &&
+        (bmi_altered >= p_rf_interventions[c_bmi][c_high_risk_lower_cutoff]) &&
+        (bmi_altered <= p_rf_interventions[c_bmi][c_high_risk_upper_cutoff]) &&
+        (n_interventions_applied[c_bmi] < p_rf_intervention_time_period[c_bmi][c_max_intervention_years]) &&
+        (p_risk_factor_control_panel[c_bmi][rf_reintervention] || !l_intervention_succeeded[c_bmi]))
+    {
+        if (p_risk_factor_control_panel[c_bmi][rf_relative_change])
+        {
+            if (p_risk_factor_control_panel[c_bmi][rf_change_to_value])
+            {
+                bmi_altered *= (1.0 + d_amount_of_change);
+            }
+
+            else
+            {
+                if (d_amount_of_change < 0.0)
+                {
+                    d_amount_of_change = -1.0*d_amount_of_change;
+                    if (RandUniform(35) < d_amount_of_change)
+                    {
+                        if (bmi == bmi_cat_4)
+                        {
+                            bmi_altered = 29.0;
+                        }
+                        else if (bmi == bmi_cat_3)
+                        {
+                            bmi_altered = 24.0;
+                        }
+                        else if (bmi == bmi_cat_2)
+                        {
+                            bmi_altered = 18.4;
+                        }
+                    }
+                }
+                else
+                {
+                    if (RandUniform(66) < d_amount_of_change)
+                    {
+                        if (bmi == bmi_cat_3)
+                        {
+                            bmi_altered = 31.0;
+                        }
+                        else if (bmi == bmi_cat_3)
+                        {
+                            bmi_altered = 26.0;
+                        }
+                        else if (bmi == bmi_cat_2)
+                        {
+                            bmi_altered = 19.0;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            bmi_altered += d_amount_of_change;
+        }
+
+        if (d_amount_of_change != 0)
+        {
+            d_lower_trigger = p_rf_interventions[c_bmi][c_result_lower_limit] + p_rf_interventions[c_bmi][c_lower_buffer] / 2;
+            d_upper_trigger = p_rf_interventions[c_bmi][c_result_upper_limit] - p_rf_interventions[c_bmi][c_upper_buffer] / 2;
+
+            if (bmi_altered < d_lower_trigger)
+            {
+                bmi_altered = p_rf_interventions[c_bmi][c_result_lower_limit] +
+                    (RandUniform(75) * p_rf_interventions[c_bmi][c_lower_buffer]);
+            }
+            else if (bmi_altered > d_upper_trigger)
+            {
+                bmi_altered = p_rf_interventions[c_bmi][c_result_upper_limit] -
+                    (RandUniform(76) * p_rf_interventions[c_bmi][c_upper_buffer]);
+            }
+
+            if ((bmi_altered < p_rf_interventions[c_bmi][c_high_risk_lower_cutoff]) ||
+                (bmi_altered > p_rf_interventions[c_bmi][c_high_risk_upper_cutoff]))
+            {
+                l_intervention_succeeded[c_bmi] = TRUE;
+            }
+        }
+
+        n_interventions_applied[c_bmi]++;
+    }
+
+    g_bmi = COERCE(bmi_range_t, bmi_altered);
+
+    hook_intervene_on_bmi();
+}

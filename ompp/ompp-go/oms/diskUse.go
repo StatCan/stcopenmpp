@@ -329,35 +329,3 @@ func initDiskState(diskIniPath string) (bool, diskUseConfig) {
 
 	return true, cfg
 }
-
-// Return db cleanup log file name and file path.
-// Example of db cleanup file name: db-cleanup.2022_07_08_23_03_27_555.RiskPaths.console.txt
-func dbCleanupLogNamePath(baseName, logDir string) (string, string) {
-
-	ts, _ := theCatalog.getNewTimeStamp()
-	fn := "db-cleanup." + ts + "." + baseName + ".console.txt"
-
-	return fn, filepath.Join(logDir, fn)
-}
-
-// parse db cleanup log path:
-// remove directory, remove db-cleanup. prefix, remove .console.txt extension.
-// Return date-time stamp and db file name and log file name without directory.
-func parseDbCleanupLogPath(srcPath string) (string, string, string) {
-
-	_, fn := filepath.Split(srcPath)
-
-	if !strings.HasPrefix(fn, "db-cleanup.") || !strings.HasSuffix(fn, ".console.txt") {
-		return "", "", ""
-	}
-	p := fn[:len(fn)-len(".console.txt")]
-	p = p[len("db-cleanup."):]
-
-	// check result: it must 2 non-empty parts and first must be a time stamp
-	sp := strings.SplitN(p, ".", 2)
-
-	if len(sp) < 2 || !helper.IsUnderscoreTimeStamp(sp[0]) || sp[1] == "" {
-		return "", "", "" // source file path is not db cleanup log file
-	}
-	return sp[0], sp[1], fn
-}

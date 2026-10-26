@@ -20,14 +20,10 @@ export const useServerStateStore = defineStore('server-state', {
         cfg.IsAdminAll ??= false
         cfg.IsJobControl ??= false
         cfg.IsReadonly ??= false
-        let uiex = {}
-        try {
-          uiex = JSON.parse((cfg?.UiExtra || '{}'))
-        } catch {
-          uiex = {}
+        if (!cfg.hasOwnProperty('UiExtra') || typeof cfg.UiExtra !== 'object' || !cfg.UiExtra) {
+          cfg.UiExtra = {}
         }
         this.config = cfg
-        this.config.UiExtra = uiex
       }
     },
 

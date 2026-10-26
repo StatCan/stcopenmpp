@@ -1,0 +1,187 @@
+﻿//LABEL(tab-standard, EN) Standard output Tables
+/* NOTE(tab-standard, EN)
+	 Standard output Tables: population, deaths and life-long cohort statistics.
+*/
+partition age_group5_t { 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80 };
+partition age_group18_5_t { 18, 19, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90 };
+partition age_group20_5_t { 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
+
+partition yeargroup_t { 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+    2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+    2023, 2024, 2025, 2026, 2027 };
+
+partition from_2002_to_2022_by_10_t { 2002, 2012, 2022 };
+partition from_30_to_90_by_10_plus_21_t { 21, 30, 40, 50, 60, 70, 80, 90 }; //EN Age group
+
+table_group tg_population_tables { //EN Population Tables
+    t_population,
+    t_population_province,
+    t_population_start,
+    t_population_start_lean,
+    t_pop_start,
+    t_pop_count,
+    t_population_source
+};
+
+table_group tg_mortality_tables { //EN Mortality and life expectancy
+    t_mortality_bmi,
+    t_cohort_life_long
+};
+
+table person t_changes
+[in_tabulation_scope]
+{
+    population_source +
+    *
+    {
+        changes(sex),
+        changes(g_bmi_phac),
+        changes(g_education),
+        changes(g_region),
+        changes(g_income_quartile),
+        duration()
+    }
+    * sex +
+};
+
+table person t_pop_count //EN Population by sex, age, province and year
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    {
+        entrances(alive, FALSE),               //EN Deaths
+        entrances(alive, FALSE) / duration(),  //EN Death hazard rate  decimals=5
+        nz_delta(duration()),                  //EN Population Count
+        duration()                             //EN Person-years decimals=1
+    }
+    * g_province +                            //EN Province
+    * sex +                                   //EN Sex
+    * report_calendar_year                    //EN Year
+    * split(lifespan_age, age_group20_5_t) +  //EN Age group
+};
+
+table person t_population //EN Population by sex, age and year
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    {
+        nz_delta(duration()),  //EN Population count
+        duration()             //EN Person-years decimals=1
+    }
+    * sex +                 //EN Sex
+    * report_calendar_year  //EN Year
+    * truncated_age +       //EN Age
+};
+
+table person t_population_province //EN Population by province and year
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    place_of_birth + //EN Place of birth
+    *
+    sex + //EN Sex
+    *
+    {
+        nz_delta(duration()),  //EN Population Count
+        duration()             //EN Person-years decimals=1
+    }
+    * g_province +          //EN Province
+    * report_calendar_year  //EN Year
+};
+
+table person t_population_start_lean //EN Population by population source, sex, birthplace
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    population_source + //EN Population source
+    *
+    {
+        nz_delta(duration()) //EN Population count
+    }
+    *
+    sex + //EN Sex
+    *
+    place_of_birth + //EN Place of birth
+};
+
+table person t_population_source //EN Population source table
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    population_source + * //EN Population Source
+    {
+        nz_delta(duration()),  //EN Population Count
+        duration()             //EN Person-years decimals=1
+    }
+    * sex +                                         //EN Sex
+    * report_calendar_year                          //EN Year
+    * split(lifespan_age_start, age_group18_5_t) +  //EN Age group
+};
+
+table person t_population_start //EN Population by year created and age created
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    place_of_birth + *  //EN Place of birth
+    g_province + *      //EN Province
+    {
+        nz_delta(duration()) //EN Population count
+    }
+    * sex +                                         //EN Sex
+    * split(lifespan_age_start, age_group18_5_t) +  //EN Age at startup
+    * split(calendar_year_start, yeargroup_t)       //EN Year at startup
+};
+
+table person t_pop_start //EN Population by sex, age and year
+[in_tabulation_scope && WITHIN(report_year_t, year) && calendar_year <= p_max_year_new_arrivals]
+{
+    {
+        nz_delta(duration()),  //EN Population count
+        duration()             //EN Person-years decimals=1
+    }
+    * sex +                                         //EN Sex
+    * report_calendar_year                          //EN Year
+    * split(lifespan_age_start, age_group18_5_t) +  //EN Age group
+};
+
+/* NOTE(t_mortality_bmi, EN)
+Deaths, person-years and death rates by sex, 5-year age group, self-reported BMI category and year.
+Deaths include the deterministic exits at max_life; exits at max_year are excluded by the year filter.
+*/
+table person t_mortality_bmi //EN Mortality by sex, age, BMI category and year
+[in_tabulation_scope && WITHIN(report_year_t, year)]
+{
+    sex +                                     //EN Sex
+    * split(lifespan_age, age_group20_5_t) +  //EN Age group
+    * bmi4cat_phac +                          //EN BMI category (self-reported)
+    * {
+        entrances(alive, FALSE),              //EN Deaths
+        duration(),                           //EN Person-years decimals=1
+        entrances(alive, FALSE) / duration()  //EN Death rate decimals=5
+    }
+    * report_calendar_year //EN Year
+};
+
+/* NOTE(t_cohort_life_long, EN)
+This table provides lifelong statistics for various cohorts like, for instance, actors who were created at age 40-49 in years 2012-2021 (those would be people who immigrate in Canada in 2012-2021 at age 40-49).
+
+Notes
+1. Calendar year at start = [min,2002[ corresponds to 2001 and hence provide life long statistics for those who were Canadian residents in 2001.
+2. If Calendar year at start is not [min,2002[ (e.g. [2012,2022[ ), the youngest initial age group corresponds to so-called new births (Canadian residents reaching the youngest StartPop age after 2001).
+3. It is a good idea to check if Deterministic deaths (max year reached) is 0 or not.  If not zero, it means that the simulation of some persons were interupted because calendar year reached the value of the input parameter "Year simulation ends".  You may want to set it to a higher value.
+*/
+
+table person t_cohort_life_long [in_tabulation_scope && alive] //EN Various cohorts lifelong statistics
+{
+    sex + //EN Sex
+    *
+    split(calendar_year_start, from_2002_to_2022_by_10_t) + //EN Calendar year at start
+    *
+    split(g_bmi_start, bmi4cat_t) + //EN Initial BMI category
+    *
+    {
+        nz_delta(duration()),                           //EN Nb persons
+        duration(),                                     //EN PY (person-years)
+        duration() / nz_delta(duration()),              //EN Residual LE (life expectancy)                      decimals=2
+        weighted_duration(g_bmi_phac) / duration(),     //EN Average BMI over remaining life (self-reported)    decimals=2
+        duration(bmi4cat_phac, obese) / duration(),     //EN Proportion of remaining life obese (self-reported) decimals=4
+        entrances(alive, FALSE),                        //EN Deaths (deterministic deaths included)
+        entrances(alive_deterministic_max_year, FALSE)  //EN Deterministic deaths (max year reached)
+    }
+    *
+    split(lifespan_age_start, from_30_to_90_by_10_plus_21_t) + //EN Initial age
+};

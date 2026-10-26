@@ -90,13 +90,18 @@ export default {
       pvKeyPos: [],               // position of each dimension item in cell key
       locale: '',                 // current locale to format values
       isDragging: false,          // if true then user is dragging dimension select control
-      selectDimName: '',      // selected dimension name
+      selectDimName: '',          // selected dimension name
       isOtherDropDisabled: false, // if true then others drop area disabled
+      filterCellCount: 0,     // number of cells filtered out by dimension items selection
+      visibleCellCount: 0,    // visible cells count: total - filter
       isPages: false,
       pageStart: 0,
       pageSize: 0,
       isLastPage: false,
       isHidePageControls: false,
+      pageStartLabel: '0',
+      pageSizeOpts: [],
+      pageSizeVals: [10, 40, 100, 200, 400, 1000, 2000, 4000, 10000, 20000, 0],
       loadRunWait: false,
       refreshRunTickle: false,
       runInfoTickle: false,
@@ -239,6 +244,7 @@ export default {
 
       this.ctrl.kind = Puih.ekind.MICRO // default view
       this.pvc.reader = this.readerMicro
+      this.updatePageSizeOpts()
     },
     // setup all dimensions and microdata view formatter
     setupDims () {
@@ -619,6 +625,7 @@ export default {
         this.pageStart = 0
         this.pageSize = 0
       }
+      this.updatePageSizeOpts()
 
       // store view and refresh pivot view: both dimensions labels and table body
       if (this.ctrl.kind === Puih.ekind.CALC || this.ctrl.kind === Puih.ekind.CMP) this.doCalcPage()
@@ -685,6 +692,7 @@ export default {
       // refresh pivot view: both dimensions labels and table body
       this.ctrl.isPvDimsTickle = !this.ctrl.isPvDimsTickle
       this.ctrl.isPvTickle = !this.ctrl.isPvTickle
+      this.updatePageSizeOpts()
     },
     // store pivot view
     storeView () {
@@ -824,6 +832,7 @@ export default {
 
       // set new view kind and  store pivot view
       this.ctrl.kind = Puih.ekind.MICRO
+      this.updatePageSizeOpts()
       this.storeView()
       this.doRefreshDataPage()
     },
@@ -937,8 +946,29 @@ export default {
       this.calcEditTickle = !this.calcEditTickle
     },
     // copy edited calcultion list into calcEnums
+    // or if calcultion list is empty then clear calcEnums and other calculation state
     onCalcEditApply (cLst) {
-      if (!Mdf.isLength(cLst) || cLst.findIndex(c => !!c.calc && Mdf.isLength(c.calc.trim())) < 0) {
+      if (!Array.isArray(cLst)) {
+        console.warn('Invalid (empty) list of calculated measure attributes', cLst)
+        this.$q.notify({ type: 'negative', message: this.$t('Invalid (empty) list of calculated measure attributes') })
+        return
+      }
+
+      // if calcultion list is empty then clear calculation state
+      if (!Mdf.isLength(cLst)) {
+        this.calcEnums = []
+        this.groupBy = []
+        this.groupDimCalc = []
+        this.attrCalc = []
+        this.aggrCalc = '' // disable update from menu
+        this.cmpCalc = ''
+
+        this.doMicroPage()
+        return
+      }
+
+      // apply edited calcultion list
+      if (cLst.findIndex(c => !!c.calc && Mdf.isLength(c.calc.trim())) < 0) {
         console.warn('Invalid (empty) list of calculated measure attributes', cLst)
         this.$q.notify({ type: 'negative', message: this.$t('Invalid (empty) list of calculated measure attributes') })
         return
@@ -1153,6 +1183,7 @@ export default {
 
       // set new view kind, store pivot view and refersh the data
       this.ctrl.kind = this.isRunCompare ? Puih.ekind.CMP : Puih.ekind.CALC
+      this.updatePageSizeOpts()
       this.updateCalcFormat()
       this.pvc.reader = this.makeCalcReader()
     },
@@ -1438,6 +1469,24 @@ export default {
       return !this.pageSize || typeof this.pageSize !== typeof 1 || this.pageSize <= 0
     },
 
+    // update page size labels and  start label
+    updatePageSizeOpts () {
+      const scale = this.ctrl.kind === Puih.ekind.MICRO ? this.attrCount : 1
+      this.pageSizeOpts = []
+      for (const val of this.pageSizeVals) {
+        this.pageSizeOpts.push({
+          value: val,
+          label: (!val || typeof val !== typeof 1 || val <= 0) ? this.$t('All') : (val * (scale || 1)).toLocaleString()
+        })
+      }
+      this.updatePageStartLabel()
+    },
+    // update page start label
+    updatePageStartLabel() {
+      const scale = this.ctrl.kind === Puih.ekind.MICRO ? this.attrCount : 1
+      this.pageStartLabel = (this.pageStart * scale).toLocaleString()
+    },
+
     // download microdata as csv file
     onDownload () {
       // start with:
@@ -1695,6 +1744,12 @@ export default {
 
     // pivot table view updated: item keys layout updated
     onPvKeyPos (keyPos) { this.pvKeyPos = keyPos },
+
+    // new pivot table size
+    onPvSize (nTotal, nFilter, nData) {
+      this.filterCellCount = nFilter
+      this.visibleCellCount = nTotal - nFilter
+    },
 
     // dimensions drag, drop and selection filter
     //
@@ -2028,6 +2083,9 @@ export default {
           pageSize: this.isPages ? this.pageSize : 0
         })
       }
+      this.updatePageStartLabel()
+      this.filterCellCount = 0
+      this.visibleCellCount = 0
     },
 
     // get page of aggregated microdata from current model run
@@ -2132,6 +2190,9 @@ export default {
           pageSize: this.isPages ? this.pageSize : 0
         })
       }
+      this.updatePageStartLabel()
+      this.filterCellCount = 0
+      this.visibleCellCount = 0
     }
   },
 

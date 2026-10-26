@@ -23,3 +23,33 @@ $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #33465c; // indigo-13 instead of #31CCEC;
 $warning   : #F2C037;
+
+// UI color scheme: dark blue ($primary) is used for the top bar, active tab and dialog titles,
+// other elements use light tones of it and one accent color per kind of object
+$om-navy          : $primary; // top bar, active tab
+$om-surface       : #f3f6f9;  // section headers background
+$om-surface-hover : #e9eef4;
+$om-tonal         : #e2e9f1;  // toolbar buttons background
+$om-tonal-hover   : #d2dce8;
+$om-tonal-text    : #2b3d52;  // toolbar buttons icon and text
+$om-cta           : #2e8b4f;  // main action: Run the Model, same color as Run the Model tab
+$om-cta-hover     : #25733f;
+
+// accent color by kind of object: tabs, section headers
+$om-c-run         : #2f80c0;  // model runs
+$om-c-set         : #e07b24;  // input scenarios
+$om-c-new-run     : #2e8b4f;  // run the model
+$om-c-param       : #1a9988;  // parameters
+$om-c-table       : #7b5ea7;  // output tables
+$om-c-entity      : #b0457f;  // microdata
+$om-c-log         : #6b7785;  // run log
+$om-c-updown      : #b07d12;  // downloads and uploads
+$om-c-notes       : #1a9988;  // description and notes
+$om-c-options     : #5f7389;  // advanced options
+$om-c-advanced    : #3f6fb5;  // advanced run options
+$om-c-cluster     : #6b7785;  // cluster run options
+
+// page spacing
+$om-page-gutter   : 16px;     // left and right margin of the pages
+$om-page-top      : 12px;     // space between the top bar and the tabs
+

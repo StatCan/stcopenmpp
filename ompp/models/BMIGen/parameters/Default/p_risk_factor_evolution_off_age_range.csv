@@ -1,0 +1,3 @@
+﻿sub_id,Risk_factors,Dim1,param_value
+0,Body_Mass_Index,LOWER_BOUND,999
+0,Body_Mass_Index,UPPER_BOUND,999

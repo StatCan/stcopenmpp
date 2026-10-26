@@ -1,0 +1,555 @@
+﻿//LABEL(BMIGen, EN) Person Core
+/* NOTE(BMIGen, EN)
+	This file initializes attributes for the person when first created.
+*/
+
+version 1, 0, 0, 0;
+//LABEL(model, EN) A microsimulation model of body mass index and mortality in which the individual is the unit of analysis
+
+classification place_of_birth_t {
+    canada,  //EN CANADA
+    abroad   //EN ABROAD
+};
+
+classification region_t { //EN Region
+    atlantic,  //EN ATLANTIC
+    quebec,    //EN QUEBEC
+    ontario,   //EN ONTARIO
+    prairies,  //EN PRAIRIES
+    bc_region  //EN BCregion
+};
+
+classification province_t { //EN Province
+    //EN Newfoundland
+    nfld,
+    //EN P.E.I.
+    pei,
+    //EN Nova Scotia
+    n_s,
+    //EN New Brunswick
+    n_b,
+    //EN Quebec
+    que,
+    //EN Ontario
+    ont,
+    //EN Manitoba
+    man,
+    //EN Saskatchewan
+    sask,
+    //EN Alberta
+    alta,
+    //EN British Columbia
+    b_c
+};
+
+classification c_province_t { //EN Province and Territories
+    //EN Newfoundland
+    c_nfld,
+    //EN P.E.I.
+    c_pei,
+    //EN Nova Scotia
+    c_ns,
+    //EN New Brunswick
+    c_nb,
+    //EN Quebec
+    c_que,
+    //EN Ontario
+    c_ont,
+    //EN Manitoba
+    c_man,
+    //EN Saskatchewan
+    c_sask,
+    //EN Alberta
+    c_alta,
+    //EN British Columbia
+    c_bc,
+    //EN Yukon
+    c_yukon,
+    //EN North West Territories
+    c_nwt,
+    //EN Nunavut
+    c_nunavut
+};
+
+aggregation region_t, province_t
+{
+    atlantic, nfld,
+    atlantic, pei,
+    atlantic, n_s,
+    atlantic, n_b,
+    quebec, que,
+    ontario, ont,
+    prairies, man,
+    prairies, sask,
+    prairies, alta,
+    bc_region, b_c
+};
+
+classification education_t { //EN Education level
+    educ1,  //EN Less than secondary
+    educ2,  //EN Secondary grad
+    educ3,  //EN Other post-secondary
+    educ4   //EN Post-secondary grad
+};
+
+classification education_na_t { //EN Education level
+    educ_na_1,  //EN < THAN SECONDARY
+    educ_na_2,  //EN SECONDARY GRAD
+    educ_na_3,  //EN OTHER POST-SEC
+    educ_na_4,  //EN POST-SEC. GRAD
+    educ_na_na  //EN Not applicable  (age < 20)
+};
+
+classification income_quartile_t { //EN Income quartile
+    //EN Income quartile 1 (poorest)
+    income_q1,
+    //EN Income quartile 2 (lower middle)
+    income_q2,
+    //EN Income quartile 3 (upper middle)
+    income_q3,
+    //EN Income quartile 4 (richest)
+    income_q4
+};
+//EN Sex
+classification sex_t {
+    //EN Female
+    female,
+    //EN Male
+    male
+};
+
+range life_t { 0, 99 }; //EN Age
+
+//EN year of birth
+range life_span_t { 0, 119 }; //EN span of life *GR*
+
+range range_from_2001_to_2111_t { 2001, 2111 }; //EN year
+
+range year_t { 1872, 2056 }; //EN year
+
+range years_t { 2001, 2100 }; //EN Year
+
+/* NOTE(years_t, EN)
+Various parts of the code uses YEARS but the code is robust to changes in the range specified ie no modification of
+code is required.
+However, changing YEARS impacts on parameters p_population and p_immig and appropriate data must be supplied
+for the range of years chosen.
+The other related parameter is p_start_year. It determines when the simulation starts.
+We can continue to set it 2001 to continue as usual, but we now also have the option of setting
+it to an earlier year for purposes of validation (or later such as 2003 or 2005 if we update to more recent waves
+of CCHS).
+eg1, start simulation in 1971 (census population estimates as StartPop db)
+	with certain incidence rates, and see what prevalence rates generated for 2001)
+eg2, start simulation in 1994 (with NPHS 1994 as StartPop db) and run forward to 2001 to validate AMI incidence.
+*/
+
+range range_from_2001_to_2021_t { 2001, 2021 };  //EN Year
+range report_year_mend_t { 2001, 2041 };         //EN Year
+range report_year_t { 2010, 2056 };              //EN Year
+
+parameter_group pg_tabulation_parameters { //EN Tabulation parameters
+    table_filter_sex,
+    table_filter_province,
+    table_filter_age,
+    table_filter_age_start,
+    table_filter_year,
+    table_filter_year_start,
+    table_filter_door,
+    table_filter_education,
+    table_filter_income
+};
+
+parameters
+{
+    double fictive_person_characteristics[dummy_row_or_column_t][db_fields_t]; //EN Characteristics of a fictive person to be simulated
+
+    int table_filter_age[c_lower_upper_bounds_t];         //EN Tabulation restriction: Age (current)
+    int table_filter_age_start[c_lower_upper_bounds_t];   //EN Tabulation restriction: Initial age (upon actor creation)
+    int table_filter_year[c_lower_upper_bounds_t];        //EN Tabulation restriction: Year (current)
+    int table_filter_year_start[c_lower_upper_bounds_t];  //EN Tabulation restriction: Initial year (upon actor creation)
+    logical table_filter_sex[sex_t];                      //EN Tabulation restriction: Sex
+    logical table_filter_province[province_t];            //EN Tabulation restriction: Province
+    logical table_filter_door[c_population_source_t];     //EN Tabulation restriction: Entry point/door
+    logical table_filter_education[education_t];          //EN Tabulation restriction: Education
+    logical table_filter_income[income_quartile_t];       //EN Tabulation restriction: Income quartile
+};
+
+//EN Person
+actor person
+{
+    report_year_t report_calendar_year = COERCE(report_year_t, calendar_year); //EN Year
+    range_from_2001_to_2021_t calendar_year_2001_2021 = COERCE(range_from_2001_to_2021_t, calendar_year); //EN Year
+    range_from_2001_to_2111_t calendar_year_2001_2111 = COERCE(range_from_2001_to_2111_t, calendar_year); //EN Year
+
+    logical in_tabulation_scope = dominant &&
+        calendar_year >= MIN(report_year_t) &&
+        table_filter_age[bound_lower] <= lifespan_age && lifespan_age <= table_filter_age[bound_upper] &&
+        table_filter_age_start[bound_lower] <= lifespan_age_start && lifespan_age_start <= table_filter_age_start[bound_upper] &&
+        table_filter_year[bound_lower] <= year && year <= table_filter_year[bound_upper] &&
+        table_filter_year_start[bound_lower] <= calendar_year_start && calendar_year_start <= table_filter_year_start[bound_upper] &&
+        table_filter_sex[sex] &&
+        table_filter_province[g_province] &&
+        table_filter_door[population_source] &&
+        table_filter_education[g_education] &&
+        table_filter_income[g_income_quartile];
+
+    logical dominant;                         //EN Dominant Actor - kept to maintain table defintions
+    db_records_t cchs_record;                 //EN record number from Startpop
+    c_population_source_t population_source;  //EN Actor origin (2001 adult Canadian, new birth, new immigrant)
+
+    sex_t sex; //EN Sex
+
+    logical alive = { TRUE };                         //EN Alive
+    logical alive_deterministic_max_year = { TRUE };  //EN This becomes FALSE only when max_year is reached
+    logical alive_deterministic_max_life = { TRUE };  //EN This becomes FALSE only when max_life is reached
+
+    //EN Place of birth (Canada or Abroad)
+    place_of_birth_t place_of_birth;
+
+    //EN Time person was created
+    TIME time_person_created;
+
+    //EN Date of birth
+    TIME date_of_birth;
+
+    //EN Year of birth
+    year_t year_of_birth;
+
+    //EN Year of initialization
+    years_t calendar_year_start;
+
+    //EN Calendar Year
+    years_t calendar_year;
+
+    //EN Calendar Year (alias of calendar_year, used in tabulation filters)
+    years_t year = calendar_year;
+
+    //EN Integer age when actor started
+    life_span_t lifespan_age_start;
+
+    //EN Integer age of life span
+    life_span_t lifespan_age;
+
+    //EN Integer age of life
+    life_t truncated_age = COERCE(life_t, lifespan_age);
+
+    //EN Time to next birthday (elapsed)
+    TIME next_birthday;
+
+    //EN Time to next New Year (elapsed)
+    TIME next_year;
+
+    logical escaped_start = { FALSE }; //EN Indicator that Start has completed
+
+    region_t g_region = aggregate(g_province, region_t);  //EN Self-reported Region
+    province_t g_province;                                //EN Self-reported Province
+    education_t g_education;                              //EN Self-reported Education
+    education_t g_education_startpop;                     //EN Self-reported Education on Startpop file
+    income_quartile_t g_income_quartile;                  //EN Self-reported Income Quartile
+
+    double g_height_m;                                   //EN Self-reported height in meter
+    double g_mass_kg = g_bmi * g_height_m * g_height_m;  //EN Mass (Kg)
+
+    void start(c_population_source_t l_population_source);
+    void finish();
+
+    void initialization_empty_hub();
+    hook initialization_empty_hub, start, 0;
+
+    void risk_factors_updates_empty_hub();
+    hook risk_factors_updates_empty_hub, start, 10;
+    hook risk_factors_updates_empty_hub, birthday_event, 20;
+
+    int convert_age_group(const double *record_to_be_read);
+    void get_record_year_age_sex_province_region(TIME *p_age, TIME *p_time);
+
+    start_pop_record_t start_pop_record();
+    void read_from_start_pop();
+    void start_snapshots(); //EN takes a snapshot of attributes after the Start function and its hooks have been implemented
+
+    event time_escaped_start_event, escaped_start_event, 250; //EN Highest priority.  First event visited when Start and its hooks have been implemented
+
+    event time_new_years_event, new_years_event, 2;
+    event time_birthday_event, birthday_event, 0;
+};
+
+void person::initialization_empty_hub()
+{
+    hook_initialization_empty_hub();
+}
+
+void person::risk_factors_updates_empty_hub()
+{
+    hook_risk_factors_updates_empty_hub();
+}
+
+start_pop_record_t person::start_pop_record()
+{
+    return using_fictive_person() ? fictive_person_characteristics[row_1] : p_start_pop[cchs_record];
+}
+
+void person::read_from_start_pop()
+{
+    start_pop_record_t record_to_be_read = start_pop_record();
+
+    g_education_startpop = (education_t) int(record_to_be_read[c_db_education]);
+    g_education = (education_t) int(record_to_be_read[c_db_education]);
+    g_income_quartile = (income_quartile_t) int(record_to_be_read[c_db_income_quartile]);
+
+    g_height_m = (double) record_to_be_read[c_db_height_m];
+
+    hook_read_from_start_pop();
+}
+
+void person::get_record_year_age_sex_province_region(TIME *p_age, TIME *p_time)
+{
+    int n_record;
+    int n_year, n_age;
+    int n_sex;
+    int n_province;
+
+    if (population_source == c_start_pop || using_fictive_person())
+    {
+        Lookup_mg_cum_start_pop_weight(RandUniform(79), &n_record);
+
+        const double *record_to_be_read = using_fictive_person() ? fictive_person_characteristics[row_1] : p_start_pop[n_record];
+
+        n_year = p_start_year;
+
+        n_age = convert_age_group(record_to_be_read);
+
+        n_sex = int(record_to_be_read[c_db_sex]);
+        n_province = int(record_to_be_read[c_db_province]);
+    }
+
+    else if (population_source == c_new_birth)
+    {
+        int n_prov;
+        int n_youngest_record;
+
+        Lookup_mg_birth(RandUniform(83), &n_sex, &n_year, &n_prov);
+
+        n_year = n_year + MIN(years_t);
+
+        n_age = mg_youngest_age;
+
+        Lookup_mg_cum_start_pop_weight_youngest(RandUniform(87), n_sex, n_prov, &n_youngest_record);
+        n_record = mg_start_pop_youngest_decode[n_youngest_record];
+
+        n_province = int(p_start_pop[n_record][c_db_province]);
+    }
+
+    else if (population_source == c_new_immig)
+    {
+        Lookup_mg_immig(RandUniform(88), &n_year, &n_sex, &n_province, &n_age);
+
+        n_year = n_year + MIN(years_t);
+
+        int n_region = region_of_province(n_province);
+
+        int n_age_code = 0;
+        while (!(n_age >= p_db_age_decode[n_age_code][c_db_begin_age] &&
+            n_age <= p_db_age_decode[n_age_code][c_db_end_age])
+            && (n_age_code < SIZE(db_age_code_t) - 1))
+        {
+            n_age_code++;
+        }
+
+        int n_immig_record;
+        if (Lookup_mg_cum_start_pop_weight_immig(RandUniform(89), n_sex, n_province, n_age_code, &n_immig_record))
+        {
+            n_record = mg_start_pop_immig_decode[n_sex][n_age_code][n_immig_record];
+        }
+        else if (Lookup_mg_cum_start_pop_weight_immig_reg(RandUniform(8), n_sex, n_region, n_age_code, &n_immig_record))
+        {
+            n_record = mg_start_pop_immig_decode[n_sex][n_age_code][n_immig_record];
+        }
+        else if (Lookup_mg_cum_start_pop_weight_immig_can(RandUniform(10), n_sex, n_age_code, &n_immig_record))
+        {
+            n_record = mg_start_pop_immig_decode[n_sex][n_age_code][n_immig_record];
+        }
+        else
+            ModelExit("No immigrant donor found.\n");
+    }
+    else
+        ModelExit("Unexpected population_source.\n");
+
+    cchs_record = (db_records_t) n_record;
+    sex = (sex_t) n_sex;
+    g_province = (province_t) n_province;
+
+    double d_fraction_of_year;
+
+    d_fraction_of_year = RandUniform(393);
+    if (p_start_time_method == c_start_bday_is_jan01)
+    {
+        *p_age = (TIME)(n_age);
+        *p_time = (TIME)(n_year);
+        next_birthday = 1.0;
+        next_year = 1.0;
+    }
+    else if ((p_start_time_method == c_start_jan01)
+        && (n_year == p_start_year) && (n_age > 0))
+    {
+        *p_age = (TIME)(n_age - d_fraction_of_year);
+        *p_time = (TIME)(n_year);
+        next_birthday = d_fraction_of_year;
+        next_year = 1.0;
+    }
+    else
+    {
+        *p_age = (TIME)(n_age);
+        *p_time = (TIME)(n_year + d_fraction_of_year);
+        next_birthday = 1.0;
+        next_year = 1 - d_fraction_of_year;
+    }
+
+    hook_get_record_year_age_sex_province_region();
+}
+
+int person::convert_age_group(const double *record_to_be_read)
+{
+    int n_age;
+    logical l_age_not_assigned;
+    double d_rand;
+
+    int n_age_code, n_province, n_sex;
+    n_age_code = (int) record_to_be_read[c_db_age_grp];
+    n_province = (int) record_to_be_read[c_db_province];
+    n_sex = (int) record_to_be_read[c_db_sex];
+
+    d_rand = RandUniform(90);
+
+    if (p_use_input_population_to_assign_age)
+    {
+        l_age_not_assigned = TRUE;
+        n_age = p_db_age_decode[n_age_code][c_db_begin_age];
+        while (l_age_not_assigned && (n_age <= p_db_age_decode[n_age_code][c_db_end_age]))
+        {
+            if (d_rand < mg_cum_population[n_province][n_sex][n_age])
+            {
+                l_age_not_assigned = FALSE;
+            }
+            else
+            {
+                n_age++;
+            }
+        }
+    }
+    else
+    {
+        n_age = (int) p_db_age_decode[n_age_code][c_db_begin_age]
+            + int(d_rand * (p_db_age_decode[n_age_code][c_db_end_age]
+            - p_db_age_decode[n_age_code][c_db_begin_age] + 1));
+    }
+    return n_age;
+}
+
+/* NOTE(person.start, EN)
+	Initializes a new Person.
+	>Persons can be initialized on (see bottom part of get_record_year_age_sex_province_region)
+	(1) on January 1st and force this to be birthday for everyone
+	(2) on January 1st (excluding new borns and immigrants)
+	(3) on their birthday sometime during the year (including new borns and immigrants)
+
+	The data should be clean before arriving here (We could COERCE, but that may hide unclean data).
+	Also would benefit from classification variables that make it clear the expected values as input.
+	The StartPop SAS program needs to respect these definitions and be cleaned accordingly.
+*/
+
+void person::start(c_population_source_t l_population_source)
+{
+    initialize_attributes();
+
+    dominant = TRUE;
+    place_of_birth = (l_population_source == c_new_immig && !using_fictive_person()) ? abroad : canada;
+    population_source = l_population_source;
+
+    TIME starting_age;
+    TIME starting_time;
+    get_record_year_age_sex_province_region(&starting_age, &starting_time);
+    age = starting_age;
+    time = starting_time;
+
+    lifespan_age = COERCE(life_span_t, int(age));
+    lifespan_age_start = lifespan_age;
+    calendar_year = COERCE(years_t, int(time));
+    calendar_year_start = calendar_year;
+    time_person_created = time;
+
+    date_of_birth = time - age;
+    year_of_birth = COERCE(year_t, int(date_of_birth));
+
+    read_from_start_pop();
+
+    get_timing_first_update();
+
+    hook_start();
+
+    enter_simulation();
+}
+
+void person::start_snapshots()
+{
+    bmi4cat_measured_start_phac = (bmi_index_all_ages_t) bmi4cat_measured_phac;
+
+    hook_start_snapshots();
+}
+
+TIME person::time_escaped_start_event()
+{
+    TIME event_time = { TIME_INFINITE };
+
+    if (!escaped_start)
+    {
+        event_time = WAIT(0.0);
+    }
+    return event_time;
+}
+
+void person::escaped_start_event()
+{
+    escaped_start = TRUE;
+
+    start_snapshots();
+
+    hook_escaped_start_event();
+}
+
+TIME person::time_birthday_event()
+{
+    return WAIT(next_birthday);
+}
+
+void person::birthday_event()
+{
+    next_birthday = 1.0;
+    lifespan_age = COERCE(life_span_t, lifespan_age + 1);
+
+    hook_birthday_event();
+}
+
+TIME person::time_new_years_event()
+{
+    return WAIT(next_year);
+}
+
+void person::new_years_event()
+{
+    next_year = 1.0;
+    calendar_year = COERCE(years_t, calendar_year + 1);
+
+    hook_new_years_event();
+}
+
+/* NOTE(person.finish, EN)
+	Performs additional hidden processing when terminating a Person.
+*/
+void person::finish()
+{
+    alive = FALSE;
+
+    hook_finish();
+
+    exit_simulation();
+}

@@ -92,7 +92,7 @@
     switch-toggle-side
     expand-separator
     class="q-my-sm"
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     >
       <template v-slot:header>
         <q-item-section>
@@ -164,7 +164,7 @@
     v-model="isQueueShow"
     switch-toggle-side
     expand-separator
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-my-sm"
     >
       <template v-slot:header>
@@ -277,7 +277,7 @@
     v-model="isOtherHistoryShow"
     switch-toggle-side
     expand-separator
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-my-sm"
     >
     <template v-slot:header>
@@ -371,7 +371,7 @@
     v-model="isDoneHistoryShow"
     switch-toggle-side
     expand-separator
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-my-sm"
     >
     <template v-slot:header>

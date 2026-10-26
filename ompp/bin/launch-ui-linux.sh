@@ -1,66 +1,64 @@
 #!/usr/bin/env bash
 #
-# It does:
+# Start openM++ UI:
 #   cd $OM_ROOT
 #     # start oms in a new terminal window:
-#   gnome-terminal -e "OM_ROOT=$PWD bin/oms -oms.Listen localhost:4040 -oms.LogRequest"
-#     # open UI in browser:
+#   x-terminal-emulator -e bin/start_oms.sh
+#     # wait until oms is listening, then open UI in browser:
 #   xdg-open http://localhost:4040
 #
 # Environment:
-#   OM_ROOT       - openM++ root folder, default is a parent dir: ..
+#   OM_ROOT       - openM++ root folder, default is the parent of this script's folder
 #   OMS_PORT      - oms web-service port to listen, default: 4040
-#   OM_X_TERMINAL - which x-terminal to use, default: x-terminal-emulator or gnome-terminal
-#   OM_X_OPEN_URL - command to open URL, usually xdg-open or firefox
-
-# set -e
-set -m
-
-# set openM++ root folder 
+#   OM_X_TERMINAL - x-terminal to use (may include arguments), default: first found of
+#                   x-terminal-emulator, xfce4-terminal, gnome-terminal, konsole, qterminal, ptyxis
+#   OM_X_OPEN_URL - command to open URL, default: xdg-open or firefox
 #
+# Exit codes: 0 = OK, 1 = setup error, 2 = port in use, 3 = oms did not start, 7 = browser failed
+
 self=$(basename "$0")
-sd=$(dirname "$0")
+sd=$(dirname "$(readlink -f "$0")")
 
-if [ -z "$OM_ROOT" ] ;
-then
+OMPP_UI_SH_LOG=""
 
-  echo "Set openM++ root directory: OM_ROOT"
-
-  if [ -d "${sd}/.." ] ;
-  then
-    echo pushd "${sd}/.."
-    pushd "${sd}/.."
-  fi
-  
-  OM_ROOT="$PWD"
-
-fi
-
-echo "OM_ROOT = $OM_ROOT"
-
-# check if OM_ROOT directory exist
-#
-if [ ! -d "$OM_ROOT" ] ;
-then
-  echo "ERROR: openM++ directory not exist: $OM_ROOT"
+pause_exit() {
   echo -n "Press Enter to exit..."
-  read any
-  exit 1
-fi
+  read -r _
+  exit "${1:-0}"
+}
 
-[ "$OM_ROOT" != "$PWD" ] && pushd "$OM_ROOT"
+log() {
+  if [ -n "$OMPP_UI_SH_LOG" ] ; then
+    echo "$*" | tee -a "$OMPP_UI_SH_LOG"
+  else
+    echo "$*"
+  fi
+}
 
+fail() {   # usage: fail exit_code message...
+  local code=$1
+  shift
+  log "ERROR: $*"
+  pause_exit "$code"
+}
+
+# set openM++ root folder
+#
+[ -z "$OM_ROOT" ] && OM_ROOT="${sd}/.."
+
+cd "$OM_ROOT" 2>/dev/null || fail 1 "openM++ directory does not exist: $OM_ROOT"
 export OM_ROOT="$PWD"
+
+echo "OM_ROOT  = $OM_ROOT"
 
 # check if OM_ROOT is openM++ root
 #
-if [ ! -x "bin/oms" ] || [ ! -d "html" ] || [ ! -d "models/bin" ] || [ ! -d "log" ] ;
+if [ ! -x "bin/oms" ] || [ ! -x "bin/start_oms.sh" ] || [ ! -d "html" ] || [ ! -d "models/bin" ] ;
 then
-  echo "ERROR: openM++ UI not found at: $OM_ROOT"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 1
+  fail 1 "openM++ UI not found at: $OM_ROOT"
 fi
+
+mkdir -p log || fail 1 "cannot create log directory: $OM_ROOT/log"
 
 # log configuration
 #
@@ -69,132 +67,109 @@ OMPP_UI_SH_LOG="${OM_ROOT}/log/${self}.log"
 echo "Log:       $OMPP_UI_SH_LOG"
 echo "OM_ROOT  = $OM_ROOT" >"$OMPP_UI_SH_LOG"
 
-# which x-terminal to use: x-terminal-emulator, gnome-terminal, konsole
+# which x-terminal to use
 #
-if [ -z "${OM_X_TERMINAL}" ] && command -v x-terminal-emulator >/dev/null 2>&1 ;
+if [ -z "$OM_X_TERMINAL" ] ;
 then
-  OM_X_TERMINAL="x-terminal-emulator"
+  for t in x-terminal-emulator xfce4-terminal gnome-terminal konsole qterminal ptyxis ; do
+    if command -v "$t" >/dev/null 2>&1 ; then
+      OM_X_TERMINAL="$t"
+      break
+    fi
+  done
 fi
-if [ -z "${OM_X_TERMINAL}" ] && command -v xfce4-terminal >/dev/null 2>&1 ;
-then
-  OM_X_TERMINAL="xfce4-terminal"
-fi
-if [ -z "${OM_X_TERMINAL}" ] && command -v gnome-terminal >/dev/null 2>&1 ;
-then
-  OM_X_TERMINAL="gnome-terminal"
-fi
-if [ -z "${OM_X_TERMINAL}" ] && command -v konsole >/dev/null 2>&1 ;
-then
-  OM_X_TERMINAL="konsole"
-fi
-if [ -z "${OM_X_TERMINAL}" ] && command -v qterminal >/dev/null 2>&1 ;
-then
-  OM_X_TERMINAL="qterminal"
-fi
-if [ -z "${OM_X_TERMINAL}" ] && command -v ptyxis >/dev/null 2>&1 ;
-then
-  OM_X_TERMINAL="ptyxis"
-fi
-if [ -z "${OM_X_TERMINAL}" ] ;
-then
-  echo "ERROR not found any of: x-terminal-emulator, gnome-terminal, konsole and OM_X_TERMINAL not set" | tee -a "$OMPP_UI_SH_LOG"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 1
-fi
+[ -n "$OM_X_TERMINAL" ] || \
+  fail 1 "no terminal found (tried: x-terminal-emulator, xfce4-terminal, gnome-terminal, konsole, qterminal, ptyxis); set OM_X_TERMINAL"
 
-# how to open URL:
-#   xdg-open http://localhost:4040
-#   firefox  http://localhost:4040
+# how to open URL: xdg-open or firefox
 #
-if [ -z "${OM_X_OPEN_URL}" ] && command -v xdg-open >/dev/null 2>&1 ;
+if [ -z "$OM_X_OPEN_URL" ] ;
 then
-  OM_X_OPEN_URL="xdg-open"
+  for t in xdg-open firefox ; do
+    if command -v "$t" >/dev/null 2>&1 ; then
+      OM_X_OPEN_URL="$t"
+      break
+    fi
+  done
 fi
-if [ -z "${OM_X_OPEN_URL}" ] && command -v firefox >/dev/null 2>&1 ;
-then
-  OM_X_OPEN_URL="firefox"
-fi
-if [ -z "${OM_X_OPEN_URL}" ] ;
-then
-  echo "ERROR not found any of: xdg-open, firefox and OM_X_OPEN_URL not set" | tee -a "$OMPP_UI_SH_LOG"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 1
-fi
+[ -n "$OM_X_OPEN_URL" ] || fail 1 "no URL opener found (tried: xdg-open, firefox); set OM_X_OPEN_URL"
 
 # set oms port to listen
 #
 [ -z "$OMS_PORT" ] && OMS_PORT=4040
-
 export OMS_PORT
-echo "OMS_PORT = $OMS_PORT" | tee -a "$OMPP_UI_SH_LOG"
+log "OMS_PORT = $OMS_PORT"
 
-lsof -P -n -iTCP:"$OMS_PORT" -a -sTCP:LISTEN >>"$OMPP_UI_SH_LOG" 2>&1
-if [ $? -eq 0 ] ;
-then
-  echo "FAILED to start oms web-service, port in use: OMS_PORT=$OMS_PORT" | tee -a "$OMPP_UI_SH_LOG"
-  echo "If port $OMS_PORT used by oms web-service then stop it first" | tee -a "$OMPP_UI_SH_LOG"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 2
-fi
-
-# start oms web-service
+# port check uses ss (iproute2) if available, otherwise lsof; if neither, the check is skipped
 #
-status=0
+port_tool=""
+command -v ss   >/dev/null 2>&1 && port_tool="ss"
+[ -z "$port_tool" ] && command -v lsof >/dev/null 2>&1 && port_tool="lsof"
 
-if [ "${OM_X_TERMINAL}" != "konsole" ] ;
+port_listening() {
+  case "$port_tool" in
+    ss)   ss -Htln "sport = :$1" 2>/dev/null | grep -q . ;;
+    lsof) lsof -P -n -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1 ;;
+    *)    return 1 ;;
+  esac
+}
+
+if [ -z "$port_tool" ] ;
 then
-  echo "${OM_X_TERMINAL} -e ./bin/start_oms.sh &" | tee -a "$OMPP_UI_SH_LOG"
+  log "WARNING: neither ss nor lsof found, cannot check if port $OMS_PORT is in use"
+elif port_listening "$OMS_PORT" ;
+then
+  log "FAILED to start oms web-service, port in use: OMS_PORT=$OMS_PORT"
+  log "If port $OMS_PORT used by oms web-service then stop it first"
+  pause_exit 2
+fi
 
-  ${OM_X_TERMINAL} -e ./bin/start_oms.sh &
-  status=$?
+# start oms web-service in a new terminal window
+#
+read -r -a term <<< "$OM_X_TERMINAL"     # allow OM_X_TERMINAL to include arguments
+
+case "$(basename "${term[0]}")" in
+  gnome-terminal|ptyxis) term_cmd=("${term[@]}" -- ./bin/start_oms.sh) ;;   # -e is deprecated here
+  *)                     term_cmd=("${term[@]}" -e ./bin/start_oms.sh) ;;
+esac
+
+log "${term_cmd[*]} &"
+
+# setsid detaches the terminal so it keeps running after this script exits
+setsid "${term_cmd[@]}" >>"$OMPP_UI_SH_LOG" 2>&1 </dev/null &
+
+# wait for oms to start listening (catches start_oms.sh failures, unlike checking $? of a background job)
+#
+if [ -n "$port_tool" ] ;
+then
+  log "Waiting for oms on port $OMS_PORT..."
+  for _ in $(seq 1 20) ; do
+    port_listening "$OMS_PORT" && break
+    sleep 0.5
+  done
+  port_listening "$OMS_PORT" || \
+    fail 3 "oms did not start listening on port $OMS_PORT within 10 seconds, see logs in: $OM_ROOT/log"
 else
-  echo bash -c "konsole -e ./bin/start_oms.sh &" | tee -a "$OMPP_UI_SH_LOG"
-
-  bash -c "konsole -e ./bin/start_oms.sh &"
-  status=$?
+  sleep 2
 fi
-
-if [ $status -ne 0 ] ;
-then
-  echo "FAILED to start oms web-service using ${OM_X_TERMINAL}" | tee -a "$OMPP_UI_SH_LOG"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 1
-fi
-# known issue: test above does not catch exit code of start_oms.sh
 
 # start browser and open UI
 #
-OMS_URL="http://localhost:${OMS_PORT}" 
+OMS_URL="http://localhost:${OMS_PORT}"
 
-echo "Open openM++ UI in browser:" | tee -a "$OMPP_UI_SH_LOG"
+log "Open openM++ UI in browser:"
 
-status=0
-if [ "${OM_X_OPEN_URL}" != "firefox" ] ;
+read -r -a opener <<< "$OM_X_OPEN_URL"
+
+if [ "$(basename "${opener[0]}")" = "firefox" ] ;
 then
-  echo "${OM_X_OPEN_URL} ${OMS_URL}" | tee -a "$OMPP_UI_SH_LOG"
-  ${OM_X_OPEN_URL} "${OMS_URL}" >> "$OMPP_UI_SH_LOG" 2>&1;
-  status=$?
+  log "${opener[*]} ${OMS_URL} &"
+  "${opener[@]}" "$OMS_URL" >>"$OMPP_UI_SH_LOG" 2>&1 &
 else
-  echo "${OM_X_OPEN_URL} ${OMS_URL} &" | tee -a "$OMPP_UI_SH_LOG"
-  ${OM_X_OPEN_URL} "${OMS_URL}" & >> "$OMPP_UI_SH_LOG" 2>&1;
-  status=$?
-fi
-
-if [ $status -ne 0 ] ;
-then
-  echo "FAILED to open browser at ${OMS_URL}" | tee -a "$OMPP_UI_SH_LOG"
-  echo -n "Press Enter to exit..."
-  read any
-  exit 7
+  log "${opener[*]} ${OMS_URL}"
+  "${opener[@]}" "$OMS_URL" >>"$OMPP_UI_SH_LOG" 2>&1 || fail 7 "FAILED to open browser at ${OMS_URL}"
 fi
 # known issue: xdg-open may return 0 when it is not able to start browser
 
-echo "Done." | tee -a "$OMPP_UI_SH_LOG"
-
-echo -n "Press Enter to exit..."
-read any
-exit 0
+log "Done."
+pause_exit 0

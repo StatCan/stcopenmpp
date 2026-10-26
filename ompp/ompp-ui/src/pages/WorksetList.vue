@@ -694,6 +694,50 @@
     >
   </create-workset>
 
+  <!-- input scenario parameter: view and edit in a modal dialog -->
+  <q-dialog
+    :model-value="!!paramDialogName"
+    @update:model-value="onParamDialogModel"
+    full-width
+    full-height
+    transition-show="fade"
+    transition-hide="fade"
+    >
+    <q-card class="column no-wrap param-dialog-card">
+      <q-bar class="col-auto bg-primary text-white">
+        <q-icon name="mdi-table-edit" />
+        <div class="ellipsis" :title="paramDialogWs + ': ' + paramDialogName">{{ paramDialogName }}<span class="q-pl-sm text-caption">{{ paramDialogWs }}</span></div>
+        <q-space />
+        <q-btn
+          @click="onParamDialogClose"
+          dense
+          flat
+          icon="close"
+          :title="$t('Close')"
+          :aria-label="$t('Close')"
+          />
+      </q-bar>
+      <q-card-section class="col q-pa-none scroll">
+        <parameter-page
+          v-if="!!paramDialogName"
+          ref="paramDialogPage"
+          :key="paramDialogWs + '/' + paramDialogName"
+          :is-dialog="true"
+          :digest="digest"
+          :workset-name="paramDialogWs"
+          :parameter-name="paramDialogName"
+          :refresh-tickle="refreshTickle"
+          @dialog-close="doParamDialogHide"
+          @edit-updated="onParamDialogEditUpdated"
+          @set-update-readonly="onParamDialogReadonly"
+          @user-view-updated="onParamDialogUserView"
+          @new-run-select="onParamDialogNewRun"
+          >
+        </parameter-page>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
   <q-inner-loading :showing="loadWait || loadWsWait || loadWorksetDelete || loadWsMultipletDelete || loadWorksetCreate">
     <q-spinner-gears size="md" color="primary" />
   </q-inner-loading>
@@ -719,5 +763,9 @@
   }
   .primary-border-025 {
     border: 0.25rem solid $primary;
+  }
+  .param-dialog-card {
+    width: 100%;
+    max-width: 100%;
   }
 </style>

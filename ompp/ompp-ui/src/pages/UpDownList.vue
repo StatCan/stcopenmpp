@@ -213,7 +213,7 @@
     switch-toggle-side
     expand-separator
     :label="$t('Downloads of') + (modelNameVer ? ' ' + modelNameVer : '')"
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-ma-sm"
     >
   <q-card
@@ -409,7 +409,7 @@
     switch-toggle-side
     expand-separator
     :label="$t('Uploads of') + (modelNameVer ? ' ' + modelNameVer : '')"
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-ma-sm"
     >
   <q-card
@@ -592,7 +592,7 @@
     switch-toggle-side
     expand-separator
     :label="$t('Files')"
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-ma-sm"
     >
   <q-card

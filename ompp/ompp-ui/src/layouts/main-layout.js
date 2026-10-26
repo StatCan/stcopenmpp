@@ -4,15 +4,19 @@ import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import languages from 'quasar/lang/index.json'
 import * as Mdf from 'src/model-common'
+import { OFFLINE_EVENT } from 'src/cache/http-cache'
 import RefreshModel from 'components/RefreshModel.vue'
 import RefreshRunList from 'components/RefreshRunList.vue'
 import RefreshRun from 'components/RefreshRun.vue'
 import RefreshWorksetList from 'components/RefreshWorksetList.vue'
 import RefreshWorkset from 'components/RefreshWorkset.vue'
 import RefreshUserViews from 'components/RefreshUserViews.vue'
+import RefreshRunStatusAll from 'components/RefreshRunStatusAll.vue'
 import UploadUserViews from 'components/UploadUserViews.vue'
 import UpdateWorksetStatus from 'components/UpdateWorksetStatus.vue'
 import ModelInfoDialog from 'components/ModelInfoDialog.vue'
+import RunInfoDialog from 'components/RunInfoDialog.vue'
+import WorksetInfoDialog from 'components/WorksetInfoDialog.vue'
 
 const DISK_USE_MIN_REFRESH_TIME = (17 * 1000) // msec, minimum disk space usage refresh interval
 const DISK_USE_MAX_ERR = 5 // max error count to stop disk use retrival and block model runs
@@ -20,7 +24,7 @@ const NO_REDIRECT = 0
 const WS_PARAM_REDIRECT = 1 // redirect by url to workset parameter
 const RUN_PARAM_REDIRECT = 2 // redirect by url to run parameter
 const TABLE_REDIRECT = 3 // redirect by url to output table
-const ENTITY_REDIRECT = 4 // redirect by url to run parameter
+const ENTITY_REDIRECT = 4 // redirect by url to entity microdata
 
 export default {
   name: 'MainLayout',
@@ -31,9 +35,12 @@ export default {
     RefreshWorksetList,
     RefreshWorkset,
     RefreshUserViews,
+    RefreshRunStatusAll,
     UploadUserViews,
     UpdateWorksetStatus,
-    ModelInfoDialog
+    ModelInfoDialog,
+    RunInfoDialog,
+    WorksetInfoDialog
   },
 
   data () {
@@ -55,7 +62,12 @@ export default {
       isDiskUse: false,
       diskUseRefreshInt: '',
       diskUseMs: DISK_USE_MIN_REFRESH_TIME,
-      //
+      runCurrent: Mdf.emptyRunText(), // currently selected run
+      runInfoTickle: false,
+      runInfoDigest: '',
+      worksetCurrent: Mdf.emptyWorksetText(), // currently selected workset
+      worksetInfoTickle: false,
+      worksetInfoName: '',
       isRedirect: false, // redirect by url
       redirectTo: NO_REDIRECT,
       toModelDigest: '',
@@ -98,11 +110,17 @@ export default {
     },
     runTextCount () { return Mdf.runTextCount(this.runTextList) },
     worksetTextCount () { return Mdf.worksetTextCount(this.worksetTextList) },
+    isNotEmptyRunCurrent () { return Mdf.isNotEmptyRunText(this.runCurrent) },
+    descrRunCurrent () { return Mdf.descrOfTxt(this.runCurrent) },
+    isNotEmptyWorksetCurrent () { return Mdf.isNotEmptyWorksetText(this.worksetCurrent) },
+    isReadonlyWorksetCurrent () { return Mdf.isNotEmptyWorksetText(this.worksetCurrent) && this.worksetCurrent.IsReadonly },
+    descrWorksetCurrent () { return Mdf.descrOfTxt(this.worksetCurrent) },
 
     ...mapState(useModelStore, [
       'theModel',
       'theModelDir',
       'modelList',
+      'modelListUpdated',
       'runTextList',
       'worksetTextList',
       'modelCount',
@@ -126,8 +144,12 @@ export default {
   watch: {
     isDiskUse () { this.restartDiskUseRefresh() },
     diskUseMs () { this.restartDiskUseRefresh() },
-    modelCount () { this.doRedirectByUrl() },
+    // model list loaded from the server: check if this is redirect url
+    // model list may be already restored from cache, so model count may not change after list loaded
+    modelListUpdated () { this.doRedirectByUrl() },
     defaultTitle () { if (this.$route.path === '/' && this.defaultTitle) document.title = this.defaultTitle },
+    runDigestSelected () { this.runCurrent = this.runTextByDigest({ ModelDigest: this.modelDigest, RunDigest: this.runDigestSelected }) },
+    worksetNameSelected () { this.worksetCurrent = this.worksetTextByName({ ModelDigest: this.modelDigest, Name: this.worksetNameSelected }) },
 
     // language updated outside of main menu
     uiLang () {
@@ -190,6 +212,10 @@ export default {
   },
 
   methods: {
+    ...mapActions(useModelStore, [
+      'runTextByDigest',
+      'worksetTextByName'
+    ]),
     ...mapActions(useServerStateStore, [
       'dispatchServerConfig',
       'dispatchDiskUse'
@@ -202,10 +228,31 @@ export default {
       'dispatchWorksetNameSelected'
     ]),
 
+    // current model run, based on runDigestSelected
+    isSuccess (status) { return status === Mdf.RUN_SUCCESS },
+    isInProgress (status) { return status === Mdf.RUN_IN_PROGRESS || status === Mdf.RUN_INITIAL },
+    isRunDeleted (status, name) { return Mdf.isRunDeletedStatus(status, name) },
+
     // show model notes dialog
     doShowModelNote () {
       this.modelInfoTickle = !this.modelInfoTickle
     },
+    // show run notes dialog
+    doShowRunNote (dgst) {
+      this.runInfoDigest = dgst
+      this.runInfoTickle = !this.runInfoTickle
+    },
+    // show workset notes dialog
+    doShowWorksetNote (name) {
+      this.worksetInfoName = name
+      this.worksetInfoTickle = !this.worksetInfoTickle
+    },
+
+    // server offline and cached data displayed
+    onCacheOffline () {
+      this.$q.notify({ type: 'warning', message: this.$t('Server offline: cached data displayed') })
+    },
+
     // new selected language in the menu
     onLangMenu (lc) {
       this.langCode = lc // switch app language by watch
@@ -635,13 +682,18 @@ export default {
 
   mounted () {
     this.doConfigRefresh()
+    window.addEventListener(OFFLINE_EVENT, this.onCacheOffline)
   },
 
   beforeUnmount () {
     clearInterval(this.diskUseRefreshInt)
+    window.removeEventListener(OFFLINE_EVENT, this.onCacheOffline)
   },
 
   created () {
+    // if UI language restored from cache then use it
+    if (this.uiLang) this.langCode = this.uiLang
+
     // if locale for current language not avaliable then
     // find fallback locale (assuming fallback is available)
     let ln = this.langCode

@@ -1,0 +1,3 @@
+ompp/ompp-docker/**                  text=auto eol=lf
+ompp/ompp-docker/windows-build/**    text=auto eol=crlf
+ompp/ompp-docker/windows-run/**      text=auto eol=crlf

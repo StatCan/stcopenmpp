@@ -206,11 +206,6 @@ export const isRunSuccess = (rt) => {
   return isRunText(rt) && rt.Status === RUN_SUCCESS
 }
 
-// return true if run in progress
-export const isRunInProgress = (rt) => {
-  return isRunText(rt) && (rt.Status === RUN_IN_PROGRESS || rt.Status === RUN_INITIAL)
-}
-
 // return true if run completed, status is one of: s=success, x=exit, e=error
 export const isRunCompleted = (rt) => {
   return isRunText(rt) && isRunCompletedStatus(rt.Status)
@@ -219,6 +214,11 @@ export const isRunCompleted = (rt) => {
 // return true if run completed, status is one of: s=success, x=exit, e=error
 export const isRunCompletedStatus = (status) => {
   return status === RUN_SUCCESS || status === RUN_EXIT || status === RUN_FAILED
+}
+
+// return true if run in progress
+export const isRunInProgress = (rt) => {
+  return isRunText(rt) && (rt.Status === RUN_IN_PROGRESS || rt.Status === RUN_INITIAL)
 }
 
 // return true if run delete in progress: status is: d=delete or name starts with 'deleted:'
@@ -339,7 +339,7 @@ export const toRunStateFromLog = (rlp) => {
   }
 }
 
-// Run progerss: RunPub with run_lst row array of run_progress for each sub-value
+// Run progerss: RunPub with run_lst row and array of run_progress rows for each sub-value
 //
 // return true if each list element isRunStatusProgress()
 export const isRunStatusProgressList = (rpl) => {

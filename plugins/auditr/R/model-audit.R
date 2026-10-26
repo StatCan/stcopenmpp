@@ -1,49 +1,49 @@
-#' @title R6 class: `auditr`
-#' @description `auditr` is an R6 class that provides methods for auditing two versions of stcopenmpp.
+#' @title R6 class: `model_audit`
+#' @description `model_audit` is an R6 class that provides methods for auditing two versions of a stcopenmpp model.
 #' @export
 
-auditr <- R6::R6Class(
-  classname = "auditr",
+model_audit <- R6::R6Class(
+  classname = "model_audit",
   public = list(
-    #' @field args A list of arguments passed into `auditr$new()`. See documentation for `auditr$new()` for details.
+    #' @field args A list of arguments passed into `model_audit$new()`. See documentation for `model_audit$new()` for details.
     args = list(),
 
-    #' @field code A list of vectors representing code chunks. Any time an `auditr` method is called, the code chunk is saved and rendered in the audit report when `$load_report()` is called.
+    #' @field code A list of vectors representing code chunks. Any time a `model_audit` method is called, the code chunk is saved and rendered in the audit report when `$load_report()` is called.
     code = list(),
 
     #' @field results A list of four tibbles: `audit`, `output_tables`, `model_runs` and `performance`.
     results = list(),
 
-    #' @description This method creates an instance of an `auditr` class.
-    #' @param releases Required: a length-two character vector representing the URLs or full paths to two releases of `stcopenmpp`.
-    #' @param labels Required: a length-two character vector representing the labels for the two releases (default: `paste0("Release ", 1:2)`).
+    #' @description This method creates an instance of a `model_audit` class.
+    #' @param release Required: a length-one character vector representing the URL or full path to a release of `stcopenmpp`.
+    #' @param label Required: a length-one character vector representing the label for the release (default: `"Release"`).
     #' @param sln Required: a length-one character vector representing the model solution file name.
-    #' @param mode Required: a length-one character vector representing the model mode to use during the model build (`release` or `debug`; default: `release`).
-    #' @param bit Required: a length-one numeric vector representing the the model architecture to use during the model build (`64` or `32`; default: `64`).
+    #' @param mode Optional: a length-one character vector representing the model mode to use during the model build (`release` or `debug`; default: `release`).
+    #' @param bit Optional: a length-one numeric vector representing the the model architecture to use during the model build (`64` or `32`; default: `64`).
     #' @param git_url Required: a length-one character vector representing the URL to the model repo.
     #' @param git_user Optional: a length-one character vector representing the repo username.
     #' @param git_token Optional: a length-one character vector representing the repo personal access token.
-    #' @param git_commit Optional: a length-one character vector representing commit or tag to checkout before building the model.
-    #' @param keep_vcxproj Optional: a length-one logical vector representing whether to keep the model's `Model.vcxproj` file when loaded or to discard and download a fresh template from the RiskPaths model (default: `TRUE`).
+    #' @param git_commits Required: a length-two character vector representing commits or tags to checkout before building the model.
+    #' @param keep_vcxproj Optional: a length-one logical vector representing whether to keep the model's `Model.vcxproj` file when loaded or to discard and download a fresh template from the RiskPaths model (default: `FALSE`).
     #' @param dir Optional: a length-one character vector representing the full path to where releases, models, model run meta and reports will be stored (default: `getwd()`).
     #' @param db Optional: a length-one character vector representing the full path to where the model `.sqlite` file will be located for model runs.
     #' @param vs_cmd Optional: a length-one character vector representing the full path to the Microsoft Visual Studio terminal. This is required if performing an audit in a Windows environment.
     #' @param platform_toolset Optional: a length-one character vector representing the version of C++ build tools to use (e.g., `"v142"`, `"v143"`). This is only relevant for audits in Windows.
     #' @param include Optional: a character vector representing the full path(s) to additional C++ libraries to include.
     #' @param digits Optional: a length-one integer vector representing the number of digits to use when comparing output table values during audits.
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
     initialize = function(
-    releases,
-    labels = paste0("Release ", 1:2),
+    release,
+    label = "Release 1",
     sln,
     mode = "release",
     bit = 64,
     git_url,
     git_user,
     git_token,
-    git_commit,
-    keep_vcxproj = TRUE,
+    git_commits,
+    keep_vcxproj = FALSE,
     dir = getwd(),
     db,
     vs_cmd,
@@ -74,18 +74,46 @@ auditr <- R6::R6Class(
       # Load commands history
       self$code$new <- readLines(".Rhistory")
 
+      # Set element number to start from
+      element_n <- max(which(stringr::str_detect(string = self$code$new, pattern = "model_audit[$]new")))
+
+      # Evaluate any config::get() calls
+      self$code$new[element_n:length(self$code$new)] <- sapply(
+        X = self$code$new[element_n:length(self$code$new)],
+        FUN = function(x) {
+          # Isolate config::get() call
+          config_call <- regmatches(x, regexpr("config::get\\([^)]*\\)", x))
+
+          # If call exists
+          if(length(config_call)) {
+            # Evaluate
+            config_call_eval <- eval(parse(text = config_call))
+
+            # Sub
+            x <- sub(
+              pattern = 'config::get\\("([^"]+)"\\)',
+              replacement = paste0('"', config_call_eval, '"'),
+              x = x
+            )
+
+            # Exit
+            return(x)
+          } else {
+            # Exit
+            return(x)
+          }
+        }
+      )
+
       # If git_token set, censor anything between single or double quotes
       git_token <- suppressWarnings(max(which(stringr::str_detect(string = self$code$new, pattern = "git_token"))))
       if(length(git_token)) {
-        self$code$new[git_token] <- gsub(
+        self$code$new[git_token] <- sub(
           pattern = "(['\"])(.*?)\\1",
           replacement = "\\1********************\\1",
           x = self$code$new[git_token]
         )
       }
-
-      # Set element number to start from
-      element_n <- max(which(stringr::str_detect(string = self$code$new, pattern = "auditr[$]new")))
 
       # Adjust if preceded by comments
       if(element_n > 1) {
@@ -103,20 +131,11 @@ auditr <- R6::R6Class(
       private$cache_code()
 
       # Set release labels and paths
-      self$args$release1_label = self$args$labels[1]
-      self$args$release2_label = self$args$labels[2]
-      self$args$release1 <- self$args$releases[1]
-      self$args$release2 <- self$args$releases[2]
-      self$args$release1_path = paste0(
+      self$args$release_label = self$args$label
+      self$args$release_path = paste0(
         self$args$dir,
         "/auditr-downloads/",
-        private$strip_file_ext(basename(self$args$release1))
-      )
-
-      self$args$release2_path = paste0(
-        self$args$dir,
-        "/auditr-downloads/",
-        private$strip_file_ext(basename(self$args$release2))
+        private$strip_file_ext(basename(self$args$release))
       )
 
       # Get repo path
@@ -126,21 +145,23 @@ auditr <- R6::R6Class(
         private$strip_file_ext(self$args$git_url)
       )
 
-      # Get model name
+      # Get model names
       self$args$model <- basename(self$args$repo_path)
+      self$args$model1 <- paste0(self$args$model, "-", self$args$git_commits[1])
+      self$args$model2 <- paste0(self$args$model, "-", self$args$git_commits[2])
 
       # If db set, create paths and ensure folders exist
       if(! is.null(self$args$db)) {
         timestamp <- gsub(" |[:]|[.]", "-", Sys.time())
-        self$args$release1_db <- paste0(self$args$db, "/", timestamp, "/", basename(self$args$release1_path), "/", self$args$model, ".sqlite")
-        self$args$release2_db <- paste0(self$args$db, "/", timestamp, "/", basename(self$args$release2_path), "/", self$args$model, ".sqlite")
+        self$args$model1_db <- paste0(self$args$db, "/", timestamp, "/", basename(self$args$release_path), "/", self$args$model1, ".sqlite")
+        self$args$model2_db <- paste0(self$args$db, "/", timestamp, "/", basename(self$args$release_path), "/", self$args$model2, ".sqlite")
         dir.create(
-          path = paste0(self$args$db, "/", timestamp, "/", basename(self$args$release1_path)),
+          path = paste0(self$args$db, "/", timestamp, "/", basename(self$args$release_path)),
           showWarnings = FALSE,
           recursive = TRUE
         )
         dir.create(
-          path = paste0(self$args$db, "/", timestamp, "/", basename(self$args$release2_path)),
+          path = paste0(self$args$db, "/", timestamp, "/", basename(self$args$release_path)),
           showWarnings = FALSE,
           recursive = TRUE
         )
@@ -189,10 +210,10 @@ auditr <- R6::R6Class(
       }
 
       # Set more paths
-      self$args$release1_model_path <- paste0(self$args$release1_path, "/models/", self$args$model)
-      self$args$release1_model_bin_path <- paste0(self$args$release1_model_path, self$args$ompp_dir, "bin")
-      self$args$release2_model_path <- paste0(self$args$release2_path, "/models/", self$args$model)
-      self$args$release2_model_bin_path <- paste0(self$args$release2_model_path, self$args$ompp_dir, "bin")
+      self$args$model1_path <- paste0(self$args$release_path, "/models/", self$args$model1)
+      self$args$model1_bin_path <- paste0(self$args$model1_path, self$args$ompp_dir, "bin")
+      self$args$model2_path <- paste0(self$args$release_path, "/models/", self$args$model2)
+      self$args$model2_bin_path <- paste0(self$args$model2_path, self$args$ompp_dir, "bin")
 
       # Sort args
       self$args <- self$args[order(names(self$args))]
@@ -201,39 +222,39 @@ auditr <- R6::R6Class(
       return(invisible(self))
     },
 
-    #' @description This method downloads and extracts `stcopenmpp` archived releases (e.g., `.zip`, `.tar.gz`, `.tar.xz`).
-    #' @return Returns the `auditr` object invisibly.
+    #' @description This method downloads and extracts a `stcopenmpp` archived release (e.g., `.zip`, `.tar.gz`, `.tar.xz`).
+    #' @return Returns the `model_audit` object invisibly.
 
-    load_releases = function() {
+    load_release = function() {
       # Save command history
       utils::savehistory()
 
       # Load command history
-      self$code$load_releases <- readLines(".Rhistory")
+      self$code$load_release <- readLines(".Rhistory")
 
       # Set element number to start from
-      element_n <- max(which(stringr::str_detect(string = self$code$load_releases, pattern = "[$]load_releases")))
+      element_n <- max(which(stringr::str_detect(string = self$code$load_release, pattern = "[$]load_release")))
 
       # Adjust if preceded by comments
       if(element_n > 1) {
         for(i in (element_n - 1):1) {
-          if(grepl("^#", trimws(self$code$load_releases[i]))) element_n <- i else break
+          if(grepl("^#", trimws(self$code$load_release[i]))) element_n <- i else break
         }
       }
 
       # Style code
-      self$code$load_releases <- styler::style_text(
-        self$code$load_releases[element_n:length(self$code$load_releases)]
+      self$code$load_release <- styler::style_text(
+        self$code$load_release[element_n:length(self$code$load_release)]
       )
 
       # Cache code
       private$cache_code()
 
       # Render console message
-      cli::cli_h2(paste0(cli::make_ansi_style("#af3c43")("\U1F341"), cli::make_ansi_style("#3465a4")("{.fn $load_releases} method")))
+      cli::cli_h2(paste0(cli::make_ansi_style("#af3c43")("\U1F341"), cli::make_ansi_style("#3465a4")("{.fn $load_release} method")))
 
       # Render console message
-      cli::cli_alert_info("Loading releases. Hang tight ...")
+      cli::cli_alert_info("Loading release. Hang tight ...")
       cli::cli_text("")
 
       # Clean up
@@ -243,13 +264,12 @@ auditr <- R6::R6Class(
         force = TRUE
       )
 
-      # Download/extract releases
-      private$load_release(url = self$args$release1, dest = self$args$release1_path)
-      private$load_release(url = self$args$release2, dest = self$args$release2_path)
+      # Download/extract release
+      private$.load_release(url = self$args$release, dest = self$args$release_path)
 
       # Set paths
-      self$args$dbcopy_path <- list.files(path = paste0(self$args$release1_path, "/bin"), pattern = paste0(self$args$dbcopy_exe, "$"), full.names = TRUE)
-      self$args$dbget_path <- list.files(path = paste0(self$args$release1_path, "/bin"), pattern = paste0(self$args$dbget_exe, "$"), full.names = TRUE)
+      self$args$dbcopy_path <- list.files(path = paste0(self$args$release_path, "/bin"), pattern = paste0(self$args$dbcopy_exe, "$"), full.names = TRUE)
+      self$args$dbget_path <- list.files(path = paste0(self$args$release_path, "/bin"), pattern = paste0(self$args$dbget_exe, "$"), full.names = TRUE)
 
       # Save args
       saveRDS(
@@ -265,14 +285,14 @@ auditr <- R6::R6Class(
     },
 
     #' @description This method downloads a model from a repo via `git clone`.
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
-    load_model = function() {
+    load_models = function() {
       # Save command history
       utils::savehistory()
 
       # Load command history
-      self$code$load_model <- readLines(".Rhistory")
+      self$code$load_models <- readLines(".Rhistory")
 
       # Set element number to start from
       element_n <- max(which(stringr::str_detect(string = self$code$load_model, pattern = "[$]load_model")))
@@ -285,7 +305,7 @@ auditr <- R6::R6Class(
       }
 
       # Style code
-      self$code$load_model <- styler::style_text(
+      self$code$load_models <- styler::style_text(
         self$code$load_model[element_n:length(self$code$load_model)]
       )
 
@@ -293,159 +313,53 @@ auditr <- R6::R6Class(
       private$cache_code()
 
       # Render console message
-      cli::cli_h2(paste0(cli::make_ansi_style("#af3c43")("\U1F341"), cli::make_ansi_style("#3465a4")("{.fn $load_model} method")))
+      cli::cli_h2(paste0(cli::make_ansi_style("#af3c43")("\U1F341"), cli::make_ansi_style("#3465a4")("{.fn $load_models} method")))
 
-      # Render console message
-      cli::cli_alert_info("Loading model. Hang tight ...")
-
-      # Remove destination path if it exists
-      unlink(
-        x = self$args$repo_path,
-        recursive = TRUE,
-        force = TRUE
-      )
-
-      # Clone repo
-      if(sum(sapply(X = self$args[c("git_user", "git_url", "git_token")], FUN = function(x) is.null(x))) == 0) {
-        git_clone <- suppressWarnings(
-          system2(
-            command = Sys.which("git"),
-            args = c(
-              "clone",
-              paste0(
-                "https://",
-                self$args$repo_user,
-                ":",
-                private$git_token,
-                "@",
-                gsub(pattern = "https://", replacement = "", x = self$args$git_url)
-              ),
-              paste0(self$args$dir, "/auditr-downloads/", self$args$model)
-            ),
-            stdout = TRUE,
-            stderr = TRUE
-          )
-        )
-      } else {
-        git_clone <- suppressWarnings(
-          system2(
-            command = Sys.which("git"),
-            args = c(
-              "clone",
-              self$args$git_url,
-              paste0(self$args$dir, "/auditr-downloads/", self$args$model)
-            ),
-            stdout = TRUE,
-            stderr = TRUE
-          )
-        )
-      }
-
-      # Render console message
-      cli::cli_text("")
-      cli::cli_alert(git_clone)
-
-      # Switch to commit if set
-      if(! is.null(self$args$git_commit)) {
-        git_checkout <- suppressWarnings(
-          system2(
-            command = Sys.which("git"),
-            args = c(
-              "-C",
-              self$args$repo_path,
-              "checkout",
-              self$args$git_commit
-            ),
-            stdout = TRUE,
-            stderr = TRUE
-          )
-        )
-
-        # Render console message
-        cli::cli_text("")
-        cli::cli_alert(git_checkout)
-      }
-
-      # Get last commit
-      withr::with_dir(
-        new = paste0(self$args$dir, "/auditr-downloads/", self$args$model),
-        code = {
-          self$args$git_commit_hash <- system2(
-            command = Sys.which("git"),
-            args = c(
-              "log",
-              "-1",
-              "--format=%H"
-            ),
-            stdout = TRUE,
-            stderr = TRUE
-          )
-
-          # Re-sort args
-          self$args <- self$args[order(names(self$args))]
-        }
-      )
-
-      # If self$args$sln not in repo root
-      if(! file.exists(paste0(self$args$repo_path, "/", self$args$sln))) {
-        # Look for correct path
-        sln <- list.files(
-          path = self$args$repo_path,
-          pattern = self$args$sln,
-          full.names = TRUE,
-          recursive = TRUE
-        )
-
-        # If correct path found
-        if(length(sln)) {
-          # Store old model
-          old_model <- self$args$model
-
-          # Update self$args
-          self$args$repo_path <- dirname(sln)
-          self$args$model <- basename(dirname(sln))
-          model_paths <- c(
-            "model_exe",
-            "release1_model_bin_path",
-            "release1_model_path",
-            "release2_model_bin_path",
-            "release2_model_path"
-          )
-          self$args[model_paths] <- gsub(
-            pattern = old_model,
-            replacement = self$args$model,
-            x = c(
-              self$args[model_paths]
-            )
+      # Iterate self$args$git_commits[1:2]
+      for(i in 1:2) {
+        if(i == 2) {
+          # Checkout model repo
+          clone <- checkout_repo(
+            dest = clone$dest,
+            commit = self$args$git_commits[i]
           )
         } else {
-          # Render console message
-          cli::cli_abort("The {.emph sln} argument, {.var {self$args$sln}}, could not be located in the repo.")
+          # Clone model repo
+          clone <- clone_repo(
+            git_url = self$args$git_url,
+            git_commit = self$args$git_commits[i],
+            git_user = self$args$git_user,
+            git_token = self$args$git_token
+          )
         }
+
+        # Get model meta
+        model_meta <- get_model_meta(
+          path = clone$dest,
+          sln = self$args$sln
+        )
+
+        # Set args
+        self$args[[paste0("model", i)]] <- paste0(model_meta$model, "-", clone$commit)
+        self$args[[paste0("model", i, "_db")]] <- paste0(self$args[[paste0("model", i)]], ".sqlite")
+        self$args[[paste0("model", i, "_exe")]] <- ifelse(test = self$args$os == "windows", yes = paste0(self$args[[paste0("model", i)]], ".exe"), no = self$args[[paste0("model", i)]])
+        self$args[[paste0("model", i, "_path")]] <- paste0(self$args$release_path, "/models/", self$args[[paste0("model", i)]])
+        self$args[[paste0("model", i, "_bin_path")]] <- paste0(self$args[[paste0("model", i, "_path")]], self$args$ompp_dir, "bin")
+
+        # Copy model
+        copy_model <- fs::dir_copy(
+          path = model_meta$model_path,
+          new_path = self$args[[paste0("model", i, "_path")]],
+          overwrite = TRUE
+        )
       }
 
-      # Remove repo from self$args$release1_path/models and self$args$release2_path/models if it exists
-      unlink(
-        x = paste0(c(self$args$release1_model_path, self$args$release2_model_path)),
-        recursive = TRUE
-      )
+      # Update self$args
+      self$args$model <- model_meta$model
+      if(self$args$os == "windows") self$args$model_exe <- paste0(self$args$model, ".exe") else self$args$model_exe <- self$args$model
 
-      # Copy repo to self$args$release1_path/models and self$args$release2_path/models
-      suppressWarnings(
-        file.copy(
-          from = self$args$repo_path,
-          to = paste0(self$args$release1_path, "/models/"),
-          recursive = TRUE,
-        )
-      )
-
-      suppressWarnings(
-        file.copy(
-          from = self$args$repo_path,
-          to = paste0(self$args$release2_path, "/models/"),
-          recursive = TRUE
-        )
-      )
+      # Re-sort args
+      self$args <- self$args[order(names(self$args))]
 
       # Save args
       saveRDS(
@@ -453,17 +367,12 @@ auditr <- R6::R6Class(
         file = paste0(self$args$dir, "/auditr-downloads/args.rds")
       )
 
-      # Render console message
-      cli::cli_text("")
-      cli::cli_alert_success("Done!")
-      cli::cli_text("")
-
       # Exit
       return(invisible(self))
     },
 
     #' @description This method compiles a model in both `stcopenmpp` releases asynchronously.
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
     build_models = function() {
       # Save command history
@@ -517,12 +426,12 @@ auditr <- R6::R6Class(
       cli::cli_progress_bar("Compiling ...")
 
       # Build models asynchronously
-      private$build_model(om_root = self$args$release1_path, model_path = self$args$release1_model_path, model_bin_path = self$args$release1_model_bin_path)
-      private$build_model(om_root = self$args$release2_path, model_path = self$args$release2_model_path, model_bin_path = self$args$release2_model_bin_path)
+      private$build_model(om_root = self$args$release_path, model_path = self$args$model1_path, model_bin_path = self$args$model1_bin_path)
+      private$build_model(om_root = self$args$release_path, model_path = self$args$model2_path, model_bin_path = self$args$model2_bin_path)
 
       # Monitor progress
       while (TRUE) {
-        if (sum(! file.exists(paste0(c(self$args$release1_model_bin_path, self$args$release2_model_bin_path), "/build.done"))) == 0) break
+        if (sum(! file.exists(paste0(c(self$args$model1_bin_path, self$args$model2_bin_path), "/build.done"))) == 0) break
         Sys.sleep(1)
         cli::cli_progress_update()
       }
@@ -533,7 +442,7 @@ auditr <- R6::R6Class(
       # Import build logs
       build_logs <- dplyr::bind_rows(
         sapply(
-          X = paste0(c(self$args$release1_model_bin_path, self$args$release2_model_bin_path), "/build.log"),
+          X = paste0(c(self$args$model1_bin_path, self$args$model2_bin_path), "/build.log"),
           FUN = function(x) {
             readLines(con = x, warn = FALSE) |>
               dplyr::as_tibble() |>
@@ -547,8 +456,8 @@ auditr <- R6::R6Class(
       if(sum(stringr::str_detect(tolower(build_logs$value), "build succeeded.")) == 2) {
         # Copy databases
         file.copy(
-          from = paste0(c(self$args$release1_model_bin_path, self$args$release2_model_bin_path), "/", self$args$model, ".sqlite"),
-          to = paste0(c(self$args$release1_model_bin_path, self$args$release2_model_bin_path), "/", self$args$model, "-copy.sqlite")
+          from = paste0(c(self$args$model1_bin_path, self$args$model2_bin_path), "/", c(self$args$model1, self$args$model2), ".sqlite"),
+          to = paste0(c(self$args$model1_bin_path, self$args$model2_bin_path), "/", c(self$args$model1, self$args$model2), "-copy.sqlite")
         )
 
         # Render console message
@@ -568,7 +477,7 @@ auditr <- R6::R6Class(
     },
 
     #' @description This method re-compiles the OpenM++ library in both `stcopenmpp` releases asynchronously.
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
     rebuild_openm = function() {
       # Save command history
@@ -642,7 +551,7 @@ auditr <- R6::R6Class(
     },
 
     #' @description This method retrieves and stores a list of a model's non-hidden output tables via `dbcopy.exe`.
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
     load_output_tables = function() {
       # Save command history
@@ -675,48 +584,54 @@ auditr <- R6::R6Class(
 
         if(self$args$git_url == args$git_url & self$args$model != args$model) {
           arg_labels <- c(
-            "model",
-            "model_exe",
+            paste0("model", 1:2),
+            paste0("model", 1:2, "_exe"),
             "repo_path",
-            paste0("release", 1:2, "_model_bin_path"),
-            paste0("release", 1:2, "_model_path"),
+            paste0("model", 1:2, "_bin_path"),
+            paste0("model", 1:2, "_path"),
             paste0(c("dbcopy", "dbget"), "_path")
           )
           self$args[arg_labels] <- args[arg_labels]
         }
 
-        if(is.null(self$args$git_commit)) self$args$git_commit <- args$git_commit
-        if(is.null(self$args$git_commit_hash)) self$args$git_commit_hash <- args$git_commit_hash
+        if(is.null(self$args$git_commits)) self$args$git_commits <- args$git_commits
       }
 
       # Render console message
       cli::cli_h2(paste0(cli::make_ansi_style("#af3c43")("\U1F341"), cli::make_ansi_style("#3465a4")("{.fn $load_output_tables} method")))
 
       # Abort if model_path doesn't exit
-      if(! file.exists(paste0(self$args$release1_model_bin_path, "/", self$args$model_exe))) cli::cli_abort("Please run {.fn $build_models}.")
+      if(! file.exists(paste0(self$args$model1_bin_path, "/", self$args$model1_exe))) cli::cli_abort("Please run {.fn $build_models}.")
 
       # Render console message
       cli::cli_alert_info("Loading non-hidden output tables. Hang tight ...")
 
+      # Ensure self$args$dbcopy_path and self$args$dbget_path are set
+      if(is.null(self$args$dbcopy_path)) {
+        self$args$dbcopy_path <- list.files(path = paste0(self$args$release_path, "/bin"), pattern = paste0(self$args$dbcopy_exe, "$"), full.names = TRUE)
+      }
+
+      if(is.null(self$args$dbget_path)) {
+        self$args$dbget_path <- list.files(path = paste0(self$args$release_path, "/bin"), pattern = paste0(self$args$dbget_exe, "$"), full.names = TRUE)
+      }
+
       # Download model meta
       withr::with_dir(
-        new = self$args$release1_model_bin_path,
-        code = {
-          system2(
-            command = self$args$dbcopy_path,
-            args = c(
-              "-m",
-              self$args$model,
-              "-OpenM.LogToConsole=false"
-            )
+        new = self$args$model1_bin_path,
+        code = system2(
+          command = self$args$dbcopy_path,
+          args = c(
+            "-m",
+            self$args$model1,
+            "-OpenM.LogToConsole=false"
           )
-        }
+        )
       )
 
       # Connect to database
       connection <- DBI::dbConnect(
         RSQLite::SQLite(),
-        dbname = paste0(self$args$release1_model_bin_path, "/", self$args$model, "-copy.sqlite")
+        dbname = paste0(self$args$model1_bin_path, "/", self$args$model1, "-copy.sqlite")
       )
 
       # Import output table meta and bind to self$results$output_tables
@@ -769,7 +684,7 @@ auditr <- R6::R6Class(
     #' @param sub_samples Required: a length-one numeric vector representing the number of sub-samples to use during the model run (default: `1`).
     #' @param param_dir Optional: a length-one character vector representing the full path to the directory where the parameter files are located (default: `NULL`).
     #' @param tables_per_run Optional: a length-one numeric vector representing the number of output tables per model run (default: `25`).
-    #' @return Returns the `auditr` object invisibly.
+    #' @return Returns the `model_audit` object invisibly.
 
     run_models = function(
     parameters = c(),
@@ -830,15 +745,11 @@ auditr <- R6::R6Class(
         # Set run name
         run_name <- paste0("run-", stringr::str_pad(string = i, width = max(nchar(length(table_groupings)), 2), pad = "0"))
 
-        # Set db
-        if(! is.null(self$args$db)) db1 <- self$args$release1_db else db1 <- NULL
-        if(! is.null(self$args$db)) db2 <- self$args$release2_db else db2 <- NULL
-
         # Initiate model runs asynchronously
         private$run_model(
           run_name = run_name,
-          om_root = self$args$release1_path,
-          model_bin_path = self$args$release1_model_bin_path,
+          om_root = self$args$release_path,
+          model_bin_path = self$args$model1_bin_path,
           table_grouping = table_groupings[[i]],
           parameters,
           sub_from,
@@ -846,12 +757,12 @@ auditr <- R6::R6Class(
           threads,
           sub_samples,
           param_dir,
-          db = db1
+          db = self$args$model1_db
         )
         private$run_model(
           run_name = run_name,
-          om_root = self$args$release2_path,
-          model_bin_path = self$args$release2_model_bin_path,
+          om_root = self$args$release_path,
+          model_bin_path = self$args$model2_bin_path,
           table_grouping = table_groupings[[i]],
           parameters,
           sub_from,
@@ -859,7 +770,7 @@ auditr <- R6::R6Class(
           threads,
           sub_samples,
           param_dir,
-          db = db2
+          db = self$args$model2_db
         )
 
         # Comma-separate output tables
@@ -872,8 +783,8 @@ auditr <- R6::R6Class(
         while(TRUE) {
           # Get log file names
           log_files <- c(
-            paste0(self$args$release1_model_bin_path, "/", self$args$model, ".log"),
-            paste0(self$args$release2_model_bin_path, "/", self$args$model, ".log")
+            paste0(self$args$model1_bin_path, "/", self$args$model1, ".log"),
+            paste0(self$args$model2_bin_path, "/", self$args$model2, ".log")
           )
 
           # Check if they exist
@@ -887,8 +798,8 @@ auditr <- R6::R6Class(
         while (TRUE) {
           # Look for errors
           logs <- c(
-            readLines(con = paste0(self$args$release1_model_bin_path, "/", self$args$model, ".log")),
-            readLines(con = paste0(self$args$release2_model_bin_path, "/", self$args$model, ".log"))
+            readLines(con = paste0(self$args$model1_bin_path, "/", self$args$model1, ".log")),
+            readLines(con = paste0(self$args$model2_bin_path, "/", self$args$model2, ".log"))
           ) |> tolower()
 
           error_fail_sums <- sum(stringr::str_detect(string = logs, pattern = "error|failed"))
@@ -898,33 +809,33 @@ auditr <- R6::R6Class(
             cli::cli_abort(
               paste0(
                 "One or more model runs encountered an error. Please consult the run logs ({.file ",
-                paste0(self$args$release1_model_bin_path, "/", self$args$model, ".log"),
+                paste0(self$args$model1_bin_path, "/", self$args$model1, ".log"),
                 "}, {.file ",
-                paste0(self$args$release2_model_bin_path, "/", self$args$model, ".log"),
+                paste0(self$args$model2_bin_path, "/", self$args$model2, ".log"),
                 "})."
               )
             )
           }
 
           # Look for run.done flags
-          if (sum(! file.exists(paste0(c(self$args$release1_model_bin_path, self$args$release2_model_bin_path), "/run.done"))) == 0) break
+          if (sum(! file.exists(paste0(c(self$args$model1_bin_path, self$args$model2_bin_path), "/run.done"))) == 0) break
 
           # Pause
           Sys.sleep(5)
         }
 
         # Set paths
-        om_roots <- c(self$args$release1_path, self$args$release2_path)
-        model_paths <- c(self$args$release1_model_bin_path, self$args$release2_model_bin_path)
+        om_roots <- self$args$release_path
+        model_paths <- c(self$args$model1_bin_path, self$args$model2_bin_path)
 
         # Render console message
         cli::cli_alert("Getting model run results and auditing output tables.")
 
         # Get db paths
         if(! is.null(self$args$db)) {
-          db_paths <- self$args[paste0("release", 1:length(model_paths), "_db")]
+          db_paths <- self$args[paste0("model", 1:length(model_paths), "_db")]
         } else {
-          db_paths <- paste0(self$args[paste0("release", 1:length(model_paths), "_model_bin_path")], "/", self$args$model, ".sqlite")
+          db_paths <- paste0(self$args[paste0("model", 1:length(model_paths), "_bin_path")], "/", c(self$args$model1, self$args$model2), ".sqlite")
         }
 
         # Set run_ids
@@ -960,8 +871,8 @@ auditr <- R6::R6Class(
               dplyr::arrange(dplyr::desc(update_dt)) |>
               dplyr::slice(1) |>
               dplyr::mutate(
-                release = paste0("release", j),
-                release_path = self$args[paste0("release", j, "_path")] |>
+                model = paste0("model", j),
+                model_path = self$args[paste0("model", j, "_path")] |>
                   unlist() |>
                   unname(),
                 cases = cases,
@@ -1118,7 +1029,7 @@ auditr <- R6::R6Class(
         cli::cli_text("")
 
         # Clean up
-        unlink(x = paste0(model_paths, "/", self$args$model, ".sqlite"))
+        unlink(x = db_paths)
       }
 
       # Render console message
@@ -1186,7 +1097,7 @@ auditr <- R6::R6Class(
           run_time = difftime(time1 = run_end, time2 = run_start, units = "mins")
         )
 
-      # Store auditr object
+      # Store model_audit object
       dir.create(path = paste0(self$args$dir, "/auditr-model-runs"), showWarnings = FALSE, recursive = TRUE)
       rds_path <- paste0(self$args$dir, "/auditr-model-runs/", self$args$model, "-", gsub(" |[:]", "-", Sys.time()), ".rds")
       saveRDS(
@@ -1201,7 +1112,7 @@ auditr <- R6::R6Class(
       # Render console message
       cli::cli_alert("Output table audit stored in {.var $results$audit}.")
       cli::cli_alert("Model run meta stored in {.var $results$model_runs}.")
-      cli::cli_alert("{.var auditr} object stored in {.file {rds_path}}.")
+      cli::cli_alert("{.var model_audit} object stored in {.file {rds_path}}.")
       cli::cli_text("")
       cli::cli_alert_success("Done!")
 
@@ -1210,11 +1121,11 @@ auditr <- R6::R6Class(
     },
 
     #' @description This method renders an audit report in .html format.
-    #' @param name Required: a length-one character vector representing the file name of the report (default: `paste0("auditr-report-", self$args$model)`).
+    #' @param name Required: a length-one character vector representing the file name of the report (default: `paste0("release-audit-report-", self$args$model)`).
     #' @param dir Required: a length-one character vector representing the full path to the location where the report will be exported in `.html` format (default: `paste0(self$args$dir, "/auditr-reports")`).
     #' @return Returns an .html-formatted report.
 
-    load_report = function(name = paste0("auditr-report-", self$args$model), dir = paste0(self$args$dir, "/auditr-reports")) {
+    load_report = function(name = paste0("release-audit-report-", self$args$model), dir = paste0(self$args$dir, "/auditr-reports")) {
       # Save command history
       utils::savehistory()
 
@@ -1263,7 +1174,7 @@ auditr <- R6::R6Class(
 
       # Copy quarto doc to working directory (for now)
       copy_file <- file.copy(
-        from = system.file("qmd", "auditr-report.qmd", package = "auditr"),
+        from = system.file("qmd", "release-audit-report.qmd", package = "auditr"),
         to = paste0(getwd(), "/", report_name_qmd),
         overwrite = TRUE
       )
@@ -1629,7 +1540,7 @@ auditr <- R6::R6Class(
 
     git_token = c(),
 
-    load_release = function(url, dest) {
+    .load_release = function(url, dest) {
       # Render console message
       cli::cli_alert("Downloading {.url {url}} and extracting to {.file {dest}}.")
       cli::cli_text("")
@@ -1706,19 +1617,22 @@ auditr <- R6::R6Class(
       param_dir,
       db
     ) {
+      # Set model
+      model <- basename(dirname(dirname(model_bin_path)))
+
       # If db set
       if(! is.null(db)) {
         # Copy original database
         file.copy(
-          from = paste0(model_bin_path, "/", self$args$model, "-copy.sqlite"),
+          from = paste0(model_bin_path, "/", model, "-copy.sqlite"),
           to = db,
           overwrite = TRUE
         )
       } else {
         # Get fresh copy of model database
         file.copy(
-          from = paste0(model_bin_path, "/", self$args$model, "-copy.sqlite"),
-          to = paste0(model_bin_path, "/", self$args$model, ".sqlite"),
+          from = paste0(model_bin_path, "/", model, "-copy.sqlite"),
+          to = paste0(model_bin_path, "/", model, ".sqlite"),
           overwrite = TRUE
         )
       }
@@ -1790,7 +1704,7 @@ auditr <- R6::R6Class(
           "[Tables]",
           paste0("Retain=", paste0(table_grouping, collapse = ","))
         ),
-        con = paste0(model_bin_path, "/", self$args$model, ".ini")
+        con = paste0(model_bin_path, "/", model, ".ini")
       )
 
       # Clean up
@@ -1816,12 +1730,16 @@ auditr <- R6::R6Class(
                 " && ",
                 ifelse(
                   test = self$args$os != "windows",
-                  yes = paste0("chmod +x ", model_bin_path, "/", self$args$model, " && ulimit -S -s 65536 && "),
+                  yes = paste0("chmod +x ", model_bin_path, "/", model, " && ulimit -S -s 65536 && "),
                   no = ""
                 ),
-                self$args$model_exe,
+                ifelse(
+                  test = self$args$os == "windows",
+                  yes = paste0(model, ".exe"),
+                  no = model
+                ),
                 " -ini ",
-                self$args$model,
+                model,
                 ".ini",
                 ifelse(
                   test = ! is.null(db),

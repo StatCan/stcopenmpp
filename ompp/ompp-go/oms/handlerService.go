@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/statcan/stcopenmpp/ompp/ompp-go/ompp/db"
@@ -36,8 +37,9 @@ func serviceConfigHandler(w http.ResponseWriter, r *http.Request) {
 		JobServicePub                     // jobs service state: paused, resources usage and limits
 		DiskUse        diskUseConfig      // disk use config
 		Env            map[string]string  // server config environmemt variables for UI
-		UiExtra        string             // UI extra config from etc/ui.extra.json
+		UiExtra        map[string]any     // Object of etc/ui.extra.json
 		ModelCatalog   ModelCatalogConfig // "public" state of model catalog
+		ModelLib       modelLib           // "public" models library configuration
 		RunCatalog     RunCatalogConfig   // "public" state of model run catalog
 	}{
 		OmsName:        theCfg.omsName,
@@ -54,15 +56,20 @@ func serviceConfigHandler(w http.ResponseWriter, r *http.Request) {
 		IsModelDoc:     theCfg.docDir != "",
 		IsDiskUse:      theCfg.isDiskUse,
 		Env:            theCfg.env,
-		UiExtra:        theCfg.uiExtra,
-		ModelCatalog:   theCatalog.toPublicConfig(),
+		UiExtra:        map[string]any{},
 		RunCatalog:     *theRunCatalog.toPublicConfig(),
 	}
+	st.ModelCatalog, st.ModelLib = theCatalog.toPublicConfig()
+
+	// read UI extra configuration from etc/ui.extra.json
+	if ok, err := helper.FromJsonFile(filepath.Join(theCfg.etcDir, "ui.extra.json"), &st.UiExtra); !ok || err != nil {
+		st.UiExtra = map[string]any{}
+	}
+
 	if theCfg.isDiskUse {
 		_, st.DiskUse = theRunCatalog.getDiskUseStatus()
 		st.IsDiskCleanup = st.DiskUse.dbCleanupCmd != "" && theCfg.dbcopyPath != ""
 	}
-
 	jsonResponse(w, r, st)
 }
 

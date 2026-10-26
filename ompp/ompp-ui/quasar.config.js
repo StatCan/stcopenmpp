@@ -15,6 +15,8 @@ export default defineConfig((ctx) => {
     boot: [
       'i18n',
       'axios',
+      'ui-version',
+      'ui-cache',
       'apexcharts'
     ],
 

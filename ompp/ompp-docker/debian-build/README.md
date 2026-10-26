@@ -13,24 +13,24 @@ docker build `
   .
 </pre>
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
+| Package                                                             | Version                           | URL                                                                                                 |
 | :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| Bison                                                               | 3.8.2                             | `https://packages.guix.gnu.org/packages/bison/3.8.2`                                                |
-| curl                                                                | 8.14.1                            | `https://packages.debian.org/stable/curl`                                                           |
-| Debian                                                              | 13.2 (trixie)                     | `https://www.debian.org/releases/trixie`                                                            |
-| Flex                                                                | 2.6.4                             | `https://packages.guix.gnu.org/packages/flex/2.6.4`                                                 |
-| g++                                                                 | 14.2.0                            | `https://ftp.gnu.org/gnu/gcc/gcc-14.2.0`                                                            |
-| Git                                                                 | 2.47.3                            | `https://debian.pkgs.org/13/debian-main-amd64/git_2.47.3-0+deb13u1_amd64.deb.html`                  |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://pkgs.org/download/golang`                                                                  |
-| Make                                                                | 4.4.1                             | `https://ftp.gnu.org/gnu/make/?C=M;O=D`                                                             |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-linux-x64.tar.xz`                                   |
-| Open MPI (libopenmpi-dev)                                           | 5.0.7-1                           | `https://packages.debian.org/trixie/amd64/net/libopenmpi-dev`                                       |
-| Open MPI (openmpi-bin)                                              | 5.0.7                             | `https://packages.debian.org/trixie/amd64/net/openmpi-bin`                                          |
-| Perl                                                                | 5.40.1                            | `https://packages.debian.org/sid/amd64/perl/download`                                               |
-| SQLite                                                              | 3.46.1                            | `https://packages.debian.org/stable/sqlite3`                                                        |
-| XZ Utils                                                            | 5.8.1                             | `https://packages.debian.org/stable/XZ-Utils`                                                       |
+| Bison                                                               | 3.8.2                             | `https://packages.debian.org/trixie/bison`                                                          |
+| curl                                                                | 8.14.1                            | `https://packages.debian.org/trixie/curl`                                                           |
+| Debian ![Updated](https://img.shields.io/badge/Updated-green)       | 13.7 (trixie)                     | `https://www.debian.org/releases/trixie`                                                            |
+| Flex                                                                | 2.6.4                             | `https://packages.debian.org/trixie/flex`                                                           |
+| g++                                                                 | 14.2.0                            | `https://packages.debian.org/trixie/g++`                                                            |
+| Git                                                                 | 2.47.3                            | `https://packages.debian.org/trixie/git`                                                            |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.8                            | `https://pkgs.org/download/golang`                                                                  |
+| Make                                                                | 4.4.1                             | `https://packages.debian.org/trixie/make`                                                           |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.18.0                           | `https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz`                                   |
+| Open MPI (libopenmpi-dev)                                           | 5.0.7                             | `https://packages.debian.org/trixie/libopenmpi-dev`                                                 |
+| Open MPI (openmpi-bin)                                              | 5.0.7                             | `https://packages.debian.org/trixie/openmpi-bin`                                                    |
+| Perl                                                                | 5.40.1                            | `https://packages.debian.org/trixie/perl`                                                           |
+| SQLite                                                              | 3.46.1                            | `https://packages.debian.org/trixie/sqlite3`                                                        |
+| XZ Utils                                                            | 5.8.1                             | `https://packages.debian.org/trixie/xz-utils`                                                       |
 
 ### Building stcopenmpp
 

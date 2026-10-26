@@ -1,0 +1,41 @@
+﻿//LABEL(table-and-parameter-groups, EN) Parameter and table groups module
+
+/* NOTE(table-and-parameter-groups, EN)
+	This module contains table groups to control the order of display in the interface.
+*/
+
+parameter_group pg01_favorite_parameters { //EN Favorite Parameters
+    pg_key_demography_controls,
+    pg_bmi_control
+};
+
+parameter_group pg02_all_parameters { //EN All Parameters
+    pg_start_pop,
+    pg_bmi_parameters,
+    pg_intervention_parameters,
+    pg_ses_all,
+    pg_mortality,
+    pg_tabulation_parameters
+};
+
+table_group tg01_favorite_tables { //EN Favorite Tables
+    t_risk_factors_cross_sectional,
+    t_risk_factors_longitudinal,
+    t_mortality_bmi,
+    t_cohort_life_long
+};
+
+table_group tg02_all_tables { //EN All Tables
+    tg_population_tables,
+    tg_mortality_tables,
+    tg_sep_tables,
+    tg_risk_factor_tables,
+    debug_tables
+};
+
+table_group debug_tables { //EN CS Debug Tables
+    t_changes,
+    tg_user_tables
+};
+
+hide(debug_tables);

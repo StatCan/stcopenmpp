@@ -1,6 +1,6 @@
 
 
-## Getting started
+## Overview
 
 `auditr` is a cross-platform (Windows and Linux) R package that provides
 R6 methods for auditing two releases of
@@ -19,7 +19,7 @@ databases immediately after model runs and audits to avoid any
 unexpected incursions on storage capacity in the case of models with
 large and/or numerous output tables.
 
-### Loading auditr
+## Installation
 
 ``` r
 # Set working directory
@@ -29,26 +29,28 @@ setwd("path/to/auditr")
 devtools::load_all()
 ```
 
-### Using auditr
+## Usage
+
+### Auditing two releases with one model
 
 ``` r
-# Initialize auditr R6 class
-audit <- auditr$new(
+# Initialize release_audit R6 class
+audit <- release_audit$new(
   releases = c(
-    "https://github.com/openmpp/main/releases/download/v1.17.9/openmpp_win_20250601.zip",
-    "https://github.com/openmpp/main/releases/download/v1.17.10/openmpp_win_20250923.zip"
+    "https://github.com/StatCan/stcopenmpp/releases/download/v0.2/stcopenmpp-windows-v0.2-gh-release.zip",
+    "https://github.com/StatCan/stcopenmpp/releases/download/v0.3/stcopenmpp-windows-v0.3-gh-release.zip"
   ),
   labels = c(
-    "OpenM++ v1.17.9",
-    "OpenM++ v1.17.10"
+    "stcopenmpp v0.2",
+    "stcopenmpp v0.3"
   ),
   sln = "RiskPaths-ompp.sln",
   mode = "release",
   bit = 64,
   git_url = "https://github.com/openmpp/main.git",
-  git_commit = "v1.17.9",
-  vs_cmd = "c:/program files/microsoft visual studio/18/professional/common7/tools/vsdevcmd.bat",
-  platform_toolset = "v145"
+  git_commit = "v1.17.15",
+  vs_cmd = find_vsdevcmd(),
+  platform_toolset = find_msvc_toolset()
 )
 
 # Download and extract releases
@@ -107,7 +109,7 @@ audit$results$audit
     #> 6 7           0          0.00         -        -        -          
     #> 7 12          0          0.00         -        -        -
 
-#### Model run meta
+##### Model run meta
 
 ``` r
 # View model run meta
@@ -115,42 +117,42 @@ audit$results$model_runs
 ```
 
     #> # A tibble: 32 × 3
-    #>    Variable      `OpenM++ v1.17.9`              `OpenM++ v1.17.10`            
+    #>    Variable      `stcopenmpp v0.1`              `stcopenmpp v0.2`             
     #>    <chr>         <chr>                          <chr>                         
     #>  1 run_number    1                              2                             
     #>  2 run_id        102                            102                           
-    #>  3 run_stamp     2026_01_26_08_37_44_686        2026_01_26_08_37_45_371       
-    #>  4 run_digest    828e0b4ddf2a83...44d1c67441ebf 7032002bf830d7...53a762871c66d
-    #>  5 create_dt     2026-01-26 08:37:44.709        2026-01-26 08:37:45.39        
-    #>  6 update_dt     2026-01-26 08:38:05.812        2026-01-26 08:38:06.222       
-    #>  7 cases         1e+06                          1e+06                         
-    #>  8 sub_count     4                              4                             
-    #>  9 sub_started   4                              4                             
-    #> 10 sub_completed 4                              4                             
-    #> 11 status        s                              s                             
-    #> 12 value_digest  e56784b5fdf5de...3ff4d5c37bd5a e56784b5fdf5de...3ff4d5c37bd5a
-    #> 13 release_path  C:/Users/barnj..._win_20250601 C:/Users/barnj..._win_20250923
-    #> 14 output_tables T01_LifeExpect...hortFertility T01_LifeExpect...hortFertility
-    #> 15 descr         Default                        Default                       
-    #> 16 lang_code     EN                             EN                            
+    #>  3 model_id      101                            101                           
+    #>  4 run_stamp     2026_07_22_09_45_55_487        2026_07_22_09_45_55_495       
+    #>  5 run_digest    37e215b37c39fc...20dcc47bf850e f66b147571de07...ab612df3e0b7e
+    #>  6 create_dt     2026-07-22 09:45:55.547        2026-07-22 09:45:55.547       
+    #>  7 update_dt     2026-07-22 09:46:17.507        2026-07-22 09:46:16.964       
+    #>  8 cases         1e+06                          1e+06                         
+    #>  9 sub_count     4                              4                             
+    #> 10 sub_started   4                              4                             
+    #> 11 sub_restart   4                              4                             
+    #> 12 sub_completed 4                              4                             
+    #> 13 status        s                              s                             
+    #> 14 value_digest  e56784b5fdf5de...3ff4d5c37bd5a e56784b5fdf5de...3ff4d5c37bd5a
+    #> 15 release_path  C:/Users/barnj...-windows-v0.1 C:/Users/barnj...-windows-v0.2
+    #> 16 output_tables T01_LifeExpect...hortFertility T01_LifeExpect...hortFertility
     #> 17 run_number    3                              4                             
     #> 18 run_id        102                            102                           
-    #> 19 run_stamp     2026_01_26_08_38_11_611        2026_01_26_08_38_11_616       
-    #> 20 run_digest    a2aaba2f09ec01...b155dffc84d2b 8610d6750f623f...8292374f1da94
-    #> 21 create_dt     2026-01-26 08:38:11.633        2026-01-26 08:38:11.638       
-    #> 22 update_dt     2026-01-26 08:38:29.916        2026-01-26 08:38:32.576       
-    #> 23 cases         1e+06                          1e+06                         
-    #> 24 sub_count     4                              4                             
-    #> 25 sub_started   4                              4                             
-    #> 26 sub_completed 4                              4                             
-    #> 27 status        s                              s                             
-    #> 28 value_digest  b248a5a663b2f5...9d8eb62a27347 b248a5a663b2f5...9d8eb62a27347
-    #> 29 release_path  C:/Users/barnj..._win_20250601 C:/Users/barnj..._win_20250923
-    #> 30 output_tables T06_BirthsByUn...nionFormation T06_BirthsByUn...nionFormation
-    #> 31 descr         Default                        Default                       
-    #> 32 lang_code     EN                             EN
+    #> 19 model_id      101                            101                           
+    #> 20 run_stamp     2026_07_22_09_46_20_416        2026_07_22_09_46_20_432       
+    #> 21 run_digest    7e6a4def9cedaf...d875df47eed80 f93796529f9356...af6c83c2b63f1
+    #> 22 create_dt     2026-07-22 09:46:20.439        2026-07-22 09:46:20.458       
+    #> 23 update_dt     2026-07-22 09:46:38.713        2026-07-22 09:46:38.622       
+    #> 24 cases         1e+06                          1e+06                         
+    #> 25 sub_count     4                              4                             
+    #> 26 sub_started   4                              4                             
+    #> 27 sub_restart   4                              4                             
+    #> 28 sub_completed 4                              4                             
+    #> 29 status        s                              s                             
+    #> 30 value_digest  b248a5a663b2f5...9d8eb62a27347 b248a5a663b2f5...9d8eb62a27347
+    #> 31 release_path  C:/Users/barnj...-windows-v0.1 C:/Users/barnj...-windows-v0.2
+    #> 32 output_tables T06_BirthsByUn...nionFormation T06_BirthsByUn...nionFormation
 
-#### Output tables
+##### Output tables
 
 ``` r
 # View list of non-hidden output tables
@@ -160,10 +162,10 @@ audit$results$output_tables
     #> # A tibble: 7 × 3
     #>   id    name                         label                              
     #>   <chr> <chr>                        <chr>                              
-    #> 1 0     T01_LifeExpectancy           Life Expectancy                    
-    #> 2 1     T02_TotalPopulationByYear    Life table                         
-    #> 3 2     T03_FertilityByAge           Age-specific fertility             
-    #> 4 3     T04_FertilityRatesByAgeGroup Fertility rates by age group       
-    #> 5 4     T05_CohortFertility          Cohort fertility                   
-    #> 6 5     T06_BirthsByUnion            Pregnancies by union status & order
-    #> 7 6     T07_FirstUnionFormation      First union formation
+    #> 1 101   T01_LifeExpectancy           Life Expectancy                    
+    #> 2 102   T02_TotalPopulationByYear    Life table                         
+    #> 3 103   T03_FertilityByAge           Age-specific fertility             
+    #> 4 104   T04_FertilityRatesByAgeGroup Fertility rates by age group       
+    #> 5 105   T05_CohortFertility          Cohort fertility                   
+    #> 6 106   T06_BirthsByUnion            Pregnancies by union status & order
+    #> 7 107   T07_FirstUnionFormation      First union formation

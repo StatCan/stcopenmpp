@@ -221,8 +221,7 @@ void RunController::createRunEntityTables(IDbExec * i_dbExec)
             //   run_id     INT    NOT NULL,
             //   entity_key BIGINT NOT NULL,
             //   attr4      INT    NOT NULL,
-            //   attr7      FLOAT,          -- float attribute value NaN is NULL
-            //   PRIMARY KEY (run_id, entity_key)
+            //   attr7      FLOAT          -- float attribute value NaN is NULL
             // )
             const string prv = i_dbExec->provider();
 
@@ -239,8 +238,12 @@ void RunController::createRunEntityTables(IDbExec * i_dbExec)
                     " " + IDbExec::valueDbType(prv, t->name, t->typeId) +
                     (isFloatType(t->name.c_str()) ? "," : " NOT NULL,");
             }
+			
+			// Remove trailing comma
+			if (!bodySql.empty() && bodySql.back() == ',')
+				bodySql.pop_back();
 
-            bodySql += " PRIMARY KEY (run_id, entity_key))";
+            bodySql += ")";
 
             i_dbExec->update(IDbExec::makeSqlCreateTableIfNotExist(prv, dbTableName, bodySql));
         }

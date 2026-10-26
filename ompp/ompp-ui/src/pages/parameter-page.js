@@ -45,7 +45,8 @@ export default {
     runDigest: { type: String, default: '' },
     worksetName: { type: String, default: '' },
     parameterName: { type: String, default: '' },
-    refreshTickle: { type: Boolean, default: false }
+    refreshTickle: { type: Boolean, default: false },
+    isDialog: { type: Boolean, default: false } // if true then parameter page is displayed in a modal dialog, not as a tab
   },
 
   /* eslint-disable no-multi-spaces */
@@ -94,6 +95,8 @@ export default {
       edt: Pcvt.emptyEdit(),  // editor options and state shared with child
       isDragging: false,      // if true then user is dragging dimension select control
       selectDimName: '',      // selected dimension name
+      filterCellCount: 0,     // number of cells filtered out by dimension items selection
+      visibleCellCount: 0,    // visible cells count: total - filter
       isPages: false,
       pageStart: 0,
       pageSize: 0,
@@ -104,6 +107,7 @@ export default {
       loadWsWait: false,
       refreshWsTickle: false,
       showEditDiscardTickle: false,
+      isDialogCloseWait: false, // dialog close requested and waiting for user answer to "discard changes?"
       runInfoTickle: false,
       worksetInfoTickle: false,
       paramInfoTickle: false,
@@ -159,6 +163,7 @@ export default {
   },
 
   emits: [
+    'dialog-close',
     'edit-updated',
     'new-run-select',
     'set-update-readonly',
@@ -495,6 +500,12 @@ export default {
     // pivot table view updated: item keys layout updated
     onPvKeyPos (keyPos) { this.pvKeyPos = keyPos },
 
+    // new pivot table size
+    onPvSize (nTotal, nFilter, nData) {
+      this.filterCellCount = nFilter
+      this.visibleCellCount = nTotal - nFilter
+    },
+
     // start of editor methods
     //
     // start or stop parameter editing
@@ -530,6 +541,27 @@ export default {
         if (this.pvc.formatter.options().isRawValue !== this.ctrl.isRawShow) this.pvc.formatter.doRawValue() // switch back to formatted value on edit complete
       }
       this.updateWorksetReadonly(true) // set workset read only if all parameters saved and workset note editor closed
+
+      if (this.isDialog && this.isDialogCloseWait) { // dialog close requested: close if no other unsaved changes
+        this.isDialogCloseWait = false
+        if (this.dialogCanClose()) this.$emit('dialog-close')
+      }
+    },
+
+    // dialog close requested: return true if dialog can be closed
+    // if there are unsaved data or notes changes then ask user "discard changes?" and return false
+    dialogCanClose () {
+      if (this.edt.isEdit && this.edt.isUpdated) {
+        this.isDialogCloseWait = true
+        this.showEditDiscardTickle = !this.showEditDiscardTickle
+        return false
+      }
+      if (!this.onCancelParamNote()) {
+        this.isDialogCloseWait = true
+        return false
+      }
+      if (this.edt.isEdit) this.doEditToogle() // no changes: stop editing
+      return true
     },
 
     // save if data editied
@@ -1139,6 +1171,11 @@ export default {
     onYesDiscardParamNote () {
       this.noteEditorShow = false
       this.updateWorksetReadonly(true) // set workset read only if all parameters saved and workset note editor closed
+      if (this.isDialog && this.isDialogCloseWait) { // dialog close requested: close if no other unsaved changes
+        this.isDialogCloseWait = false
+        if (this.dialogCanClose()) this.$emit('dialog-close')
+        return
+      }
       this.isYesToLeave = (this.pathToRouteLeave || '') !== ''
       if (this.isYesToLeave) {
         this.$router.push(this.pathToRouteLeave)
@@ -1237,6 +1274,8 @@ export default {
           pageStart: this.isPages ? this.pageStart : 0,
           pageSize: this.isPages ? this.pageSize : 0
         })
+        this.filterCellCount = 0
+        this.visibleCellCount = 0
       }
     },
 
@@ -1472,6 +1511,14 @@ export default {
 
   mounted () {
     this.initViewRefreshData()
+    if (this.isDialog) { // displayed in a dialog: not a tab
+      if (!this.isFromRun) {
+        this.$nextTick(() => {
+          this.$emit('edit-updated', this.edt.isUpdated, this.routeKey)
+        })
+      }
+      return
+    }
     if (this.isFromRun) {
       this.$emit('tab-mounted', 'run-parameter', { digest: this.digest, runDigest: this.runDigest, parameterName: this.parameterName })
     } else {

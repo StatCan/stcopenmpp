@@ -1,0 +1,11 @@
+﻿sub_id,Sex,Education_level,param_value
+0,Female,X_THAN_SECONDARY,-0.82187
+0,Female,SECONDARY_GRAD,-1.40475
+0,Female,OTHER_POST_SEC,-1.35261
+0,Female,POST_SEC_GRAD,-1.3896
+0,Female,Not_applicable_age_20,-0.83874
+0,Male,X_THAN_SECONDARY,0.12226
+0,Male,SECONDARY_GRAD,-0.22673
+0,Male,OTHER_POST_SEC,0.46694
+0,Male,POST_SEC_GRAD,-0.02293
+0,Male,Not_applicable_age_20,0.20556

@@ -1,0 +1,483 @@
+﻿//LABEL(languages-french, EN) French translations
+
+/* NOTE(languages-french, EN)
+	This module contains French translations of labels and notes.
+*/
+
+//LABEL(person.g_alcohol5, FR) Alcool autodéclaré (5 catégories)
+
+//LABEL(bmi_index_t, FR) Catégorie de poids
+//LABEL(underweight, FR) Insuffisance pondérale IMC <18,5
+//LABEL(normal_weight, FR) Poids normal IMC [18.5,25)
+//LABEL(overweight, FR) IMC en surpoids [25,30)
+//LABEL(obese, FR) Obésité IMC >=30
+//LABEL(bmi_index_all_ages_t, FR) Catégorie de poids(4)
+//LABEL(bmi_underweight, FR) Poids faible
+//LABEL(bmi_normal_weight, FR) Poids normal
+//LABEL(bmi_overweight, FR) Poids excessif
+//LABEL(bmi_obese, FR) Obèse
+//LABEL(bmi_state_na_t, FR) Catégories d'IMC
+//LABEL(bmi_state_na_uw, FR) Poids faible
+//LABEL(bmi_state_na_nw, FR) Poids normal
+//LABEL(bmi_state_na_ow, FR) Poids excessif
+//LABEL(bmi_state_na_obese, FR) Obèse
+//LABEL(bmi_state_na_na, FR) Sans objet (âge < 18 ans)
+//LABEL(bmi_model_t, FR) Modèle d'IMC
+//LABEL(bmi_model0, FR) Pas de modèle d'IMC
+//LABEL(bmi_model2, FR) IMC modèle 2 (8 équations de régénération : éducation, revenu et région)
+//LABEL(ar_order_index_4_t, FR) BMI Modèle auto-régressif
+//LABEL(ar4_1, FR) Modèle autorégressif d'ordre 1
+//LABEL(ar4_2, FR) Modèle autorégressif d'ordre 2
+//LABEL(ar4_3, FR) Modèle autorégressif d'ordre 3
+//LABEL(ar4_4, FR) Modèle autorégressif d'ordre 4
+//LABEL(bmi_compound_change_parameter_t, FR) Variation composée de l'IMC
+//LABEL(c_compound_amount, FR) Montant du changement
+//LABEL(c_compound_start, FR) Année de début
+//LABEL(c_compound_end, FR) Fin d'année
+//LABEL(c_compound_floor, FR) IMC minimal autorisé
+//LABEL(c_compound_ceiling, FR) IMC maximal autorisé
+//LABEL(bmi_built_in_alteration_specs_t, FR) Paramètres de modification de l'IMC
+//LABEL(bbias_scope_year_lower_cutoff, FR) Portée : Limite inférieure de l'année
+//LABEL(bbias_scope_year_upper_cutoff, FR) Portée : limite supérieure de l'année
+//LABEL(bbias_scope_bmi_lower_cutoff, FR) Champ d'application : limite inférieure de l'IMC
+//LABEL(bbias_scope_bmi_upper_cutoff, FR) Champ d'application : limite supérieure de l'IMC
+//LABEL(bbias_intercept, FR) Transformation : terme additif (intercept)
+//LABEL(bbias_slope, FR) Transformation : terme multiplicatif (pente)
+//LABEL(bbias_result_lower_limit, FR) Plancher
+//LABEL(bbias_result_lower_buffer, FR) Taille de la mémoire tampon du sol
+//LABEL(bbias_result_upper_limit, FR) Plafond
+//LABEL(bbias_result_upper_buffer, FR) Taille maximale du tampon
+//LABEL(bmi_ar_order_range_t, FR) Plage d'ordre autorégressive de l'IMC
+//LABEL(bmi_range_t, FR) Fourchette d'IMC autorisée dans la simulation.
+//LABEL(from_25_to_75_by_10_t, FR) Groupe d'âge
+//LABEL(from_25_to_80_by_5_t, FR) Groupe d'âge
+//LABEL(from_25_to_90_by_5_t, FR) Groupe d'âge
+//LABEL(age_bmi_group3075_t, FR) Groupe d'âge
+//LABEL(bmi_cat_t, FR) Catégories d'IMC
+//LABEL(bmi4cat_t, FR) Catégories d'IMC
+//LABEL(bmi_intervention_factor_fruit_veg, FR) Consommation de fruits et légumes
+//LABEL(bmi_intervention_factor_food_insecurity, FR) Insécurité alimentaire
+//LABEL(bmi_intervention_factor_physical_activity, FR) Activité physique
+//LABEL(bmi_intervention_factor_breast_fed, FR) Initiation à l'allaitement maternel
+//LABEL(bmi_intervention_factor_marketing, FR) Le marketing pour les enfants
+//LABEL(bmi_intervention_switch_t, FR) Commutation des facteurs de risque de l'IMC
+//LABEL(bmi_intervention_relative_change, FR) Changement relatif
+//LABEL(bmi_intervention_min_age, FR) Âge minimum d'intervention
+//LABEL(bmi_intervention_max_age, FR) Âge maximal d'intervention
+//LABEL(bmi_intervention_min_year, FR) Année d'intervention minimale
+//LABEL(bmi_intervention_max_year, FR) Année d'intervention maximale
+//LABEL(pg_bmi_parameters, FR) Indice de masse corporelle (IMC)
+//LABEL(pg_bmi_interventions, FR) Interventions sur l'IMC
+//LABEL(pg_bmi_conversions, FR) Conversion de l'IMC
+//LABEL(pg_bmi_collection_conversion, FR) Conversion de l'IMC autodéclaré en IMC mesuré
+//LABEL(pg_bmi_time_conversion, FR) Conversion de l'IMC en fonction du calendrier
+//LABEL(pg_expert_bmi_intervention_parameters, FR) Experts seulement
+//LABEL(pg_bmi_adult_models_parameters, FR) IMC Paramètres de régression pour les adultes
+//LABEL(pg_expert_bmi_conversions, FR) Experts seulement
+//LABEL(pivot_multiplier, FR) Facteur multiplicatif appliqué au terme d'erreur à vie dans la conversion de l'IMC autodéclaré en IMC mesuré
+//LABEL(bmi_measured_reported_pivot_variance_bmi, FR) Coefficients d'IMC pour la conversion en IMC mesuré (partie variance)
+//LABEL(bmi_measured_reported_pivot_variance_education, FR) coefficients des catégories d'éducation pour la conversion en IMC mesuré (partie variance)
+//LABEL(bmi_measured_reported_pivot_mean_bmi, FR) Coefficients d'IMC pour la conversion en IMC mesuré (partie moyenne)
+//LABEL(bmi_measured_reported_pivot_mean_education, FR) coefficients des catégories d'éducation pour la conversion en IMC mesuré (partie moyenne)
+//LABEL(bmi_measured_reported_pivot_mean_age, FR) coefficients de catégorie d'âge pour la conversion en IMC mesuré (partie moyenne)
+//LABEL(bmi_measured_reported_pivot_mean_bmi_cat, FR) Coefficients des catégories d'IMC pour la conversion en IMC mesuré (partie moyenne)
+//LABEL(p_bmi_elasticity, FR) Elasticité de l'IMC par rapport aux facteurs de risque
+//LABEL(p_bmi_intervention, FR) Modification des facteurs de risque ayant une incidence sur l'IMC
+//LABEL(max_auto_regressive_order, FR) Ordre du modèle auto-régressif utilisé par défaut
+//LABEL(bmi_model_user_choice, FR) Choix du modèle d'IMC
+//LABEL(p_mean_diff_bmi_m_sr, FR) Adaptation moyenne de l'IMC autodéclaré à l'IMC mesuré
+//LABEL(p_bmi_compound_change, FR) Variation composée de l'IMC
+//LABEL(sigma_multiplier, FR) Multiplicateur utilisé pour modifier l'écart du terme d'erreur (généralement 0 ou 1)
+//LABEL(bmi_time_travel_intercept, FR) Interception dans le temps calendaire Ajustement de l'IMC
+//LABEL(bmi_time_travel_slope, FR) Pente de l'ajustement de l'IMC au temps calendaire
+//LABEL(bmi_time_travel_scope, FR) Champ d'application de l'ajustement de l'IMC en fonction du calendrier
+//LABEL(built_in_bmi_alteration_specs, FR) Modifications du modèle IMC en back-end
+//LABEL(person.g_bmi, FR) Valeur de l'IMC auto-déclarée
+//LABEL(person.g_bmi_start, FR) Valeur initiale de l'IMC auto-déclarée
+//LABEL(person.g_bmi_measured_old, FR) Valeur de l'IMC auto-rep. ajustée pour refléter l'IMC mesuré
+//LABEL(person.bmi_phac, FR) Catégorie d'indice de masse corporelle
+//LABEL(person.bmi4cat_phac, FR) Catégorie d'indice de masse corporelle
+//LABEL(person.bmi4cat_measured_phac, FR) Catégorie probable d'indice de masse corporelle mesurée
+//LABEL(person.bmi, FR) Catégorie d'indice de masse corporelle
+//LABEL(person.bmi4cat, FR) Catégorie d'indice de masse corporelle
+//LABEL(person.bmi_measured_old, FR) Catégorie probable d'indice de masse corporelle mesurée
+
+//LABEL(pg_bmi_adult_model2_equation, FR) Coefficients de régression et sigma du modèle 2 de l'IMC (ENSP)
+//LABEL(pg_bmi_adult_model2, FR) IMC adulte modèle 2 (avec éducation, revenu et région)
+//LABEL(pg_expert_bmi_adult_model2, FR) Experts seulement
+//LABEL(bmi_ordonnee_origine, FR) Paramètres de régression de l'IMC : Intercept
+//LABEL(bmi_t_minus_2, FR) Paramètres de régression de l'IMC : auto-régression du lag 1 (t-2)
+//LABEL(bmi_t_minus_4, FR) Paramètres de régression de l'IMC : auto-régression du lag 2 (t-4)
+//LABEL(bmi_t_minus_6, FR) Paramètres de régression de l'IMC : auto-régression du lag 3 (t-6)
+//LABEL(bmi_t_minus_8, FR) Paramètres de régression de l'IMC : auto-régression du lag 4 (t-8)
+//LABEL(bmi_educ, FR) Paramètres de régression de l'IMC : éducation
+//LABEL(bmi_income, FR) Paramètres de régression de l'IMC : revenu
+//LABEL(bmi_region, FR) Paramètres de régression de l'IMC : région
+//LABEL(bmi_age, FR) Paramètres de régression de l'IMC : âge
+//LABEL(bmi_sigma, FR) Paramètres de régression de l'IMC : écart-type du terme d'erreur
+
+//LABEL(scatter_plot_elements_t, FR) Index des points de données
+//LABEL(coordinates_x_y_t, FR) Taille ou probabilité
+//LABEL(coordinates_x, FR) X (par exemple, l'âge)
+//LABEL(coordinates_y, FR) Y (par exemple, le logarithme du risque cumulatif)
+//LABEL(cubic_spline_knots_index_t, FR) Liste des nœuds
+//LABEL(cubic_spline_knots_location_coefficient_t, FR) Emplacement et coefficient des nœuds de la spline cubique
+//LABEL(cubic_spline_knots_location, FR) Emplacement du nœud
+//LABEL(cubic_spline_knots_coefficient, FR) Coefficient de nœud
+//LABEL(cubic_spline_companion_t, FR) Compagnon cannelure cubique
+//LABEL(cubic_spline_companion_min, FR) Limite inférieure pour l'entité utilisée pour calculer la spline
+//LABEL(cubic_spline_companion_max, FR) Limite supérieure de l'entité utilisée pour calculer la spline
+//LABEL(cubic_spline_companion_range_power, FR) Puissance de la gamme de nœuds pour la mise à l'échelle
+//LABEL(cubic_spline_companion_center_linear_term, FR) Terme linéaire central
+//LABEL(cubic_spline_companion_linear_coefficient, FR) Coefficient pour le terme linéaire
+//LABEL(cubic_spline_companion_center_cubic_term, FR) Terme de spline cubique central
+//LABEL(mg_math_constant_pi_over_sqrt3, FR) Écart-type de la distribution logistique = pi/sqrt(3)
+
+//LABEL(cad_risk_factor_t, FR) Facteurs de risque cardiaques
+//LABEL(c_bmi, FR) Indice de masse corporelle
+//LABEL(rf_switch_t, FR) Commutateurs de facteurs de risque
+//LABEL(rf_evolution_model, FR) Evolution de la ligne de base
+//LABEL(rf_relative_change, FR) Changement relatif
+//LABEL(rf_change_to_value, FR) Appliquer la modification à la valeur
+//LABEL(rf_reintervention, FR) Permettre la ré-intervention
+//LABEL(rf_intervention_parameter_t, FR) Paramètres d'intervention RF
+//LABEL(c_amount_of_change, FR) Montant du changement
+//LABEL(c_high_risk_lower_cutoff, FR) Groupe de risque seuil inférieur
+//LABEL(c_high_risk_upper_cutoff, FR) Seuil supérieur du groupe de risque
+//LABEL(c_result_lower_limit, FR) Plancher
+//LABEL(c_lower_buffer, FR) Taille de la mémoire tampon du sol
+//LABEL(c_result_upper_limit, FR) Plafond
+//LABEL(c_upper_buffer, FR) Taille maximale du tampon
+//LABEL(rf_intervention_time_parameter_t, FR) Paramètres de temps pour les interventions RF
+//LABEL(c_intervention_start_year, FR) Année de début de l'intervention
+//LABEL(c_intervention_end_year, FR) Année de fin d'intervention
+//LABEL(c_max_intervention_years, FR) Interventions maximales par personne
+//LABEL(pg_intervention_parameters, FR) Paramètres d'intervention
+//LABEL(pg_risk_factor_interventions, FR) Contrôles des facteurs de risque
+//LABEL(pg_expert_risk_factor_interventions, FR) Experts seulement
+//LABEL(p_risk_factor_control_panel, FR) Panneau de contrôle des facteurs de risque
+//LABEL(p_rf_interventions, FR) Interventions sur les facteurs de risque
+//LABEL(p_rf_intervention_time_period, FR) Période de temps pour les interventions sur les facteurs de risque
+//LABEL(p_rf_intervention_age_groups, FR) Cibler les groupes d'âge/sexe pour les interventions sur les facteurs de risque
+//LABEL(p_risk_factor_evolution_off_age_range, FR) Évolution des facteurs de risque hors tranches d'âge
+
+//LABEL(max_year, FR) Fin de la simulation de l'année
+//LABEL(min_life, FR) Nombre minimum d'années de vie
+//LABEL(max_life, FR) Nombre maximal d'années de vie
+//LABEL(pg_mortality, FR) Paramètres de mortalité
+
+//LABEL(mport_v2_interaction_terms_t, FR) Coefficients d'interaction de l'algorithme de risque MPoRT V2
+//LABEL(mport_v2_inter_age_smoker_current, FR) Interaction Âge * fumeur actuel
+//LABEL(mport_v2_inter_age_smoker_former_lt5, FR) Interaction Âge * ancien fumeur a arrêté il y a moins de 5 ans
+//LABEL(mport_v2_inter_age_smoker_former_gt5, FR) Interaction Âge * ancien fumeur a arrêté il y a 5 ans ou plus
+//LABEL(mport_v2_inter_age_drink_former, FR) Interaction Âge * ancien buveur
+//LABEL(mport_v2_inter_age_educ_lt_high_school, FR) Interaction Âge * niveau d'études inférieur à l'enseignement secondaire
+//LABEL(mport_v2_inter_age_educ_high_school, FR) Interaction Âge * Diplôme d'études secondaires
+//LABEL(mport_v2_inter_age_educ_some_ps, FR) Interaction Age * un peu d'éducation PS
+//LABEL(mport_v2_inter_age_hypertension, FR) Interaction Âge * hypertension
+//LABEL(mport_v2_inter_age_heart_disease, FR) Interaction Âge * maladie cardiaque
+//LABEL(mport_v2_inter_age_previous_stroke, FR) Interaction âge * accident vasculaire cérébral
+//LABEL(mport_v2_inter_age_diabetes, FR) Interaction Âge * diabète
+//LABEL(mport_v2_inter_age_cancer, FR) Interaction Âge * cancer
+//LABEL(mport_v2_inter_age_dementia, FR) Interaction Âge * démence
+//LABEL(mport_v2_inter_age_pack_years, FR) Interaction Age * pack années
+//LABEL(mport_v2_inter_age_drinks_last_week, FR) Interaction Âge * boissons la semaine dernière
+//LABEL(mport_v2_inter_age_pa_met, FR) Interaction Âge * activité physique MET
+//LABEL(mport_v2_inter_age_bmi, FR) Interaction Âge * IMC
+//LABEL(mport_v2_log_base_cumulative_hazard, FR) MPoRT V2 risque de mortalité : logarithme du risque cumulé de base
+//LABEL(mport_v2_baseline, FR) Risque de mortalité MPoRT V2 : risque cumulé à 5 ans de base
+//LABEL(mport_v2_interaction_coefficients, FR) MPoRT V2 risque de mortalité : termes d'interaction
+//LABEL(mport_v2_age_spline_location_coef, FR) MPoRT V2 risque de mortalité : coefficients spline cubiques d'âge
+//LABEL(mport_v2_age_spline_companion, FR) MPoRT V2 risque de mortalité : âge compagnon spline cubique
+//LABEL(mport_v2_pack_years_spline_location_coef, FR) MPoRT V2 risque de mortalité : pack years coefficients splines cubiques
+//LABEL(mport_v2_pack_years_spline_companion, FR) MPoRT V2 risque de mortalité : pack years compagnon spline cubique
+//LABEL(mport_v2_drinks_spline_location_coef, FR) MPoRT V2 risque de mortalité : boissons dernière semaine coefficients splines cubiques
+//LABEL(mport_v2_drinks_spline_companion, FR) MPoRT V2 risque de mortalité : boissons dernière semaine compagnon spline cubique
+//LABEL(mport_v2_mets_spline_location_coef, FR) MPoRT risque de mortalité V2 : coefficients spline cubiques METs
+//LABEL(mport_v2_mets_spline_companion, FR) MPoRT V2 risque de mortalité : METs compagnon spline cubique
+//LABEL(mport_v2_bmi_spline_location_coef, FR) MPoRT V2 risque de mortalité : Coefficients splines cubiques de l'IMC
+//LABEL(mport_v2_bmi_spline_companion, FR) MPoRT V2 risque de mortalité : compagnon de spline cubique de l'IMC
+//LABEL(mport_v2_immig_spline_location_coef, FR) MPoRT V2 risque de mortalité : Coefficients splines cubiques du pourcentage de résidents Cdn
+//LABEL(mport_v2_immig_spline_companion, FR) MPoRT V2 risque de mortalité : compagnon spline cubique du pourcentage de résidents Cdn
+//LABEL(mport_v2_alteration_specs, FR) Modification du log hazard de la mortalité par sexe et âge (pour le moteur MPoRT V2)
+//LABEL(pg_mortality_mport_v2, FR) MPoRT V2
+
+//LABEL(region_t, FR) Région
+//LABEL(province_t, FR) Provinces
+//LABEL(nfld, FR) Terre-Neuve
+//LABEL(pei, FR) P.E.I.
+//LABEL(n_s, FR) Nouvelle-Écosse
+//LABEL(n_b, FR) Nouveau Brunswick
+//LABEL(que, FR) Québec
+//LABEL(ont, FR) Ontario
+//LABEL(man, FR) Manitoba
+//LABEL(sask, FR) Saskatchewan
+//LABEL(alta, FR) Alberta
+//LABEL(b_c, FR) Colombie-Britannique
+//LABEL(c_province_t, FR) Province et territoires
+//LABEL(c_nfld, FR) Terre-Neuve
+//LABEL(c_pei, FR) P.E.I.
+//LABEL(c_ns, FR) Nouvelle-Écosse
+//LABEL(c_nb, FR) Nouveau Brunswick
+//LABEL(c_que, FR) Québec
+//LABEL(c_ont, FR) Ontario
+//LABEL(c_man, FR) Manitoba
+//LABEL(c_sask, FR) Saskatchewan
+//LABEL(c_alta, FR) Alberta
+//LABEL(c_bc, FR) Colombie-Britannique
+//LABEL(c_yukon, FR) Yukon
+//LABEL(c_nwt, FR) Territoires du Nord-Ouest
+//LABEL(c_nunavut, FR) Nunavut
+//LABEL(education_t, FR) Niveau d'éducation
+//LABEL(educ1, FR) Moins que secondaire
+//LABEL(educ2, FR) Diplôme secondaire
+//LABEL(educ3, FR) Autres études postsecondaires
+//LABEL(educ4, FR) Diplôme d'études postsecondaires
+//LABEL(education_na_t, FR) Niveau d'éducation
+//LABEL(educ_na_1, FR) < QUE SECONDAIRE
+//LABEL(educ_na_2, FR) DIPLÔMÉ DU SECONDAIRE
+//LABEL(educ_na_3, FR) AUTRES POST-SEC
+//LABEL(educ_na_4, FR) POST-SEC. GRAD
+//LABEL(educ_na_na, FR) Non applicable (âge < 20 ans)
+//LABEL(income_quartile_t, FR) Quartile de revenu
+//LABEL(income_q1, FR) Quartile de revenu 1 (le plus pauvre)
+//LABEL(income_q2, FR) Quartile de revenu 2 (moyen inférieur)
+//LABEL(income_q3, FR) Quartile de revenu 3 (milieu supérieur)
+//LABEL(income_q4, FR) Quartile de revenu 4 (le plus riche)
+//LABEL(sex_t, FR) Sexe
+//LABEL(female, FR) Femme
+//LABEL(male, FR) Homme
+//LABEL(life_t, FR) Âge
+//LABEL(life_span_t, FR) durée de vie *GR*
+//LABEL(range_from_2001_to_2111_t, FR) année
+//LABEL(year_t, FR) année
+//LABEL(years_t, FR) Année
+//LABEL(range_from_2001_to_2021_t, FR) Année
+//LABEL(report_year_mend_t, FR) Année
+//LABEL(report_year_t, FR) Année
+//LABEL(pg_tabulation_parameters, FR) Paramètres de tabulation
+//LABEL(table_filter_age, FR) Restriction de tabulation : Âge (actuel)
+//LABEL(table_filter_age_start, FR) Restriction de tabulation : Âge initial (à la création de l'acteur)
+//LABEL(table_filter_year, FR) Restriction de tabulation : Année (actuelle)
+//LABEL(table_filter_year_start, FR) Restriction de tabulation : Année initiale (à la création de l'acteur)
+//LABEL(table_filter_sex, FR) Restriction de tabulation : Sexe
+//LABEL(table_filter_province, FR) Restriction de tabulation : Province
+//LABEL(table_filter_door, FR) Restriction de tabulation : Point d'entrée/porte
+//LABEL(table_filter_education, FR) Restriction de tabulation : Éducation
+//LABEL(table_filter_income, FR) Restriction de tabulation : Quartile de revenu
+//LABEL(person.report_calendar_year, FR) Année
+//LABEL(person.calendar_year_2001_2021, FR) Année
+//LABEL(person.calendar_year_2001_2111, FR) Année
+//LABEL(person.dominant, FR) Acteur dominant - conservé pour maintenir les définitions de tables
+//LABEL(person.cchs_record, FR) numéro d'enregistrement de Startpop
+//LABEL(person.population_source, FR) Origine de l'acteur (2001 adulte canadien, nouvelle naissance, nouvel immigrant)
+//LABEL(person.sex, FR) Sexe
+//LABEL(person.alive, FR) Alive
+//LABEL(person.alive_deterministic_max_year, FR) Cela devient FAUX uniquement lorsque max_year est atteint.
+//LABEL(person.alive_deterministic_max_life, FR) Cela devient FAUX uniquement lorsque la durée de vie maximale est atteinte.
+//LABEL(person.place_of_birth, FR) Lieu de naissance (Canada ou étranger)
+//LABEL(person.time_person_created, FR) Heure à laquelle la personne a été créée
+//LABEL(person.date_of_birth, FR) Date de naissance
+//LABEL(person.year_of_birth, FR) Année de naissance
+//LABEL(person.calendar_year_start, FR) Année d'initialisation
+//LABEL(person.calendar_year, FR) Année civile
+//LABEL(person.lifespan_age_start, FR) Âge de l'acteur au début de son activité (nombre entier)
+//LABEL(person.lifespan_age, FR) Âge de la durée de vie (nombre entier)
+//LABEL(person.truncated_age, FR) Âge de la vie (nombre entier)
+//LABEL(person.next_birthday, FR) Temps jusqu'au prochain anniversaire (écoulé)
+//LABEL(person.next_year, FR) Temps jusqu'au prochain Nouvel An (écoulé)
+//LABEL(person.escaped_start, FR) Indicateur que Start a terminé
+//LABEL(person.g_region, FR) Région autodéclarée
+//LABEL(person.g_region, FR) Région autodéclarée
+//LABEL(person.g_province, FR) Province auto-déclarée
+//LABEL(person.g_education, FR) Éducation autodéclarée
+//LABEL(person.g_education_startpop, FR) Éducation autodéclarée sur le fichier Startpop
+//LABEL(person.g_income_quartile, FR) Quartile de revenu autodéclaré
+//LABEL(person.g_height_m, FR) Taille autodéclarée en mètres
+//LABEL(person.g_mass_kg, FR) Mesure (Kg)
+//LABEL(person.start_snapshots, FR) prend un instantané des attributs après que la fonction Start et ses crochets ont été mis en œuvre.
+//LABEL(person.escaped_start_event, FR) Priorité la plus élevée. Premier événement visité lorsque Start et ses crochets ont été mis en œuvre.
+
+//LABEL(first_update_t, FR) Moment de la première mise à jour de certains attributs tels que l'éducation et l'IMC.
+//LABEL(first_update_1, FR) La première mise à jour a lieu un an après l'initialisation
+//LABEL(first_update_2, FR) La première mise à jour a lieu deux ans après l'initialisation
+//LABEL(first_update_3, FR) La première mise à jour a lieu trois ans après l'initialisation
+//LABEL(alcohol5_t, FR) Alcool (boissons/semaine)
+//LABEL(alcohol_never, FR) N'a jamais bu d'alcool
+//LABEL(alcohol_former, FR) Ancien buveur
+//LABEL(alcohol_light, FR) Léger (moins de 2 verres par semaine)
+//LABEL(alcohol_moderate, FR) Modérée (2-14 verres par semaine pour les hommes, 2-9 pour les femmes)
+//LABEL(alcohol_heavy, FR) Forte (15+ verres par semaine pour les hommes, 10+ pour les femmes)
+//LABEL(age_group_rfi_t, FR) Groupe d'âge
+//LABEL(person.years_to_first_update, FR) Moment de la première mise à jour de certains attributs tels que l'éducation et l'IMC.
+
+//LABEL(age_group_from18_to25_by1_t, FR) Groupe d'âge
+//LABEL(age_group_from25_to80_by5_t, FR) Groupe d'âge
+//LABEL(cchs_cycle_t, FR) Cycles de l'ESCC
+//LABEL(cchs_cycle_2001, FR) CCHS cycle 2001
+//LABEL(cchs_cycle_2003, FR) CCHS cycle 2003
+//LABEL(cchs_cycle_2005, FR) CCHS cycle 2005
+//LABEL(cchs_cycle_2007, FR) CCHS cycle 2007
+//LABEL(cchs_cycle_2009, FR) CCHS cycle 2009
+//LABEL(ar_order_index_3_t, FR) Modèle autorégressif
+//LABEL(ar3_1, FR) Modèle autorégressif d'ordre 1
+//LABEL(ar3_2, FR) Modèle autorégressif d'ordre 2
+//LABEL(ar3_3, FR) Modèle autorégressif d'ordre 3
+//LABEL(bootstrap_index_39_t, FR) Identifiant Bootstrap (0 est l'échantillon complet)
+//LABEL(pg_income, FR) Coefficients de revenu (ENSP)
+//LABEL(pg_education, FR) Education coefficients (NPHS)
+//LABEL(pg_ses_control, FR) Paramètres de contrôle
+//LABEL(pg_ses_education_control, FR) Éducation
+//LABEL(pg_ses_income_control, FR) Revenu
+//LABEL(pg_ses_all, FR) Paramètres du modèle socio-économique
+//LABEL(income_max_auto_regressive_order, FR) Modèle auto-régressif à utiliser par défaut pour le modèle de revenu
+//LABEL(income_bootstrap_index_multiplier, FR) Autoriser l'utilisation des répliques bootstrap (1) ou non (0) pour le modèle de revenu.
+//LABEL(educ_bootstrap_index_multiplier, FR) Autoriser l'utilisation de répliques bootstrap (1) ou non (0) pour le modèle d'éducation.
+//LABEL(income_bootstrap_offset, FR) Estimation bootstrap à utiliser initialement pour le modèle de revenu
+//LABEL(educ_bootstrap_offset, FR) Estimation bootstrap à utiliser initialement pour le modèle d'éducation
+//LABEL(p_education_model, FR) Activer ou désactiver le modèle éducatif
+//LABEL(p_income_model, FR) Activer ou désactiver le modèle de revenu
+//LABEL(income_calendar_time_cap, FR) Limitation dans le temps de la tendance du calendrier appliquée au modèle de revenu
+//LABEL(educ_calendar_time_cap, FR) Limitation dans le temps de la tendance du calendrier appliquée au modèle éducatif
+//LABEL(income_quartile_intercept, FR) Intercepter
+//LABEL(income_quartile_age_group_at_t, FR) Âge
+//LABEL(income_quartile_calendar_time, FR) Heure du calendrier
+//LABEL(income_quartile_drink_cat_at_t, FR) Alcool
+//LABEL(income_quartile_education_at_t, FR) Éducation
+//LABEL(income_quartile_inc_qrt_l2t, FR) Revenu (décalage de 4 ans)
+//LABEL(income_quartile_inc_qrt_l3t, FR) Revenu (décalage de 6 ans)
+//LABEL(income_quartile_inc_qrt_lt, FR) Revenu (décalage de 2 ans)
+//LABEL(income_quartile_malesex, FR) Sexe
+//LABEL(education_intercept, FR) Intercepter
+//LABEL(education_age_cap25_at_t, FR) Âge
+//LABEL(education_calendar_time, FR) Heure du calendrier
+//LABEL(education_education_lt, FR) Éducation (décalage de 2 ans)
+//LABEL(education_sp3_age_t_1, FR) Spline linéaire à l'âge de 25 ans
+//LABEL(education_sp3_age_t_2, FR) Spline linéaire à l'âge de 40 ans
+//LABEL(education_malesex, FR) Sexe
+//LABEL(education_education_lt_inter_sp3_age_t_1, FR) Interaction : éducation * (spline à 25 ans)
+//LABEL(education_education_lt_inter_sp3_age_t_2, FR) Interaction : éducation * (spline à l'âge de 40 ans)
+//LABEL(person.histo_income, FR) histoire du revenu
+//LABEL(person.due_for_biennial_update, FR) Personne devant faire l'objet d'une mise à jour basée sur l'âge tronqué.
+
+//LABEL(dummy_row_or_column_t, FR) Valeur
+//LABEL(row_1, FR) Valeur
+//LABEL(c_db_age_grp, FR) Groupe d'âge de cinq ans
+//LABEL(c_db_sex, FR) Sexe
+//LABEL(c_db_province, FR) Provinces
+//LABEL(c_db_immig, FR) Immigrant récent (9 dernières années)
+//LABEL(c_db_education, FR) Éducation
+//LABEL(c_db_income_quartile, FR) Revenu
+//LABEL(c_db_alcohol, FR) Boissons alcoolisées par semaine (dpw)
+//LABEL(c_db_bmi, FR) Indice de masse corporelle en kg/(m^2)
+//LABEL(c_db_height_m, FR) Hauteur en mètres
+//LABEL(c_db_weight, FR) Poids de l'enquête
+//LABEL(startpop_subpopulations_t, FR) Sous-populations
+//LABEL(startpop_subpopulation_1, FR) Sous-population 1
+//LABEL(startpop_subpopulation_2, FR) Sous-population 2
+//LABEL(startpop_subpopulation_3, FR) Sous-population 3
+//LABEL(startpop_subpopulation_4, FR) Sous-population 4
+//LABEL(startpop_subpopulation_5, FR) Sous-population 5
+//LABEL(startpop_subpopulation_6, FR) Sous-population 6
+//LABEL(startpop_subpopulation_7, FR) Sous-population 7
+//LABEL(startpop_subpopulation_8, FR) Sous-population 8
+//LABEL(startpop_subpopulation_9, FR) Sous-population 9
+//LABEL(start_time_method_t, FR) Méthode d'initialisation du temps et de l'anniversaire pour les cas StartPop
+//LABEL(c_start_jan01, FR) Le temps commence le 1er janvier, les anniversaires sont attribués uniformément.
+//LABEL(c_start_bday, FR) Le temps commence à l'anniversaire qui est attribué uniformément
+//LABEL(c_start_bday_is_jan01, FR) L'heure commence le 1er janvier, l'anniversaire est fixé au 1er janvier (recommandé).
+//LABEL(c_sample, FR) Échantillon (sélection aléatoire avec remplacement)
+//LABEL(c_full, FR) Complet (traiter séquentiellement chaque cas sur la BD et cloner pour le poids du cas)
+//LABEL(c_population_source_t, FR) Point d'entrée du BMIGen
+//LABEL(c_start_pop, FR) Base de données StartPop
+//LABEL(c_new_birth, FR) Nouvelles naissances
+//LABEL(c_new_immig, FR) Nouveaux immigrants
+//LABEL(db_age_decode_t, FR) Décodage de l'âge StartPop
+//LABEL(c_db_begin_age, FR) Âge de départ du groupe
+//LABEL(c_db_end_age, FR) Âge final du groupe
+//LABEL(db_records_t, FR) enregistrements de base de données
+//LABEL(db_records_immig_t, FR) enregistrements de la base de données : immigrants
+//LABEL(db_records_births_t, FR) enregistrements de la base de données : nouvelles naissances
+//LABEL(db_age_code_t, FR) Code d'âge dans la base de données StartPop
+//LABEL(conditions_reweight_t, FR) Conditions de repondération d'un dossier CCHS
+//LABEL(conditions_reweight_1, FR) Première condition
+//LABEL(conditions_reweight_2, FR) Deuxième condition
+//LABEL(conditions_reweight_3, FR) Troisième condition
+//LABEL(conditions_reweight_4, FR) Quatrième condition
+//LABEL(conditions_reweight_5, FR) Cinquième condition
+//LABEL(p_start_pop, FR) StartPop est trop grand pour être ouvert dans l'interface Modgen, et il est inutile d'imaginer modifier son contenu de cette façon.
+//LABEL(p_population_start_method, FR) Il a été déclassé.
+//LABEL(pg_start_pop_immigrants, FR) StartPop - Contrôle de la population : Immigrants
+//LABEL(pg_start_pop_reweight, FR) StartPop - Contrôle de la population : repondération des cas
+//LABEL(pg_start_pop, FR) StartPop - Contrôle de la population
+//LABEL(pg_key_demography_controls, FR) Quelques contrôles démographiques clés
+//LABEL(p_new_arrivals_control, FR) Population ouverte ou fermée
+//LABEL(p_max_year_new_arrivals, FR) Dernière année pour générer des naissances futures et des immigrants
+//LABEL(p_population_start_method, FR) Échantillon ou population complète
+//LABEL(aim_at_all_future_immigrants, FR) Inclure tous les futurs immigrants
+//LABEL(aim_at_all_future_young_adults, FR) Inclure tous les futurs jeunes adultes
+//LABEL(use_new_unduplication_method, FR) Utiliser une nouvelle méthode de déduplication
+//LABEL(p_start_time_method, FR) Commencer la personne le jour de son anniversaire et/ou au début de l'année.
+//LABEL(p_start_pop, FR) Distribution de la population au début de la simulation
+//LABEL(p_start_pop_reweight_definition_fields, FR) Rééquilibrage de la base de données de la population : champ
+//LABEL(p_start_pop_reweight_definition_bounds, FR) Base de données de la population repondérée : fourchette d'acceptation
+//LABEL(p_start_pop_reweight_multiplier, FR) Repenser la base de données de la population : multiplicateur
+//LABEL(p_start_pop_year, FR) Année correspondant à p_start_pop
+//LABEL(p_start_year, FR) Année de début de la simulation
+//LABEL(p_db_age_decode, FR) Décodeur de groupes d'âge StartPop
+//LABEL(p_immig, FR) Nombre de nouveaux immigrants par sexe, âge, province et année
+//LABEL(p_use_input_population_to_assign_age, FR) Utiliser la structure de la population pour attribuer un âge à un groupe d'âge
+//LABEL(p_population, FR) Population par sexe, âge, province (territoire) et année
+//LABEL(mg_cum_population, FR) Répartition cumulée de la population dans les groupes d'âge, par sexe et par province
+//LABEL(mg_birth, FR) répartition cumulée des nouvelles "naissances" à l'âge le plus jeune
+//LABEL(mg_youngest_age, FR) Âge le plus jeune sur p_start_pop
+//LABEL(mg_age_code_youngest, FR) Groupe d'âge le plus jeune sur p_start_pop
+//LABEL(mg_age_code_oldest, FR) Groupe d'âge le plus âgé sur p_start_pop
+//LABEL(mg_cum_start_pop_weight_youngest, FR) Poids du groupe d'âge le plus jeune sur p_start_pop par sexe et par province
+//LABEL(mg_start_pop_youngest_decode, FR) Numéro d'enregistrement du groupe d'âge le plus jeune dans la base de données init, pour consultation.
+//LABEL(mg_immig, FR) Taux d'immigration cumulé pour certaines années et tranches d'âge
+//LABEL(mg_cum_start_pop_weight_immig, FR) Poids de l'immigration en tant que cumulatif copié à partir de la base de données d'initialisation pour la recherche par province à chaud
+//LABEL(mg_cum_start_pop_weight_immig_reg, FR) Poids de l'immigration en tant que cumul copié à partir de la base de données d'initialisation pour la recherche par région - modifié par DH et BF en février 2015, voir la documentation.
+//LABEL(mg_cum_start_pop_weight_immig_can, FR) Poids de l'immigration en tant que taux cumulé copié à partir de la base de données d'initialisation pour la recherche à chaud dans l'ensemble du Canada - modifié par DH et BF en février 2015, voir la documentation.
+//LABEL(mg_start_pop_immig_decode, FR) Numéro d'enregistrement de l'immigration dans la base de données init, pour une recherche à chaud.
+//LABEL(mg_cum_start_pop_weight, FR) Tous les poids valides sont copiés de la base de données d'initialisation, tapés comme cumul pour la fn Lookup.
+//LABEL(mg_num_cases, FR) Nombre de cas à générer à partir de la base de données StartPop par rapport aux nouveaux arrivants dans les années suivantes
+//LABEL(mg_num_records_on_start_pop_file, FR) Nombre de cas à générer à partir de la base de données StartPop par rapport aux nouveaux arrivants dans les années suivantes
+//LABEL(mg_new_birth_adjust_factor, FR) ajustement du nombre de nouvelles naissances à simuler (par rapport au calcul naïf)
+//LABEL(mg_new_immig_adjust_factor, FR) adaptation du nombre de nouveaux immigrants à simuler (par rapport au calcul naïf)
+
+//LABEL(tg_risk_factor_tables, FR) Facteurs de risque
+//LABEL(t_bmi_cat, FR) Répartition de l'IMC
+//LABEL(t_measured_sr_adult_bmi, FR) Distribution et moyenne de l'IMC chez les adultes (autodéclaré ou mesuré) par sexe, âge, année
+
+//LABEL(tg_sep_tables, FR) Tableaux socio-économiques
+//LABEL(t_income_sep, FR) Facteurs de risque par revenu, par année, par sexe
+//LABEL(t_education_sep, FR) Facteurs de risque par éducation, par année, par sexe
+//LABEL(t_income_sep_prop, FR) Proportion de facteurs de risque par revenu, par année et par sexe
+//LABEL(t_education_sep_prop, FR) Proportion de facteurs de risque par éducation, par année et par sexe
+//LABEL(t_education_cohort_view5, FR) Vue de la cohorte d'éducation par année
+//LABEL(t_income_cohort_view5, FR) Vue de la cohorte de revenus par année et par sexe
+//LABEL(t_education_cross_sectional_view5, FR) Vue transversale de l'éducation par année, par sexe
+//LABEL(t_income_cross_sectional5, FR) Vue transversale des revenus par année et par sexe
+
+//LABEL(tg_population_tables, FR) Tableaux de population
+//LABEL(t_pop_count, FR) Population par sexe, âge, province et année
+//LABEL(t_population, FR) Population par sexe, âge et année
+//LABEL(t_population_province, FR) Population par province et par année
+//LABEL(t_population_start_lean, FR) Population par source de population, sexe, lieu de naissance
+//LABEL(t_population_source, FR) Tableau des sources de population
+//LABEL(t_population_start, FR) Population par année de création et âge de création
+//LABEL(t_pop_start, FR) Population par sexe, âge et année
+//LABEL(t_cohort_life_long, FR) Diverses cohortes Statistiques à vie
+//LABEL(t_risk_factors_cross_sectional, FR) Facteurs de risque par année, sexe, IMC et groupe d'âge (vue transversale)
+//LABEL(t_risk_factors_longitudinal, FR) Facteurs de risque par année, sexe, IMC et groupe d'âge (vue longitudinale)
+
+//LABEL(canada, FR) CANADA
+//LABEL(abroad, FR) ABROAD
+//LABEL(atlantic, FR) ATLANTIC
+//LABEL(quebec, FR) QUEBEC
+//LABEL(ontario, FR) ONTARIO
+//LABEL(prairies, FR) PRAIRIES
+//LABEL(bc_region, FR) BCregion
+//LABEL(bound_lower, FR) LOWER_BOUND
+//LABEL(bound_upper, FR) UPPER_BOUND

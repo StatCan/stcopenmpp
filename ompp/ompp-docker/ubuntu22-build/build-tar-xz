@@ -11,7 +11,7 @@ fi
 
 [ -n "$MODEL_DIRS" ] && \
   OM_BLD_MDLS=${MODEL_DIRS//,/ } || \
-  OM_BLD_MDLS="modelOne NewCaseBased NewTimeBased NewCaseBased_bilingual IDMM RiskPaths OzProjX OzProjGenX SM1"
+  OM_BLD_MDLS="BMIGen modelOne NewCaseBased NewTimeBased NewCaseBased_bilingual IDMM RiskPaths OzProjX OzProjGenX SM1"
 
 # push into ompp root and make log directory if not exist
 
@@ -121,6 +121,7 @@ do_cmd cp -p ompp-go/etc/run-Linux-MacOS.Debug.template.txt        $DEPLOY_DIR/e
 do_cmd cp -p ompp-go/etc/mpi-Linux-openMPI.ModelRun.template.txt   $DEPLOY_DIR/etc/mpi.ModelRun.template.txt
 do_cmd cp -p ompp-go/etc/disk_linux.ini                            $DEPLOY_DIR/etc/disk.ini
 do_cmd cp -p ompp-go/etc/db-cleanup_linux.sh                       $DEPLOY_DIR/etc/
+do_cmd cp -p ompp-go/etc/model-copy.sh							   $DEPLOY_DIR/etc/
 do_cmd cp -p ompp-go/etc/ui.extra.json                             $DEPLOY_DIR/etc/
 do_cmd cp -p ompp-go/etc/run-options.any_model.1.Use_Defaults.json $DEPLOY_DIR/etc/
 

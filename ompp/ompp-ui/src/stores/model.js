@@ -193,16 +193,6 @@ export const useModelStore = defineStore('model', {
         for (const m of ml) {
           // check if current model exist in the new model list
           if (!isKeep) isKeep = storeDigest === Mdf.modelDigest(m)
-
-          // parse model extra properties
-          let me = {}
-          try {
-            const ms = m?.Extra || ''
-            if (ms && typeof ms === typeof 'string') me = JSON.parse(ms)
-          } catch {
-            me = {}
-          }
-          m.Extra = me
         }
         // if current model does not exist in model list then clear current model
         if (!isKeep) {
@@ -238,18 +228,20 @@ export const useModelStore = defineStore('model', {
       const k = this.runTextList.findIndex((r) => r.ModelDigest === rp.ModelDigest && r.RunDigest === rp.RunDigest)
       if (k < 0) return
 
+      let isUpd = false
       if (rp.hasOwnProperty('Status')) {
-        if ((rp.Status || '') !== '') {
+        if ((rp.Status || '') !== '' && rp.Status !== this.runTextList[k].Status) {
           this.runTextList[k].Status = rp.Status
-          this.runTextListUpdated++
+          isUpd = true
         }
       }
       if (rp.hasOwnProperty('UpdateDateTime')) {
-        if ((rp.UpdateDateTime || '') !== '') {
+        if ((rp.UpdateDateTime || '') !== '' && rp.UpdateDateTime !== this.runTextList[k].UpdateDateTime) {
           this.runTextList[k].UpdateDateTime = rp.UpdateDateTime
-          this.runTextListUpdated++
+          // isUpd = true
         }
       }
+      if (isUpd) this.runTextListUpdated++
     },
 
     // set new value to run list

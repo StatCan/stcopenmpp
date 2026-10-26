@@ -11,24 +11,25 @@ For more details about `stcopenmpp`, visit <a href="https://github.com/statcan/s
 
 # Windows
 
-### Artifacts
+### Packages
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
-| :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| 7-Zip ![Updated](https://img.shields.io/badge/Updated-green)        | 26.01                             | `https://www.7-zip.org/a/7z2601-x64.exe`                                                            |
-| Git                                                                 | 2.52.0                            | `https://github.com/git-for-windows/git/releases/download/v2.52.0.windows.1/Git-2.52.0-64-bit.exe`  |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://go.dev/dl/go1.26.1.windows-amd64.zip`                                                      |
-| Microsoft MPI                                                       | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisetup.exe` |
-| Microsoft MPI SDK                                                   | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisdk.msi`   |
-| Microsoft Visual Studio Build Tools                                 | 17.4.35026.314                    | `https://aka.ms/vs/17/release.ltsc.17.4/vs_buildtools.exe`                                          |
-| MinGW                                                               | 20.0                              | `https://nuwen.net/files/mingw/history/mingw-20.0.exe`                                              |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-win-x64.zip`                                        |
-| Perl (x64)                                                          | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip`          |
-| Perl (x86)                                                          | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-no64-5.32.1.1-32bit-portable.zip`     |
-| SQLite                                                              | 3.51.0                            | `https://www.sqlite.org/2025/sqlite-tools-win-x64-3510100.zip`                                      |
-| winflexbison                                                        | 2.5.25                            | `https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip`      |
+| Package                                                               | Version                           | URL                                                                                                                                   |
+| :-------------------------------------------------------------------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | 
+| 7-Zip ![Updated](https://img.shields.io/badge/Updated-green)          | 26.04                             | `https://www.7-zip.org/a/7z2604-x64.exe`                                                                                              |
+| Git ![Updated](https://img.shields.io/badge/Updated-green)            | 2.55.0                            | `https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.3/Git-2.55.0.3-64-bit.exe`                                  |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)             | 1.26.5                            | `https://go.dev/dl/go1.26.5.windows-amd64.zip`                                                                                        |
+| Microsoft MPI                                                         | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisetup.exe`                                   |
+| Microsoft MPI SDK                                                     | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisdk.msi`                                     |
+| Microsoft Visual Studio Build Tools                                   | 17.4.35026.314                    | `https://aka.ms/vs/17/release.ltsc.17.4/vs_buildtools.exe`                                                                            |
+| MinGW                                                                 | 20.0                              | `https://nuwen.net/files/mingw/history/mingw-20.0.exe`                                                                                |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)        | 24.20.0                           | `https://nodejs.org/dist/v24.20.0/node-v24.20.0-win-x64.zip`                                                                          |
+| Perl (x64) ![Updated](https://img.shields.io/badge/Updated-green)     | 5.42.2.1                          | `https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_54221_64bit/strawberry-perl-5.42.2.1-64bit-portable.zip` |
+| Perl (x86)                                                            | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-no64-5.32.1.1-32bit-portable.zip`                                       |
+| SQLite ![Updated](https://img.shields.io/badge/Updated-green)         | 3.53.3                            | `https://sqlite.org/2026/sqlite-tools-win-x64-3530300.zip`                                                                            |
+| Windows Server ![Updated](https://img.shields.io/badge/Updated-green) | ltsc2025                          | `https://hub.docker.com/r/microsoft/windows-servercore`                                                                               |
+| winflexbison                                                          | 2.5.25                            | `https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip`                                        |
 
 ### Download build image
 
@@ -71,26 +72,26 @@ Several environment variables can be set with an `-e` flag (e.g., `-e OMPP_GIT_U
 
 # Linux (Debian)
 
-### Artifacts
+### Packages
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
+| Package                                                             | Version                           | URL                                                                                                 |
 | :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| Bison                                                               | 3.8.2                             | `https://packages.guix.gnu.org/packages/bison/3.8.2`                                                |
-| curl                                                                | 8.14.1                            | `https://packages.debian.org/stable/curl`                                                           |
-| Debian                                                              | 13.2 (trixie)                     | `https://www.debian.org/releases/trixie`                                                            |
-| Flex                                                                | 2.6.4                             | `https://packages.guix.gnu.org/packages/flex/2.6.4`                                                 |
-| g++                                                                 | 14.2.0                            | `https://ftp.gnu.org/gnu/gcc/gcc-14.2.0`                                                            |
-| Git                                                                 | 2.47.3                            | `https://debian.pkgs.org/13/debian-main-amd64/git_2.47.3-0+deb13u1_amd64.deb.html`                  |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://pkgs.org/download/golang`                                                                  |
-| Make                                                                | 4.4.1                             | `https://ftp.gnu.org/gnu/make/?C=M;O=D`                                                             |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-linux-x64.tar.xz`                                   |
-| Open MPI (libopenmpi-dev)                                           | 5.0.7-1                           | `https://packages.debian.org/trixie/amd64/net/libopenmpi-dev`                                       |
-| Open MPI (openmpi-bin)                                              | 5.0.7                             | `https://packages.debian.org/trixie/amd64/net/openmpi-bin`                                          |
-| Perl                                                                | 5.40.1                            | `https://packages.debian.org/sid/amd64/perl/download`                                               |
-| SQLite                                                              | 3.46.1                            | `https://packages.debian.org/stable/sqlite3`                                                        |
-| XZ Utils                                                            | 5.8.1                             | `https://packages.debian.org/stable/XZ-Utils`                                                       |
+| Bison                                                               | 3.8.2                             | `https://packages.debian.org/trixie/bison`                                                          |
+| curl                                                                | 8.14.1                            | `https://packages.debian.org/trixie/curl`                                                           |
+| Debian ![Updated](https://img.shields.io/badge/Updated-green)       | 13.7 (trixie)                     | `https://www.debian.org/releases/trixie`                                                            |
+| Flex                                                                | 2.6.4                             | `https://packages.debian.org/trixie/flex`                                                           |
+| g++                                                                 | 14.2.0                            | `https://packages.debian.org/trixie/g++`                                                            |
+| Git                                                                 | 2.47.3                            | `https://packages.debian.org/trixie/git`                                                            |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.8                            | `https://pkgs.org/download/golang`                                                                  |
+| Make                                                                | 4.4.1                             | `https://packages.debian.org/trixie/make`                                                           |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.18.0                           | `https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz`                                   |
+| Open MPI (libopenmpi-dev)                                           | 5.0.7                             | `https://packages.debian.org/trixie/libopenmpi-dev`                                                 |
+| Open MPI (openmpi-bin)                                              | 5.0.7                             | `https://packages.debian.org/trixie/openmpi-bin`                                                    |
+| Perl                                                                | 5.40.1                            | `https://packages.debian.org/trixie/perl`                                                           |
+| SQLite                                                              | 3.46.1                            | `https://packages.debian.org/trixie/sqlite3`                                                        |
+| XZ Utils                                                            | 5.8.1                             | `https://packages.debian.org/trixie/xz-utils`                                                       |
 
 ### Download build image
 
@@ -129,32 +130,32 @@ Several environment variables can be set with an `-e` flag (e.g., `-e OMPP_GIT_U
 | `OM_BUILD_PLATFORMS` Optional (default: `Win32,x64`)                                                       | The build architecture.                       |
 | `OM_MSG_USE` Optional (default: empty)                                                                     | If `MPI`, then the MPI version will be built. |
 | `OMPP_BUILD_TAG` Optional (default: last commit on default branch)                                         | The repo branch or commit to build from.      |
-| `OMPP_DEPLOY_NAME` Optional (default: `stcopenmpp-debian-YYYYMMDD.xz`)                                   | The filename of the build tarball.                |
+| `OMPP_DEPLOY_NAME` Optional (default: `stcopenmpp-debian-YYYYMMDD.xz`)                                     | The filename of the build tarball.            |
 
 <br>
 
 # Linux (Ubuntu)
 
-### Artifacts
+### Packages
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
-| :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| Bison                                                               | 3.8.2                             | `https://packages.guix.gnu.org/packages/bison/3.8.2`                                                |
-| curl                                                                | 8.5.0                             | `https://packages.ubuntu.com/noble/amd64/curl`                                                      |
-| Flex                                                                | 2.6.4                             | `https://packages.guix.gnu.org/packages/flex/2.6.4`                                                 |
-| g++                                                                 | 13.3.0                            | `https://packages.ubuntu.com/noble/amd64/gcc-13`                                                    |
-| Git                                                                 | 2.43.0                            | `https://packages.ubuntu.com/noble/amd64/git`                                                       |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://pkgs.org/download/golang`                                                                  |
-| Make                                                                | 4.3                               | `https://ubuntu.pkgs.org/22.04/ubuntu-main-amd64/make_4.3-4.1build1_amd64.deb.html`                 |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-linux-x64.tar.xz`                                   |
-| Open MPI (libopenmpi-dev)                                           | 4.1.6-7                           | `https://ubuntu.pkgs.org/24.04/ubuntu-universe-amd64/libopenmpi-dev_4.1.6-7ubuntu2_amd64.deb.html`  |
-| Open MPI (openmpi-bin)                                              | 4.1.6                             | `https://ubuntu.pkgs.org/24.04/ubuntu-universe-amd64/openmpi-bin_4.1.6-7ubuntu2_amd64.deb.html`     |
-| Perl                                                                | 5.38.2                            | `https://ubuntu.pkgs.org/24.04/ubuntu-main-amd64/perl_5.38.2-3.2build2_amd64.deb.html`              |
-| SQLite                                                              | 3.45.1                            | `https://packages.ubuntu.com/noble/sqlite3`                                                         |
-| Ubuntu                                                              | 24.04.3 LTS (Noble Numbat)        | `https://releases.ubuntu.com/24.04.3`                                                               |
-| XZ Utils                                                            | 5.4.5                             | `https://packages.ubuntu.com/noble/xz-utils`                                                        |
+| Package                                                                           | Version                           | URL                                                                                                 |
+| :-------------------------------------------------------------------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
+| Bison                                                                             | 3.8.2                             | `https://packages.ubuntu.com/eu/resolute/amd64/bison`                                               |
+| curl ![Updated](https://img.shields.io/badge/Updated-green)                       | 8.18.0                            | `https://packages.ubuntu.com/eu/resolute/amd64/curl`                                                |
+| Flex                                                                              | 2.6.4                             | `https://packages.ubuntu.com/eu/resolute/amd64/flex`                                                |
+| g++ ![Updated](https://img.shields.io/badge/Updated-green)                        | 15.2.0                            | `https://packages.ubuntu.com/eu/resolute/amd64/g++`                                                 |
+| Git ![Updated](https://img.shields.io/badge/Updated-green)                        | 2.53.0                            | `https://packages.ubuntu.com/eu/resolute/amd64/git`                                                 |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)                         | 1.26.8                            | `https://pkgs.org/download/golang`                                                                  |
+| Make ![Updated](https://img.shields.io/badge/Updated-green)                       | 4.4.1                             | `https://packages.ubuntu.com/eu/resolute/amd64/make`                                                |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)                    | 24.20.0                           | `https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz`                                   |
+| Open MPI (libopenmpi-dev) ![Updated](https://img.shields.io/badge/Updated-green)  | 5.0.10                            | `https://packages.ubuntu.com/eu/resolute/amd64/libopenmpi-dev`                                      |
+| Open MPI (openmpi-bin) ![Updated](https://img.shields.io/badge/Updated-green)     | 5.0.10                            | `https://packages.ubuntu.com/eu/resolute/amd64/openmpi-bin`                                         |
+| Perl ![Updated](https://img.shields.io/badge/Updated-green)                       | 5.40.1                            | `https://packages.ubuntu.com/eu/resolute/amd64/perl`                                                |
+| SQLite ![Updated](https://img.shields.io/badge/Updated-green)                     | 3.46.1                            | `https://packages.ubuntu.com/eu/resolute/amd64/sqlite3`                                             |
+| Ubuntu ![Updated](https://img.shields.io/badge/Updated-green)                     | 26.04 LTS (Resolute Raccoon)      | `https://releases.ubuntu.com/26.04/`                                                                |
+| XZ Utils ![Updated](https://img.shields.io/badge/Updated-green)                   | 5.8.3                             | `https://packages.ubuntu.com/eu/resolute/amd64/xz-utils                                             |
 
 ### Download build image
 
@@ -193,4 +194,4 @@ Several environment variables can be set with an `-e` flag (e.g., `-e OMPP_GIT_U
 | `OM_BUILD_PLATFORMS` Optional (default: `Win32,x64`)                                                       | The build architecture.                       |
 | `OM_MSG_USE` Optional (default: empty)                                                                     | If `MPI`, then the MPI version will be built. |
 | `OMPP_BUILD_TAG` Optional (default: last commit on default branch)                                         | The repo branch or commit to build from.      |
-| `OMPP_DEPLOY_NAME` Optional (default: `stcopenmpp-ubuntu-YYYYMMDD.xz`)                                   | The filename of the build tarball.                |
+| `OMPP_DEPLOY_NAME` Optional (default: `stcopenmpp-ubuntu-YYYYMMDD.xz`)                                     | The filename of the build tarball.            |

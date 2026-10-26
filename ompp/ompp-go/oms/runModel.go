@@ -32,11 +32,13 @@ func (rsc *RunCatalog) runModel(job *RunJob, queueJobPath string, hfCfg hostIni,
 	ts, tNow := theCatalog.getNewTimeStamp()
 
 	rs := &RunState{
-		ModelName:      job.ModelName,
-		ModelDigest:    job.ModelDigest,
-		RunStamp:       helper.CleanFileName(job.RunStamp),
-		SubmitStamp:    job.SubmitStamp,
-		UpdateDateTime: helper.MakeDateTime(tNow),
+		RunStatePub: RunStatePub{
+			ModelName:      job.ModelName,
+			ModelDigest:    job.ModelDigest,
+			RunStamp:       helper.CleanFileName(job.RunStamp),
+			SubmitStamp:    job.SubmitStamp,
+			UpdateDateTime: helper.MakeDateTime(tNow),
+		},
 	}
 	if rs.RunStamp == "" {
 		rs.RunStamp = helper.CleanFileName(job.Opts["OpenM.RunStamp"])

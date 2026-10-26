@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"hash"
 	"strconv"
+	"strings"
 )
 
 // WriteMicrodataFrom insert microdata values into model run until from() return not nil CellMicro value.
@@ -245,8 +246,7 @@ func doWriteMicrodataFrom(
 		//   run_id     INT    NOT NULL,
 		//   entity_key BIGINT NOT NULL,
 		//   attr4      INT    NOT NULL,
-		//   attr7      FLOAT,          -- float attribute value NaN is NULL
-		//   PRIMARY KEY (run_id, entity_key)
+		//   attr7      FLOAT          -- float attribute value NaN is NULL
 		// )
 		//
 		attrSql := ""
@@ -263,6 +263,8 @@ func doWriteMicrodataFrom(
 				attrSql += a.colName + " " + sqlType + " NOT NULL, "
 			}
 		}
+		
+		attrSql = strings.TrimSuffix(attrSql, ", ")
 
 		tSql := trx.Dbf.createTableIfNotExist(
 			entityGen.DbEntityTable,
@@ -270,7 +272,6 @@ func doWriteMicrodataFrom(
 				"run_id INT NOT NULL, "+
 				"entity_key BIGINT NOT NULL, "+
 				attrSql+
-				"PRIMARY KEY (run_id, entity_key)"+
 				")",
 		)
 		err = TrxUpdate(trx.Tx, tSql)

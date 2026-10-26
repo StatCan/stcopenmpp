@@ -1,0 +1,786 @@
+﻿//LABEL(parameter-notes, EN) Parameter notes
+/* NOTE(parameter-notes, EN)
+	Notes (documentation) for parameters, displayed in the OpenM++ user interface.
+*/
+
+/* NOTE(max_year, EN)
+  >
+  >PARAMETER	Year simulation ends
+  >LOCATION	Base(MortalityDisease).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION	This is the year beyond which nobody can live. The hecatomb occurs
+  at the beginning of the year, so if the parameter value is 2042 then everybody
+  who lived through 2041 will die on 2042's new year eve.
+  >
+  >DIMENSIONS	None
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+
+  >*/
+/* NOTE(max_life, EN)
+  >
+  >PARAMETER	Maximum number of years of life
+  >LOCATION	Base(MortalityDisease).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION	This is the age beyond which nobody can live. So if the parameter
+  is 100 then the maximum age one can reach is 100 years, 0 day, 0 second.
+  >
+  >DIMENSIONS	None
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+
+  >*/
+
+/* NOTE(p_population, EN)
+  >
+  >PARAMETER	Population by sex, age, province (territory) and year
+  >LOCATION	Base(Births).dat
+  >LAST UPDATE	September 2020
+  >
+  >DESCRIPTION
+  >
+  >DIMENSIONS	[YEARS][SEX][c_province_t][life_span_t]
+  >
+  >
+  >SOURCE	All values (by year, sex and province/territory, age) populated as
+  follows:
+  >* Observed estimates for 2001-2017 from CANSIM Table 17-10-0005-01 (formerly
+  Table 051-0001)
+  >* Projected (M3) estimates for 2018-2043 (see ASSUMPTIONS)
+  >* Imputed estimates for 2044-2100 based on 2043 estimates
+  >* Zero values for age groups 100-119 for all years, sexes and
+  provinces/territories
+  >
+  >DEFINITION
+  >
+  >METHODS	The population parameter has three functions/purposes:
+  >(1) The first is to help assign an exact age from the age group of the case
+  being initialized from the StartPop input parameter. (see parameter
+  p_use_input_population_to_assign_age)
+  >(2) It is used in the projection of new cases ("births" and immigrants) in
+  future years.
+  >(3) It can be used to "scale" the results to the population distribution (by
+  age, sex and province, although this isn't necessary if the input database
+  StartPop is representative of the population.
+  >
+  >ASSUMPTIONS
+  >The M3 projections (The medium-growth and 1999/2000 to 2002/2003
+  interprovincial migrations trends) scenario is defined by the following
+  assumptions:
+  >(i) Canadian total fertility rate that reaches 1.67 births per woman in
+  2021/2022 and remains constant thereafter;
+  >(ii) Canadian life expectancy that reaches 87.5 years for males and 89.1 years
+  for females in 2062/2063;
+  >(iii) interprovincial migration based on the trends observed between 1999/2000
+  and 2002/2003;
+  >(iv) national immigration rate that reaches 0.75% in 2022/2023 and remains
+  constant thereafter;
+  >(v) annual number of non-permanent residents (Canada) that reaches 864,600 in
+  2021 and remains constant thereafter;
+  >(vi) National net emigration rate of 0.19%.
+  >The above is from demography documentation (may be outdated, was probably
+  correct circa November 2014)
+  >
+  >DECISIONS	In November 2014, we changed the dimensions of this parameter
+  beginning in 1971 to begin in 2001.
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+  >*/
+
+/* NOTE(fictive_person_characteristics, EN)
+  >
+  >PARAMETER	Characteristics of a fictive person to be simulated
+  >LOCATION	Base(StartPop_Control).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION	This parameter may be useful for debugging/probing
+  purposes.
+  >
+  >DIMENSIONS
+  >[db_fields_t]
+  >
+  >SOURCE
+  >
+  >DEFINITION	The codesets (e.g. Sex=1 corresponds to male) are found below
+  >Five year age group : see parameter p_db_age_decode (1 = 12-17, 2 = 18-19, 3 = 20-24, 4 = 25-29, ...)
+  >Sex : 0 = Female, 1 = Male
+  >Province : 0 = Newfoundland, 1 = PEI, 2 = Nova Scotia, 3 = New Brunswick, 4 =
+  Quebec, 5 = Ontario, 6 = Manitoba, 7 = Saskatchewan, 8 = Alberta, 9 = British
+  Columbia
+  >Recent immigrant (last 9 years) : 0 = No, 1 = Yes
+  >Education : 0 = Less than secondary, 1 = Secondary grad , 2 = Other
+  post-secondary, 3 = Post-secondary grad
+  >Income : 0 = Quartile 1 (poorest), 1 = Quartile 2 (lower middle), 2 = Quartile
+  3 (upper middle), 3 = quartile 4 (richest)
+  >Alcohol drinks past week : -2 = Never drank, -1 = Former drinker, otherwise the
+  number of drinks in the past week (0, 1, 2, ...)
+  >Body mass index in kg/(m^2)
+  >Height in meters
+  >Survey weight
+  >
+  >METHODS	One needs to fill the CCHS-like questionnaire above.
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >*/
+/* NOTE(p_immig, EN)
+  >
+  >PARAMETER	Number of new immigrants by sex, age, province and year
+  >LOCATION	Base(Immig).dat
+  >LAST UPDATE	November 2020
+  >
+  >DESCRIPTION	Number of new immigrants by sex, age, province and year (aka
+  p_immig) provides BMIGen with the number of immigrants by year, sex, province and
+  age. This parameter is used to generate the correct number of immigrants after
+  2001. In 2001 the number of immigrants is determined by the starting
+  population.
+  >More details in the SOURCE section below.
+  >
+  >DIMENSIONS	[YEARS][SEX][c_province_t][LIFE]
+  >
+  >SOURCE	All values (by year, sex and province/territory, age) populated as
+  follows:
+  >* Observed estimates for 2001-2018 from CANSIM Table 17-10-0014-01 (formerly
+  Table 051-0011)
+  >* Projected (M3) estimates for 2019-2042 (see ASSUMPTIONS)
+  >* Imputed estimates for 2043-2100 based on 2042 estimates
+  >
+  >DEFINITION
+  >
+  >METHODS	This parameter is used to determine the distribution of new immigrants
+  in future years (after p_start_year up to p_max_year_new_arrivals) by sex, age and
+  year of immigration.
+  >
+  >The remaining characteristics of the immigrants are assigned through hot-deck
+  imputation of immigrants (within the past 9 years) represented in the
+  initialization database.
+  >
+  >ASSUMPTIONS	For years 2019-2042, used official population projections from the
+  cohort component model for ages 0-110. These were the medium term projections
+  M3. According to the demography documentation, the medium-growth and 1999/2000
+  to 2002/2003 interprovincial migrations trends scenario is defined by the
+  following assumptions:
+  >(i) a Canadian total fertility rate that reaches 1.67 births per woman in
+  2021/2022 and remains constant thereafter;
+  >(ii) a Canadian life expectancy that reaches 87.5 years for males and 89.1
+  years for females in 2062/2063;
+  >(iii) interprovincial migration based on the trends observed between 1999/2000
+  and 2002/2003;
+  >(iv) a national immigration rate that reaches 0.75% in 2022/2023 and remains
+  constant thereafter;
+  >(v) an annual number of non-permanent residents (Canada) that reaches 864,600
+  in 2021 and remains constant thereafter;
+  >(vi) National net emigration rate of 0.19%.
+  >
+  >DECISIONS	In November 2014, we changed the dimensions of this parameter
+  beginning in 1971 to begin in 2001.
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+  >
+  >
+  >*/
+/* NOTE(p_start_pop, EN)
+  >
+  >PARAMETER	Distribution of population at beginning of simulation
+  >LOCATION
+  >LAST UPDATE	January 2019.  Reverted back to the 20160621 version (prior to
+  addition of veterans)
+  >
+  >DESCRIPTION	This contains micro data from the CCHS PUMF 2001 on respondents aged
+  20+. Some records are removed due to missing values.
+  >
+  >DIMENSIONS
+  >[db_records_t][db_fields_t]
+  >
+  >DEFINITION
+  >
+  >METHODS
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS	Dummy records are filled with -1 in all fields.
+  >See parameter “Characteristics of a fictive person to be simulated” for the
+  list of fields/variables.
+  >
+  >
+  >*/
+/* NOTE(p_new_arrivals_control, EN)
+  >
+  >PARAMETER	Open or Closed population
+  >LOCATION
+  >LAST UPDATE
+  >
+  >DESCRIPTION	This parameter determines which type of cases will be generated by
+  the simulation.
+  >
+  >If "StartPop database" is checked then cases will be generated in the start
+  year (p_start_year) of the simulation according to the cross-sectional
+  representation of the population found in the initialization database (see
+  parameter p_start_pop).
+  >
+  >If "New Births" is checked then new cases will be generated in future years
+  (up to p_max_year_new_arrivals) to reflect the growth in the Canadian population.
+  Note that these cases are generated at a specific age equal to the youngest age
+  in p_start_pop (uses parameter p_population)
+  >
+  >If "New immigrants" is checked then new cases will be generated in future
+  years (up to p_max_year_new_arrivals) to reflect projected immigration patterns
+  (see parameter p_immig)
+  >
+  >
+  >
+  >DIMENSIONS
+  >[c_population_source_t]
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS	There are 8 possible ways to populate this parameter.
+  >
+
+  >*/
+
+/* NOTE(p_max_year_new_arrivals, EN)
+  >
+  >PARAMETER	Last year for generating Future Births and Immigrants
+  >LOCATION	Base(StartPop_Control).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION	The last year for generating Future Births and Immigrants. It is used
+  to decide how many cases are needed.
+  >
+  >DIMENSIONS
+  >None
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS	Relations to other parameters
+  >Should be greater than or equal to p_start_year.
+  >There is also a parameter called "Year simulation ends" (aka max_year) which
+  allows lives to be lived sufficiently long for lifetime outcomes like life
+  expectancy.
+  >
+
+  >*/
+/* NOTE(p_start_pop_reweight_definition_fields, EN)
+  >
+  >PARAMETER	Reweight population data base: field
+  >LOCATION	Base(StartPop_Control).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION
+  >
+  >DIMENSIONS
+  >[startpop_subpopulations_t][conditions_reweight_t]
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS	The parameter "Distribution of population at beginning of simulation"
+  (aka p_start_pop) comes with survey weights that may be altered through the
+  following trio of parameters:
+  >A: "Reweight population data base: field" (aka
+  p_start_pop_reweight_definition_fields)
+  >B: "Reweight population data base: acceptance range" (aka
+  p_start_pop_reweight_definition_bounds)
+  >C: "Reweight population data base: multiplier" (aka
+  p_start_pop_reweight_multiplier)
+  >
+  >Parameters A and B allow one to define up to 9 subpopulations and parameter C
+  allows one to specify how survey weights should be altered (multiplicatively)
+  for each population. For instance, if parameters A, B and C are set up to (i)
+  multiply survey weights of women (subpopulation 1) by 0.9 and (ii) multiply
+  survey weights of Albertans (subpopulation 2) by 1.2, then the survey weights
+  of female Albertans are multiplied by 0.9*1.2 = 1.08.
+  >
+  >BMIGen conducts its entire business with the altered weights.  So if Lucy the
+  female Albertan has survey weight equal to 200 on the donor database (parameter
+  "Distribution of population at beginning of simulation"), her survey weight
+  would become 216 (based on example above) and BMIGen would totally forget that
+  Lucy's survey weight ever was 200 at some point.
+  >
+  >The parameter currently discussed/documented is A: "Reweight population data
+  base: field" (aka p_start_pop_reweight_definition_fields).
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+
+  >*/
+/* NOTE(p_start_pop_reweight_definition_bounds, EN)
+  >
+  >PARAMETER	Reweight population data base: acceptance range
+  >LOCATION	Base(StartPop_Control).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION
+  >
+  >DIMENSIONS
+  >[startpop_subpopulations_t][conditions_reweight_t][c_lower_upper_bounds_t]
+  >
+  >SOURCE
+  >
+
+  >Parameters A and B allow one to define up to 9 subpopulations and parameter C
+  allows one to specify how survey weights should be altered (multiplicatively)
+  for each population. For instance, if parameters A, B and C are set up to (i)
+  multiply survey weights of women (subpopulation 1) by 0.9 and (ii) multiply
+  survey weights of Albertans (subpopulation 2) by 1.2, then the survey weights
+  of female Albertans are multiplied by 0.9*1.2 = 1.08.
+  >
+  >
+  >This model conducts its entire business with the altered weights.  So if Lucy the
+  female Albertan has survey weight equal to 200 on the donor database (parameter
+  "Distribution of population at beginning of simulation"), her survey weight
+  would become 216 (based on example above) and this model would totally forget that
+  Lucy's survey weight ever was 200 at some point.
+  >
+  >The parameter currently discussed/documented is B: "Reweight population data
+  base: acceptance range" (aka p_start_pop_reweight_definition_bounds).
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+
+  >*/
+/* NOTE(p_start_pop_reweight_multiplier, EN)
+  >
+  >PARAMETER	Reweight population data base: multiplier
+  >LOCATION	Base(StartPop_Control).dat
+  >LAST UPDATE
+  >
+  >DESCRIPTION
+  >
+  >DIMENSIONS
+  >[startpop_subpopulations_t][dummy_row_or_column_t]
+  >
+  >SOURCE
+  >
+  >DEFINITION
+  >
+  >METHODS	The parameter "Distribution of population at beginning of simulation"
+  (aka p_start_pop) comes with survey weights that may be altered through the
+  following trio of parameters:
+  >A: "Reweight population data base: field" (aka
+  p_start_pop_reweight_definition_fields)
+  >B: "Reweight population data base: acceptance range" (aka
+  p_start_pop_reweight_definition_bounds)
+  >C: "Reweight population data base: multiplier" (aka
+  p_start_pop_reweight_multiplier)
+  >
+  >Parameters A and B allow one to define up to 9 subpopulations and parameter C
+  allows one to specify how survey weights should be altered (multiplicatively)
+  for each population. For instance, if parameters A, B and C are set up to (i)
+  multiply survey weights of women (subpopulation 1) by 0.9 and (ii) multiply
+  survey weights of Albertans (subpopulation 2) by 1.2, then the survey weights
+  of female Albertans are multiplied by 0.9*1.2 = 1.08.
+  >
+  >This model conducts its entire business with the altered weights.  So if Lucy the
+  female Albertan has survey weight equal to 200 on the donor database (parameter
+  "Distribution of population at beginning of simulation"), her survey weight
+  would become 216 (based on example above) and this model would totally forget that
+  Lucy's survey weight ever was 200 at some point.
+  >
+  >The parameter currently discussed/documented is C: "Reweight population data
+  base: multiplier" (aka p_start_pop_reweight_multiplier).
+  >
+  >ASSUMPTIONS
+  >
+  >DECISIONS
+  >
+  >REFERENCES
+  >
+  >COMMENTS
+  >
+  >
+  >*/
+
+/* NOTE(built_in_bmi_alteration_specs, EN)
+	>
+	>PARAMETER	BMI model back-end alterations
+	>LOCATION	Base(BMIcore).dat
+	>LAST UPDATE	March 2019
+	>
+	>DESCRIPTION	This parameter is used to make adjustment to the BMI model.  The
+	adjustment are made after the BMI model has done its thing, so the BMI equation
+	is not altered, per se, but its results are.
+	>
+	>DIMENSIONS
+	>[SEX][from_25_to_80_by_5_t][bmi_built_in_alteration_specs_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	The parameter was used so that the BMI model gives results that are
+	closer to CCHS for years up to 2016.
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>
+	>
+	>*/
+
+/* NOTE(table_filter_age, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Age (current)
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Range of ages for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[c_lower_upper_bounds_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	Tabulation in this model is restricted to a population of interest define
+	by the following set of 9 parameters.
+	>*Sex(es) must be within those selected in parameter "Tabulation restriction:
+	Sex".
+	>*Province(s) must be within those selected in parameter "Tabulation
+	restriction: Province".
+	>*Education level(s) must be within those selected in parameter "Tabulation
+	restriction: Education".
+	>*Income level(s) must be within those selected in parameter "Tabulation
+	restriction: Income quartile".
+	>*Point(s) of entry must be within those selected in parameter "Tabulation
+	restriction: Entry point/door".
+	>*Age must be within the bounds provided by parameter "Tabulation restriction:
+	Age (current)".
+	>*Initial age must be within the bounds provided by parameter "Tabulation
+	restriction: Initial age (upon actor creation)".
+	>*Year must be within the bounds provided by parameter "Tabulation
+	restriction: Year (current)".
+	>*Initial year must be within the bounds provided by parameter "Tabulation
+	restriction: Initial year (upon actor creation)".
+	>
+	>Note that some tables may have additional conditions that further restrict the
+	population tabulated.
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS	The default scenario calls for no specific restriction.  Therefore
+	only "additional conditions" specific to each table will restrict the
+	population tabulated.
+	>
+	>*/
+/* NOTE(table_filter_age_start, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Initial age (upon actor creation)
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Range of initial ages for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[c_lower_upper_bounds_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_year, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Year (current)
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Range of years for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[c_lower_upper_bounds_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_year_start, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Initial year (upon actor creation)
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Range of initial years for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[c_lower_upper_bounds_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_sex, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Sex
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Sexes for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[SEX]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+
+/* NOTE(table_filter_province, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Province
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Provinces for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[PROVINCE]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_door, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Entry point/door
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Entry point/door for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[c_population_source_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_education, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Education
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Education level(s) for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[EDUCATION]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>
+	>*/
+/* NOTE(table_filter_income, EN)
+	>
+	>PARAMETER
+	>Tabulation restriction: Income quartile
+	>
+	>LOCATION	Base(Tabulation_Control).dat
+	>LAST UPDATE	June 2019
+	>
+	>DESCRIPTION	Income quartiles for which tabulation should be performed.
+	>
+	>DIMENSIONS
+	>[income_quartile_t]
+	>
+	>
+	>SOURCE
+	>
+	>DEFINITION
+	>
+	>METHODS	See notes for input parameter "Tabulation restriction: Age (current)".
+	>
+	>ASSUMPTIONS
+	>
+	>DECISIONS
+	>
+	>REFERENCES
+	>
+	>COMMENTS
+	>*/

@@ -23,7 +23,7 @@ import (
 // RefreshSqlite open db-connection to model.sqlite files in model directory and read model_dic row for each model.
 // If multiple version of the same model (equal by digest) exist in different files then only one is used.
 // All previously opened db connections are closed.
-func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) error {
+func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) (modelLib, error) {
 
 	// model directory must exist
 	isDir := modelDir != "" && modelDir != "."
@@ -31,13 +31,23 @@ func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) error {
 		isDir = helper.IsDirExist(modelDir)
 	}
 	if !isDir {
-		return errors.New("Error: model directory not exist or not accesible: " + modelDir)
+		return modelLib{}, errors.New("Error: model directory not exist or not accesible: " + modelDir)
 	}
 
 	// model log directory is optional, if empty or not exists then model log disabled
 	isLogDir := modelLogDir != "" && modelLogDir != "."
 	if isLogDir {
 		isLogDir = helper.IsDirExist(modelLogDir)
+	}
+
+	// read model lib config and store it in the model catalog
+	mlb := loadModelLibConfig()
+	theCatalog.setModelLibConfig(mlb)
+
+	// read common.message.ini
+	cmIni := []helper.IniEntry{}
+	if ea, e := config.ReadCommonMessageIni(theCfg.omsBinDir, theCfg.encodingName); e == nil {
+		cmIni = ea
 	}
 
 	// get list of models/bin/*.sqlite files
@@ -56,7 +66,7 @@ func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) error {
 	})
 	if err != nil {
 		omppLog.Log("Error: fail to scan model directory: ", err.Error())
-		return errors.New("Error: fail to scan model directory")
+		return mlb, errors.New("Error: fail to scan model directory")
 	}
 	sort.Strings(pathLst) // sort by path to model.sqlite: same as sort by model name in default case
 
@@ -68,7 +78,7 @@ func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) error {
 
 	for _, fp := range pathLst {
 
-		addLst, e := modelsFromSqliteFile(fp, dglLst, modelDir, isLogDir, modelLogDir)
+		addLst, e := modelsFromSqliteFile(fp, dglLst, modelDir, isLogDir, modelLogDir, cmIni)
 		if e != nil || len(addLst) <= 0 {
 			continue
 		}
@@ -97,7 +107,7 @@ func (mc *ModelCatalog) refreshSqlite(modelDir, modelLogDir string) error {
 	}
 
 	mc.modelLst = mLst // set new list of the models
-	return nil
+	return mlb, nil
 }
 
 // open db file, read models metadata and append it into catalog
@@ -107,7 +117,17 @@ func (mc *ModelCatalog) loadModelDbFile(srcPath string) (int, error) {
 	mbinDir, _ := theCatalog.getModelDir()
 	logDir, isLog := theCatalog.getModelLogDir()
 
-	mLst, err := modelsFromSqliteFile(srcPath, []string{}, mbinDir, isLog, logDir)
+	// read model lib config and store it in the model catalog
+	// mlb := loadModelLibConfig()
+	// theCatalog.setModelLibConfig(mlb)
+
+	// read common.message.ini
+	cmIni := []helper.IniEntry{}
+	if ea, e := config.ReadCommonMessageIni(theCfg.omsBinDir, theCfg.encodingName); e == nil {
+		cmIni = ea
+	}
+
+	mLst, err := modelsFromSqliteFile(srcPath, []string{}, mbinDir, isLog, logDir, cmIni)
 	if err != nil {
 		return 0, err
 	}
@@ -131,7 +151,7 @@ func (mc *ModelCatalog) loadModelDbFile(srcPath string) (int, error) {
 			}
 		}
 	}
-	mc.modelLst = append(mc.modelLst, mLst...) // append model to catalog and sort models by file paths
+	mc.modelLst = append(mc.modelLst, mLst...) // append model to catalog and sort models by model.sqlite file paths
 
 	slices.SortStableFunc(mc.modelLst, func(left, right modelDef) int { return strings.Compare(left.relPath, right.relPath) })
 
@@ -139,13 +159,7 @@ func (mc *ModelCatalog) loadModelDbFile(srcPath string) (int, error) {
 }
 
 // open SQLite db connection and retrive model or list of models, skip models which are in digest list already
-func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isLogDir bool, modelLogDir string) ([]modelDef, error) {
-
-	// read common.message.ini
-	cmIni := []helper.IniEntry{}
-	if ea, e := config.ReadCommonMessageIni(theCfg.omsBinDir, theCfg.encodingName); e == nil {
-		cmIni = ea
-	}
+func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isLogDir bool, modelLogDir string, cmIni []helper.IniEntry) ([]modelDef, error) {
 
 	// open db connection and check version of openM++ database
 	dbc, err := db.Open(db.MakeSqliteDefault(srcPath), db.SQLiteDbDriver)
@@ -168,6 +182,10 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 	if err != nil {
 		omppLog.Log("Error: ", srcPath, " : ", err.Error())
 		return nil, err
+	}
+	relDir := filepath.Dir(dbRel)
+	if relDir == "." {
+		relDir = ""
 	}
 
 	// read list of models: model_dic rows
@@ -271,9 +289,30 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 		}
 
 		// read model extra content from models/bin/dir/model.extra.json
-		me := ""
-		if bt, err := os.ReadFile(filepath.Join(dbDir, dicLst[idx].Name+".extra.json")); err == nil {
-			me = string(bt)
+		mex := map[string]any{}
+		pubDocDir := ""
+
+		if ok, err := helper.FromJsonFile(filepath.Join(dbDir, dicLst[idx].Name+".extra.json"), &mex); !ok || err != nil {
+			mex = map[string]any{}
+			if err != nil {
+				omppLog.Log("Error at parsing:", dicLst[idx].Name+".extra.json", err)
+			}
+		} else {
+			if ls, e := getModelDocLinks(mex); e == nil && len(ls) > 0 {
+				pubDocDir = filepath.Dir(ls[0]) // use first documenation link directory
+			}
+			if pubDocDir == "." || pubDocDir == "/" || pubDocDir == "\\" || pubDocDir == "C:\\" {
+				pubDocDir = ""
+			}
+		}
+
+		// check if exist: ModelName-Version.publish.lst or models/bin/ModelName.publish.lst
+		pubLst := filepath.Join(relDir, dicLst[idx].Name+"-"+dicLst[idx].Version+".publish.lst")
+		if !helper.IsFileExist(filepath.Join(modelDir, pubLst)) {
+			pubLst = filepath.Join(relDir, dicLst[idx].Name+".publish.lst")
+		}
+		if !helper.IsFileExist(filepath.Join(modelDir, pubLst)) {
+			pubLst = ""
 		}
 
 		// append to model list
@@ -293,7 +332,10 @@ func modelsFromSqliteFile(srcPath string, dgstLst []string, modelDir string, isL
 			matcher:       language.NewMatcher(lt),
 			modelWord:     wLst,
 			msg:           msgLst,
-			extra:         me})
+			extra:         mex,
+			pubLst:        filepath.ToSlash(pubLst),
+			docDir:        filepath.ToSlash(pubDocDir),
+		})
 	}
 
 	// close db connection if there models in that database or all models already in the model list
@@ -326,11 +368,12 @@ func (mc *ModelCatalog) closeAll() error {
 	return firstErr
 }
 
-// close model db-connection and remove model from models list.
-func (mc *ModelCatalog) closeModel(dn string) (string, string, error) {
+// Close model db-connection and remove model from models list.
+// Return model name, bin directory and model version.
+func (mc *ModelCatalog) closeModel(dn string) (string, string, string, error) {
 
 	if dn == "" {
-		return "", "", nil
+		return "", "", "", nil
 	}
 	// lock and update model catalog
 	mc.theLock.Lock()
@@ -339,6 +382,7 @@ func (mc *ModelCatalog) closeModel(dn string) (string, string, error) {
 	// close model db connection and remove model from the list
 	isFound := false
 	name := ""
+	ver := ""
 	binDir := ""
 	n := 0
 
@@ -347,11 +391,12 @@ func (mc *ModelCatalog) closeModel(dn string) (string, string, error) {
 		if !isFound && (mc.modelLst[k].meta.Model.Digest == dn || mc.modelLst[k].meta.Model.Name == dn) {
 			if err := mc.modelLst[k].dbConn.Close(); err != nil {
 				omppLog.Log("Error: close db connection error" + ": " + dn + " : " + err.Error())
-				return "", "", err
+				return "", "", "", err
 			}
 			isFound = true
 			name = mc.modelLst[k].meta.Model.Name
 			binDir = mc.modelLst[k].binDir
+			ver = mc.modelLst[k].meta.Model.Version
 			continue
 		}
 		mc.modelLst[n] = mc.modelLst[k]
@@ -360,10 +405,10 @@ func (mc *ModelCatalog) closeModel(dn string) (string, string, error) {
 	if isFound {
 		mc.modelLst = mc.modelLst[:n]
 	}
-	return name, binDir, nil
+	return name, binDir, ver, nil
 }
 
-// close model and delete all model files: exe, sqlite, ini,...
+// close model and delete all model files: exe, ModelName.*, ModelName_mpi.*, etc. and delete model directory if it is empty
 func (mc *ModelCatalog) deleteModel(dn string) error {
 
 	if dn == "" {
@@ -371,7 +416,7 @@ func (mc *ModelCatalog) deleteModel(dn string) error {
 	}
 
 	// close the model and remove it from model catalog
-	name, modelDir, err := theCatalog.closeModel(dn)
+	name, modelDir, ver, err := theCatalog.closeModel(dn)
 	if err != nil {
 		return err
 	}
@@ -379,40 +424,110 @@ func (mc *ModelCatalog) deleteModel(dn string) error {
 		return errors.New("Error: model not found " + dn)
 	}
 
-	// find all files in model directory where name is:
-	//   ModelName.* ModelName_mpi.* ModelNameD.* ModelNameD_mpi.*
+	// check if model copy.lst file exist
 	pathLst := []string{}
 
-	ff := func(pattern string) error {
-		p, e := filepath.Glob(pattern)
-		if e != nil {
-			omppLog.Log("Error: fail to scan model directory: ", pattern, ": ", e.Error())
-			return errors.New("Error: fail to scan model directory")
+	mdnp := filepath.Join(modelDir, name)
+	cpLst := mdnp + "-" + ver + ".copy.lst"
+
+	if !helper.IsFileExist(cpLst) {
+		cpLst = mdnp + ".copy.lst"
+		if !helper.IsFileExist(cpLst) {
+			cpLst = ""
 		}
-		if len(p) > 0 {
-			pathLst = append(pathLst, p...)
+	}
+	if cpLst != "" {
+		pathLst, err = helper.FileToLines(cpLst) // read list of model files from .copy.lst
+
+		if err == nil && len(pathLst) > 0 { // append .copy.lst file to the list of files to be deleted
+
+			if acp, e := filepath.Abs(cpLst); e == nil {
+				pathLst = append(pathLst, acp) // append absolute path to .copy.lst file to the list of files to be deleted
+			} else {
+				pathLst = append(pathLst, cpLst)
+			}
 		}
-		return nil
 	}
-	if err = ff(filepath.Join(modelDir, name) + ".*"); err != nil {
-		return err
-	}
-	if err = ff(filepath.Join(modelDir, name) + "D.*"); err != nil {
-		return err
-	}
-	if err = ff(filepath.Join(modelDir, name) + "_mpi.*"); err != nil {
-		return err
-	}
-	if err = ff(filepath.Join(modelDir, name) + "D_mpi.*"); err != nil {
-		return err
+
+	// if .copy.lst file not does exist or empty then
+	// find all files in model directory where name is:
+	//   ModelName.* ModelName_mpi.* ModelNameD.* ModelNameD_mpi.* ModelName-Version.*
+	if len(pathLst) <= 0 {
+
+		ff := func(pattern string) error {
+			p, e := filepath.Glob(pattern)
+			if e != nil {
+				omppLog.Log("Error: fail to scan model directory: ", pattern, ": ", e.Error())
+				return errors.New("Error: fail to scan model directory")
+			}
+			if len(p) > 0 {
+				pathLst = append(pathLst, p...)
+			}
+			return nil
+		}
+		if err = ff(mdnp + ".*"); err != nil {
+			return err
+		}
+		if err = ff(mdnp + "D.*"); err != nil {
+			return err
+		}
+		if err = ff(mdnp + "_mpi.*"); err != nil {
+			return err
+		}
+		if err = ff(mdnp + "D_mpi.*"); err != nil {
+			return err
+		}
+		if err = ff(mdnp + "-" + ver + ".*"); err != nil {
+			return err
+		}
 	}
 
 	// delete model files
+	dirs := map[string]bool{}
+
 	for _, p := range pathLst {
 		if ok := fileDeleteAndLog(true, p); !ok {
 			return errors.New("Error: unable to delete model file(s)")
 		}
+		d := filepath.Dir(p)
+		if !dirs[d] {
+			dirs[d] = true
+		}
 	}
+
+	// delete empty directories inside of models/bin, models/doc, models/log
+	for d := range dirs {
+
+		// check where directory is: under models bin, doc or log
+		r := ""
+		ok, ed := isChildOfDir(d, theCatalog.modelDir)
+		if ok && ed == nil {
+			r = theCatalog.modelDir
+		}
+		if r == "" {
+			if ok, ed = isChildOfDir(d, theCatalog.modelLogDir); ok && ed == nil {
+				r = theCatalog.modelLogDir
+			}
+		}
+		if r == "" {
+			if ok, ed = isChildOfDir(d, theCfg.docDir); ok && ed == nil {
+				r = theCfg.docDir
+			}
+		}
+		if r == "" {
+			continue // skip: directory d is either outside of models bin, doc, log or it is a models/bin, models/doc, models/log itself
+		}
+
+		// walk up to the  root r and delete empty directories
+		for ; ok && ed == nil; ok, ed = isChildOfDir(d, r) {
+
+			if !helper.IsDirEmpty(d) || !fileDeleteAndLog(true, d) {
+				break // not empty or delete error: skip this directory
+			}
+			d = filepath.Dir(d)
+		}
+	}
+
 	return nil
 }
 
@@ -452,4 +567,68 @@ func (mc *ModelCatalog) setModelTextMeta(digest string, isFull bool, txtMeta *db
 	mc.modelLst[idx].isTxtMetaFull = isFull
 	mc.modelLst[idx].txtMeta = txtMeta
 	return true
+}
+
+// store model lib settings
+func (mc *ModelCatalog) setModelLibConfig(mlb modelLib) {
+
+	mc.theLock.Lock()
+	defer mc.theLock.Unlock()
+
+	mc.modelLib = mlb
+}
+
+// read models library settings from disk.ini file
+func loadModelLibConfig() modelLib {
+
+	// if etc/disk.ini does not exists then return empty default configuration
+	diskIniPath := filepath.Join(theCfg.etcDir, "disk.ini")
+
+	if !helper.IsFileExist(diskIniPath) {
+		return modelLib{}
+	}
+	opts, err := config.FromIni(diskIniPath, theCfg.encodingName)
+	if err != nil {
+		omppLog.LogNoLT(err)
+		return modelLib{}
+	}
+
+	mlb := modelLib{}
+
+	// models library
+	mlb.Url = opts.String("ModelLib.Url")
+	mlb.srcRoot = opts.String("ModelLib.SrcRoot")
+	mlb.copyCmd = opts.String("ModelLib.CopyCmd")
+
+	// src_root directory must exist and it can not be file system root or current directory
+	mlb.srcRoot = filepath.Clean(mlb.srcRoot)
+	if mlb.srcRoot == "." || mlb.srcRoot == "/" || mlb.srcRoot == "C:\\" || !helper.IsDirExist(mlb.srcRoot) {
+		mlb.srcRoot = ""
+	}
+
+	// check if current oms root is a models library
+	if mlb.srcRoot != "" {
+
+		mlb.IsLocal = filepath.IsLocal(mlb.srcRoot)
+
+		if !mlb.IsLocal {
+
+			r, er := filepath.Abs(theCfg.rootDir)
+			s, es := filepath.Abs(mlb.srcRoot)
+			if er == nil && es == nil {
+
+				if p, ep := filepath.Rel(r, s); ep == nil {
+					mlb.IsLocal = filepath.IsLocal(p) || p != ".." && !strings.HasPrefix(p, ".."+string(filepath.Separator))
+				}
+			}
+		}
+	}
+
+	// is copy from models library enabled
+	if !helper.IsFileExist(mlb.copyCmd) { // copy script must exist
+		mlb.copyCmd = ""
+	}
+	mlb.IsCopy = !mlb.IsLocal && mlb.Url != "" && mlb.srcRoot != "" && mlb.copyCmd != ""
+
+	return mlb
 }

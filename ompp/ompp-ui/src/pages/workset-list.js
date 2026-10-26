@@ -3,6 +3,7 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import WorksetParameterList from 'components/WorksetParameterList.vue'
 import RunParameterList from 'components/RunParameterList.vue'
 import RefreshWorkset from 'components/RefreshWorkset.vue'
@@ -15,9 +16,32 @@ import DeleteWorkset from 'components/DeleteWorkset.vue'
 import ConfirmDialog from 'components/ConfirmDialog.vue'
 import DeleteConfirmDialog from 'components/DeleteConfirmDialog.vue'
 import MarkdownEditor from 'components/MarkdownEditor.vue'
+import ParameterPage from 'pages/ParameterPage.vue'
 
 export default {
   name: 'WorksetList',
+  mixins: [tabStateMixin],
+
+  // cache tab state: filter, selected scenarios, expanded sections and source of parameters copy
+  tabState: {
+    fields: ['wsTreeFilter', 'wsTreeTicked', 'isParamTreeShow', 'worksetNameFrom', 'isFromRunShow', 'isFromWorksetShow', 'paramDialogName', 'paramDialogWs'],
+    key () { return 'set-list:' + (this.digest || '') },
+    afterRestore () {
+      if (this.worksetNameFrom && this.worksetNameFrom === this.worksetNameSelected) this.worksetNameFrom = ''
+      this.doRefresh() // update source workset, remove selection of worksets which do not exist anymore
+
+      // copy parameters from run or workset only allowed into editable workset
+      if (!Mdf.isNotEmptyWorksetText(this.worksetCurrent) || this.worksetCurrent.IsReadonly) {
+        this.isFromRunShow = false
+        this.isFromWorksetShow = false
+      }
+      // re-open parameter dialog only for the same input scenario
+      if (!this.paramDialogName || this.paramDialogWs !== this.worksetNameSelected || !Mdf.isNotEmptyWorksetText(this.worksetCurrent)) {
+        this.paramDialogName = ''
+        this.paramDialogWs = ''
+      }
+    }
+  },
   components: {
     WorksetParameterList,
     RunParameterList,
@@ -30,7 +54,8 @@ export default {
     DeleteWorkset,
     ConfirmDialog,
     DeleteConfirmDialog,
-    MarkdownEditor
+    MarkdownEditor,
+    ParameterPage
   },
 
   props: {
@@ -96,6 +121,8 @@ export default {
       uploadFile: null,
       isNoDigestCheck: false,
       noteEditorLangCode: '',
+      paramDialogName: '', // name of parameter open in dialog for view or edit
+      paramDialogWs: '', // workset name of parameter open in dialog
       noteCurrent: ''
     }
   },
@@ -146,6 +173,8 @@ export default {
 
   emits: [
     'set-select',
+    'edit-updated',
+    'user-view-updated',
     'new-run-select',
     'set-update-readonly',
     'set-parameter-select',
@@ -312,8 +341,33 @@ export default {
       this.isParamTreeShow = !this.isParamTreeShow
     },
     // click on parameter: open current workset parameter values tab
+    // parameter opened in a modal dialog instead of a new tab
     onWorksetParamClick (name) {
-      this.$emit('set-parameter-select', name)
+      if (!name || !this.worksetNameSelected) return
+      this.paramDialogWs = this.worksetNameSelected
+      this.paramDialogName = name
+    },
+    // close parameter dialog: if there are unsaved changes then parameter page asks user to save or discard
+    onParamDialogClose () {
+      const pp = this.$refs.paramDialogPage
+      if (pp && typeof pp.dialogCanClose === 'function' && !pp.dialogCanClose()) return // wait for user answer
+      this.doParamDialogHide()
+    },
+    // click outside of parameter dialog or Esc key: close dialog, if there are no unsaved changes
+    onParamDialogModel (isShow) {
+      if (!isShow) this.onParamDialogClose()
+    },
+    doParamDialogHide () {
+      this.paramDialogName = ''
+      this.paramDialogWs = ''
+    },
+    // forward parameter dialog events to the model page
+    onParamDialogEditUpdated (isUpdated, key) { this.$emit('edit-updated', isUpdated, key) },
+    onParamDialogReadonly (dgst, name, isReadonly) { this.$emit('set-update-readonly', dgst, name, isReadonly) },
+    onParamDialogUserView (dgst, mName) { this.$emit('user-view-updated', dgst, mName) },
+    onParamDialogNewRun (name) {
+      this.doParamDialogHide()
+      this.$emit('new-run-select', (this.worksetNameSelected !== name ? name : ''))
     },
 
     // start create new workset

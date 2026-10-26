@@ -3,6 +3,7 @@ import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import DeleteConfirmDialog from 'components/DeleteConfirmDialog.vue'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import { copyToClipboard } from 'quasar'
 
 /* eslint-disable no-multi-spaces */
@@ -13,6 +14,13 @@ const MAX_NO_STATE_COUNT = 4          // max invalid response count
 
 export default {
   name: 'AdminState',
+  mixins: [tabStateMixin],
+
+  // remember which sections are open
+  tabState: {
+    fields: ['isShowServers', 'isShowOmsActive', 'isShowActiveRuns', 'isShowQueueRuns', 'isShowPastRuns'],
+    key () { return 'admin-state' }
+  },
   components: { DeleteConfirmDialog },
 
   props: {

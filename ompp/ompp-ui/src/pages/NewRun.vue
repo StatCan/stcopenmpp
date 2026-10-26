@@ -13,7 +13,7 @@
             @click="onModelRunClick"
             :disable="isInitRun || !runOpts.runName || isNoTables || isDiskOver || isReadonlyServer"
             color="primary"
-            class="rounded-borders q-pr-xs"
+            class="rounded-borders q-pr-xs om-btn-cta"
             >
             <q-icon name="mdi-run" class="q-mr-xs"/>
             <span>{{ $t('Run the Model') }}</span>
@@ -162,56 +162,31 @@
   <q-card class="q-ma-sm">
 
     <q-expansion-item
+      v-model="tablesExpanded"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header om-accent-table"
       >
       <template v-slot:header>
-        <q-icon v-if="isNoTables" name="star" color="red" />
-        <span>{{ $t('Output Tables: ') + (tablesRetain.length !== tableCount ? (tablesRetain.length.toLocaleString() + ' / ' + tableCount.toLocaleString()) : $t('All')) }}</span>
+        <q-icon name="mdi-table-large" size="sm" class="om-section-icon q-mr-sm self-center" />
+        <q-icon v-if="isNoTables" name="star" color="red" class="self-center" />
+        <span class="self-center">{{ $t('Output Tables: ') + (tablesRetain.length !== tableCount ? (tablesRetain.length.toLocaleString() + ' / ' + tableCount.toLocaleString()) : $t('All')) }}</span>
       </template>
 
       <q-card-section
         class="q-pa-sm"
         >
-        <template v-if="isNoTables">
+        <div v-if="isNoTables" class="q-pb-xs">
           <span class="text-negative text-weight-bold">*&nbsp;</span><span>{{ $t('Please select output tables in order to run the model') }}</span>
-        </template>
-        <template v-else>
-          <table-list
-            :run-digest="''"
-            :refresh-tickle="refreshTickle"
-            :refresh-table-tree-tickle="refreshTableTreeTickle"
-            :name-filter="tablesRetain"
-            :is-in-list-clear="true"
-            in-list-clear-icon="mdi-expand-all"
-            :in-list-clear-label="$t('Retain all output tables')"
-            :is-remove="true"
-            :is-remove-group="true"
-            @table-remove="onTableRemove"
-            @table-group-remove="onTableGroupRemove"
-            @table-info-show="doShowTableNote"
-            @table-group-info-show="doShowGroupNote"
-            @table-clear-in-list="onRetainAllTables"
-            >
-          </table-list>
-        </template>
-      </q-card-section>
-
-      <q-card-section
-        class="primary-border-025 shadow-up-1 q-pa-sm"
-        >
-        <table-list
-          :run-digest="''"
-          :refresh-tickle="refreshTickle"
-          :is-add="true"
-          :is-add-group="true"
-          @table-add="onTableAdd"
-          @table-group-add="onTableGroupAdd"
+        </div>
+        <!-- single list of output tables: tick tables or groups to include into model run -->
+        <table-select-tree
+          :tables="tablesRetain"
+          @update:tables="onTablesSelected"
           @table-info-show="doShowTableNote"
           @table-group-info-show="doShowGroupNote"
           >
-        </table-list>
+        </table-select-tree>
       </q-card-section>
 
     </q-expansion-item>
@@ -221,12 +196,14 @@
   <q-card v-if="entityAttrCount > 0" class="q-ma-sm">
 
     <q-expansion-item
+      v-model="microExpanded"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header om-accent-entity"
       >
       <template v-slot:header>
-        <span>{{ $t('Microdata: ') + (entityAttrsUse.length !== entityAttrCount ? (entityAttrsUse.length.toLocaleString() + ' / ' + entityAttrCount.toLocaleString()) : $t('All')) }}</span>
+        <q-icon name="mdi-microscope" size="sm" class="om-section-icon q-mr-sm self-center" />
+        <span class="self-center">{{ $t('Microdata: ') + (entityAttrsUse.length !== entityAttrCount ? (entityAttrsUse.length.toLocaleString() + ' / ' + entityAttrCount.toLocaleString()) : $t('All')) }}</span>
         <span v-if="isTooManyEntityAttrs()">
           <q-icon name="mdi-exclamation-thick" color="red" class="bg-white q-pa-xs q-ml-md q-mr-xs"/><span>{{ $t('Excessive use of microdata may slow down model run or lead to failure') }}</span>
         </span>
@@ -235,49 +212,18 @@
       <q-card-section
         class="q-pa-sm"
         >
-        <template v-if="isNoEntityAttrsUse">
+        <div v-if="isNoEntityAttrsUse" class="q-pb-xs">
           <span>{{ $t('No entity microdata included into model run results') }}</span>
-        </template>
-        <template v-else>
-          <entity-list
-            :run-digest="''"
-            :refresh-tickle="refreshTickle"
-            :refresh-entity-tree-tickle="refreshEntityTreeTickle"
-            :name-filter="entityAttrsUse"
-            :is-in-list-enable="true"
-            :is-in-list-clear="true"
-            :in-list-clear-label="$t('Do not use entity microdata')"
-            in-list-clear-icon="mdi-collapse-all"
-            :is-remove-entity-attr="true"
-            :is-remove-entity="true"
-            @entity-attr-remove="onAttrRemove"
-            @entity-remove="onEntityRemove"
-            @entity-group-remove="onEntityGroupRemove"
-            @entity-clear-in-list="onClearEntityAttrs"
-            @entity-info-show="doShowEntityNote"
-            @entity-attr-info-show="doShowEntityAttrNote"
-            @entity-group-info-show="doShowEntityGroupNote"
-            >
-          </entity-list>
-        </template>
-      </q-card-section>
-
-      <q-card-section
-        class="primary-border-025 shadow-up-1 q-pa-sm"
-        >
-        <entity-list
-          :run-digest="''"
-          :refresh-tickle="refreshTickle"
-          :is-add-entity-attr="true"
-          :is-add-entity="true"
-          @entity-attr-add="onAttrAdd"
-          @entity-add="onEntityAdd"
-          @entity-group-add="onEntityGroupAdd"
+        </div>
+        <!-- single list of entity attributes: tick attributes, groups or entities to include into microdata -->
+        <entity-select-tree
+          :attrs="entityAttrsUse"
+          @update:attrs="onEntityAttrsSelected"
           @entity-info-show="doShowEntityNote"
           @entity-attr-info-show="doShowEntityAttrNote"
           @entity-group-info-show="doShowEntityGroupNote"
           >
-        </entity-list>
+        </entity-select-tree>
       </q-card-section>
 
     </q-expansion-item>
@@ -290,9 +236,12 @@
       v-model="langOptsExpanded"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
-      :label="$t('Description and Notes')"
+      header-class="om-section-header om-accent-notes"
       >
+      <template v-slot:header>
+        <q-icon name="mdi-note-text-outline" size="sm" class="om-section-icon q-mr-sm self-center" />
+        <span class="self-center">{{ $t('Description and Notes') }}</span>
+      </template>
 
       <markdown-editor
         v-for="t in txtNewRun"
@@ -307,6 +256,8 @@
         :notes-editable="true"
         :is-hide-save="true"
         :is-hide-cancel="true"
+        :is-sync-props="true"
+        @update-descr-note="onUpdateDescrNote"
         class="q-px-sm q-py-xs"
       >
       </markdown-editor>
@@ -320,9 +271,12 @@
       v-model="advOptsExpanded"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
-      :label="$t('Advanced Run Options')"
+      header-class="om-section-header om-accent-advanced"
       >
+      <template v-slot:header>
+        <q-icon name="mdi-tune-variant" size="sm" class="om-section-icon q-mr-sm self-center" />
+        <span class="self-center">{{ $t('Advanced Run Options') }}</span>
+      </template>
       <q-card-section>
         <table>
         <tbody>
@@ -391,6 +345,47 @@
                 input-class="tc-right"
                 :title="$t('Step to log model progress: number of cases or time passed')"
                 />
+            </td>
+          </tr>
+
+          <!-- microdata output mode: database or text (CSV files) -->
+          <tr v-if="isMicrodata">
+            <td class="q-pr-xs">{{ $t('Microdata Output') }}:</td>
+            <td>
+              <div class="row items-center no-wrap">
+                <q-btn-toggle
+                  v-model="runOpts.microdataMode"
+                  :disable="isMicrodataModeByIni"
+                  :options="[
+                    { value: 'db', label: $t('Database mode'), icon: 'mdi-database-outline' },
+                    { value: 'csv', label: $t('Text mode'), icon: 'mdi-file-delimited-outline' }
+                  ]"
+                  no-caps
+                  dense
+                  unelevated
+                  toggle-color="primary"
+                  class="col-auto om-light-border"
+                  :title="runOpts.microdataMode === 'csv' ? $t('Write microdata into CSV text files and model database') : $t('Write microdata into model database')"
+                  />
+                <span v-if="isMicrodataModeByIni" class="col q-pl-sm om-text-descr">{{ $t('Microdata output defined by INI-file') }}</span>
+              </div>
+            </td>
+          </tr>
+          <!-- microdata warning (database mode only): no primary key on run_id and entity_key, duplicate rows are possible -->
+          <tr v-if="isMicrodata && runOpts.microdataMode === 'db'">
+            <td></td>
+            <td class="q-pt-xs">
+              <q-banner
+                dense
+                rounded
+                class="bg-amber-1 text-amber-10 om-light-border"
+                style="max-width: 40rem;"
+                >
+                <template v-slot:avatar>
+                  <q-icon name="mdi-alert-outline" color="amber-9" />
+                </template>
+                {{ $t('The microdata table no longer has a primary key on run_id and entity_key. If duplicate rows are written to the microdata table, the model run will not fail. But duplicate rows may be present and results may be double counted.') }}
+              </q-banner>
             </td>
           </tr>
 
@@ -676,9 +671,12 @@
       v-model="mpiOptsExpanded"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
-      :label="$t('Cluster Run Options')"
+      header-class="om-section-header om-accent-cluster"
       >
+      <template v-slot:header>
+        <q-icon name="mdi-server-network" size="sm" class="om-section-icon q-mr-sm self-center" />
+        <span class="self-center">{{ $t('Cluster Run Options') }}</span>
+      </template>
       <q-card-section>
         <table>
         <tbody>

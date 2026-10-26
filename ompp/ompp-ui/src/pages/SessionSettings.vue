@@ -2,9 +2,9 @@
 <q-page class="text-body1 q-pa-sm">
 
   <q-expansion-item
+    v-model="isStateSectionOpen"
     switch-toggle-side
-    default-opened
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
     class="q-mb-xs"
     :label="$t('Session state and settings')"
     >
@@ -121,9 +121,76 @@
   </q-expansion-item>
 
   <q-expansion-item
+    v-model="isCacheSectionOpen"
     switch-toggle-side
-    default-opened
-    header-class="bg-primary text-white"
+    header-class="om-section-header"
+    class="q-mb-xs"
+    :label="$t('Browser cache')"
+    >
+    <table class="settings-table q-mb-sm">
+      <tbody>
+
+        <tr>
+          <td class="om-light-border q-pa-sm">
+            <q-btn
+              @click="onClearUiState"
+              flat
+              dense
+              class="bg-primary text-white rounded-borders"
+              icon="cancel"
+              :title="$t('Clear saved UI state')"
+              />
+          </td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('UI State') }}:</td>
+          <td class="om-light-border q-pa-sm">
+            <q-checkbox v-model="isStateCache" :label="$t('Remember selected model, runs, open tabs, views, filters and inputs after page reload')" />
+          </td>
+        </tr>
+
+        <tr>
+          <td class="om-light-border q-pa-sm">
+            <q-btn
+              @click="onClearHttpCache"
+              :disable="!httpStats.count"
+              flat
+              dense
+              class="bg-primary text-white rounded-borders"
+              icon="cancel"
+              :title="$t('Clear cached server data')"
+              />
+          </td>
+          <td class="om-light-border q-pa-sm om-text-secondary">{{ $t('Server Data') }}:</td>
+          <td class="om-light-border q-pa-sm">
+            <q-checkbox v-model="isHttpCache" :label="$t('Cache model metadata and data of completed model runs, use cached data if server offline')" />
+            <div class="q-pl-sm q-pt-xs om-text-secondary">
+              <span>{{ httpStats.count ? httpStats.count.toLocaleString() + ' ' + $t('cached response(s)') + ', ' + fileSizeStr(httpStats.size) : $t('Empty') }}</span>
+              <span v-if="httpStats.hit">{{ ' \u2022 ' + $t('Served from cache in this session') + ': ' + httpStats.hit.toLocaleString() }}</span>
+            </div>
+            <div class="row items-center q-pl-sm q-pt-xs">
+              <span class="col-auto q-pr-sm">{{ $t('Cache size limit') }}:</span>
+              <q-select
+                v-model="cacheMaxMb"
+                :options="cacheSizeOptions"
+                :disable="!isHttpCache"
+                emit-value
+                map-options
+                dense
+                outlined
+                options-dense
+                class="col-auto"
+                />
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </q-expansion-item>
+
+  <q-expansion-item
+    v-model="isViewsSectionOpen"
+    switch-toggle-side
+    header-class="om-section-header"
     :label="isModel ? $t('Model views of') + ' ' + modelTitle : $t('Model views')"
     >
     <q-card>
@@ -274,11 +341,22 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import * as Idb from 'src/idb/idb'
 import { exportFile } from 'quasar'
+import { getCacheSettings, setCacheSettings } from 'src/cache/cache-settings'
+import { httpCacheStats, clearHttpCache } from 'src/cache/http-cache'
+import { clearPersistedState } from 'src/cache/persist-state'
 
 export default {
   name: 'SessionSettings',
+  mixins: [tabStateMixin],
+
+  // remember which sections are open
+  tabState: {
+    fields: ['isStateSectionOpen', 'isCacheSectionOpen', 'isViewsSectionOpen'],
+    key () { return 'session-settings' }
+  },
 
   data () {
     return {
@@ -290,7 +368,15 @@ export default {
       fastDownload: 'yes',
       isMicroDownload: false,
       isIdCsvDownload: false,
-      labelKind: 'default'
+      labelKind: 'default',
+      isStateSectionOpen: true, // section expanded: session state and settings
+      isCacheSectionOpen: true, // section expanded: browser cache
+      isViewsSectionOpen: true, // section expanded: model views
+      isStateCache: getCacheSettings().isStateCache,
+      isHttpCache: getCacheSettings().isHttpCache,
+      cacheMaxMb: getCacheSettings().maxMb,
+      cacheSizeOptions: [64, 128, 256, 512, 1024, 2048].map(n => ({ value: n, label: n >= 1024 ? (n / 1024) + ' GB' : n + ' MB' })),
+      httpStats: { count: 0, size: 0, hit: 0, offline: 0 }
     }
   },
 
@@ -340,6 +426,16 @@ export default {
     },
     labelKind (val) {
       this.dispatchTreeLabelKind((val === 'name-only' || val === 'descr-only') ? val : '')
+    },
+    isStateCache (val) {
+      setCacheSettings({ isStateCache: !!val })
+      if (!val) clearPersistedState() // do not restore UI state on next page load
+    },
+    isHttpCache (val) {
+      setCacheSettings({ isHttpCache: !!val })
+    },
+    cacheMaxMb (val) {
+      setCacheSettings({ maxMb: val })
     }
   },
 
@@ -360,6 +456,36 @@ export default {
       'dispatchTreeLabelKind',
       'dispatchViewDeleteByModel'
     ]),
+
+    // return file size as translated string for example: 12 MB
+    fileSizeStr (size) {
+      const fs = Mdf.fileSizeParts(size)
+      return fs.val + ' ' + this.$t(fs.name)
+    },
+    // update statistics of cached server responses
+    async doCacheStats () {
+      try {
+        this.httpStats = await httpCacheStats()
+      } catch (e) {
+        console.warn('Unable to get cache statistics', e)
+      }
+    },
+    // delete saved UI state: tab pages state, scroll positions and persisted state of all stores
+    async onClearUiState () {
+      const uiStore = useUiStateStore()
+      uiStore.$patch((s) => {
+        s.tabStates = {}
+        s.scrollPos = {}
+      })
+      await clearPersistedState()
+      this.$q.notify({ type: 'info', message: this.$t('Saved UI state cleared') })
+    },
+    // delete cached server responses
+    async onClearHttpCache () {
+      await clearHttpCache()
+      await this.doCacheStats()
+      this.$q.notify({ type: 'info', message: this.$t('Cached server data cleared') })
+    },
     // refresh model settings: select from indexed db
     doRefresh () {
       this.clearState()
@@ -369,6 +495,7 @@ export default {
       this.labelKind = (this.treeLabelKind === 'name-only' || this.treeLabelKind === 'descr-only') ? this.treeLabelKind : 'default'
 
       if (this.modelName) this.doReadViews()
+      this.doCacheStats()
     },
 
     onModelClear () {

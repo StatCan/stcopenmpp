@@ -3,6 +3,7 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import ModelBar from 'components/ModelBar.vue'
 import RunBar from 'components/RunBar.vue'
 import WorksetBar from 'components/WorksetBar.vue'
@@ -23,6 +24,14 @@ const MAX_LOG_WAIT_PROGRESS_COUNT = 20 * 60 // "recent" progress threshold (20 *
 
 export default {
   name: 'UpDownList',
+  mixins: [tabStateMixin],
+
+  // cache tab state: user files section, filters and options
+  // downloads and uploads sections are not restored: page is opened to show specific section
+  tabState: {
+    fields: ['filesExpand', 'folderTreeFilter', 'filesTreeFilter', 'isNoDigestCheck'],
+    key () { return 'updown-list:' + (this.digest || '') }
+  },
   components: { ModelBar, RunBar, WorksetBar, ModelInfoDialog, RunInfoDialog, WorksetInfoDialog, RefreshWorksetList, DeleteConfirmDialog },
 
   props: {

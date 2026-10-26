@@ -1,0 +1,162 @@
+﻿//LABEL(mortality-mport-v2, EN) Mortality_MPoRT_V2
+/* NOTE(mortality-mport-v2, EN)
+	This file implements mortality using the MPoRT V2 algorithm.
+*/
+
+classification mport_v2_interaction_terms_t { //EN MPoRT V2 risk algorithm interaction coefficients
+    mport_v2_inter_age_smoker_current,       //EN Interaction Age * current smoker
+    mport_v2_inter_age_smoker_former_lt5,    //EN Interaction Age * former smoker quit less than 5 years ago
+    mport_v2_inter_age_smoker_former_gt5,    //EN Interaction Age * former smoker quit 5 years ago or more
+    mport_v2_inter_age_drink_former,         //EN Interaction Age * former drinker
+    mport_v2_inter_age_educ_lt_high_school,  //EN Interaction Age * less than high school education
+    mport_v2_inter_age_educ_high_school,     //EN Interaction Age * high school graduate
+    mport_v2_inter_age_educ_some_ps,         //EN Interaction Age * some PS education
+    mport_v2_inter_age_hypertension,         //EN Interaction Age * hypertension
+    mport_v2_inter_age_heart_disease,        //EN Interaction Age * heart disease
+    mport_v2_inter_age_previous_stroke,      //EN Interaction Age * stroke
+    mport_v2_inter_age_diabetes,             //EN Interaction Age * diabetes
+    mport_v2_inter_age_cancer,               //EN Interaction Age * cancer
+    mport_v2_inter_age_dementia,             //EN Interaction Age * dementia
+
+    mport_v2_inter_age_pack_years,        //EN Interaction Age * pack years
+    mport_v2_inter_age_drinks_last_week,  //EN Interaction Age * drinks last week
+    mport_v2_inter_age_pa_met,            //EN Interaction Age * physical activity MET
+    mport_v2_inter_age_bmi                //EN Interaction Age * BMI
+};
+
+parameters {
+    double mport_v2_log_base_cumulative_hazard[sex_t][coordinates_x_y_t][scatter_plot_elements_t]; //EN MPoRT V2 mortality risk: log baseline cumulative hazard
+    double mport_v2_baseline[sex_t]; //EN MPoRT V2 mortality risk: 5 year baseline cumulative hazard
+    double mport_v2_interaction_coefficients[sex_t][mport_v2_interaction_terms_t]; //EN MPoRT V2 mortality risk: interaction terms (only Age x BMI is used)
+
+    double mport_v2_age_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: age cubic spline coefficients
+    double mport_v2_age_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: age cubic spline companion
+
+    double mport_v2_bmi_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: BMI cubic spline coefficients
+    double mport_v2_bmi_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: BMI cubic spline companion
+
+    double mport_v2_pack_years_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: pack years cubic spline coefficients
+    double mport_v2_pack_years_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: pack years cubic spline companion
+
+    double mport_v2_drinks_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: drinks last week cubic spline coefficients
+    double mport_v2_drinks_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: drinks last week cubic spline companion
+
+    double mport_v2_mets_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: METs cubic spline coefficients
+    double mport_v2_mets_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: METs cubic spline companion
+
+    double mport_v2_immig_spline_location_coef[sex_t][cubic_spline_knots_location_coefficient_t][cubic_spline_knots_index_t]; //EN MPoRT V2 mortality risk: Cdn resident percent cubic spline coefficients
+    double mport_v2_immig_spline_companion[sex_t][cubic_spline_companion_t]; //EN MPoRT V2 mortality risk: Cdn resident percent cubic spline companion
+
+    double mport_v2_alteration_specs[sex_t][from_25_to_90_by_5_t]; //EN Alteration of mortality log hazard by sex and age (for MPoRT V2 engine)
+
+    model_generated double mg_mport_v2_frozen_spline_offset[sex_t]; //EN Sum of the pack-years, drinks, METs and residency splines evaluated at their means
+};
+
+parameter_group pg_mortality_mport_v2 { //EN MPoRT V2
+    mport_v2_baseline,
+    mport_v2_log_base_cumulative_hazard,
+    mport_v2_interaction_coefficients,
+
+    mport_v2_age_spline_location_coef,
+    mport_v2_age_spline_companion,
+    mport_v2_bmi_spline_location_coef,
+    mport_v2_bmi_spline_companion,
+    mport_v2_pack_years_spline_location_coef,
+    mport_v2_pack_years_spline_companion,
+    mport_v2_drinks_spline_location_coef,
+    mport_v2_drinks_spline_companion,
+    mport_v2_mets_spline_location_coef,
+    mport_v2_mets_spline_companion,
+    mport_v2_immig_spline_location_coef,
+    mport_v2_immig_spline_companion,
+    mport_v2_alteration_specs
+};
+
+actor person
+{
+    double g_bmi4_mport_v2 = g_bmi_phac;
+
+    double mport_v2_spline_age = update_mport_v2_spline_age(lifespan_age, sex);
+    double mport_v2_spline_bmi = update_mport_v2_spline_bmi(g_bmi4_mport_v2, sex);
+
+    event time_mport_v2_mortality_event, mport_v2_mortality_event;
+};
+
+double update_mport_v2_spline_age(int x, sex_t sexe)
+{
+    return cubic_spline((double) x, (double*) mport_v2_age_spline_location_coef[sexe][cubic_spline_knots_location],
+        (double*) mport_v2_age_spline_location_coef[sexe][cubic_spline_knots_coefficient],
+        (double*) mport_v2_age_spline_companion[sexe]);
+}
+
+double update_mport_v2_spline_bmi(double x, sex_t sexe)
+{
+    return cubic_spline((double) x, (double*) mport_v2_bmi_spline_location_coef[sexe][cubic_spline_knots_location],
+        (double*) mport_v2_bmi_spline_location_coef[sexe][cubic_spline_knots_coefficient],
+        (double*) mport_v2_bmi_spline_companion[sexe]);
+}
+
+TIME person::time_mport_v2_mortality_event()
+{
+    TIME time_next;
+
+    double hazard;
+
+    hazard = mport_v2_interaction_coefficients[sex][mport_v2_inter_age_bmi]
+        * (g_bmi4_mport_v2 - mport_v2_bmi_spline_companion[sex][cubic_spline_companion_center_linear_term]);
+    hazard *= (lifespan_age - mport_v2_age_spline_companion[sex][cubic_spline_companion_center_linear_term]);
+
+    hazard = hazard
+        + mport_v2_spline_age
+        + mport_v2_spline_bmi
+        + mg_mport_v2_frozen_spline_offset[sex];
+
+    hazard = hazard + mport_v2_alteration_specs[sex][SPLIT(lifespan_age, from_25_to_90_by_5_t)];
+
+    hazard = exp(hazard);
+
+    if (mport_v2_baseline[sex] >= 0)
+        hazard *= mport_v2_baseline[sex] / 5.0;
+    else
+    {
+        double log_cum_haz_age, log_cum_haz_agep1;
+
+        log_cum_haz_age = PieceLinearLookup(lifespan_age, mport_v2_log_base_cumulative_hazard[sex][coordinates_x],
+            mport_v2_log_base_cumulative_hazard[sex][coordinates_y], SIZE(scatter_plot_elements_t));
+        log_cum_haz_agep1 = PieceLinearLookup(lifespan_age + 1, mport_v2_log_base_cumulative_hazard[sex][coordinates_x],
+            mport_v2_log_base_cumulative_hazard[sex][coordinates_y], SIZE(scatter_plot_elements_t));
+
+        hazard *= (exp(log_cum_haz_agep1) - exp(log_cum_haz_age));
+    }
+
+    time_next = WAIT(-TIME(log(RandUniform(147)) / hazard));
+
+    return time_next;
+}
+
+void person::mport_v2_mortality_event()
+{
+    check_finish(TRUE);
+
+    hook_mport_v2_mortality_event();
+}
+
+double mport_v2_spline_at_centre(const double location_coef[SIZE(cubic_spline_knots_location_coefficient_t)][SIZE(cubic_spline_knots_index_t)], const double companion[SIZE(cubic_spline_companion_t)])
+{
+    return cubic_spline(companion[cubic_spline_companion_center_linear_term],
+        (double*) location_coef[cubic_spline_knots_location],
+        (double*) location_coef[cubic_spline_knots_coefficient],
+        (double*) companion);
+}
+
+void PreSimulation3()
+{
+    for (int sex_looper = 0; sex_looper < SIZE(sex_t); sex_looper++)
+    {
+        mg_mport_v2_frozen_spline_offset[sex_looper] =
+            mport_v2_spline_at_centre(mport_v2_pack_years_spline_location_coef[sex_looper], mport_v2_pack_years_spline_companion[sex_looper])
+            + mport_v2_spline_at_centre(mport_v2_drinks_spline_location_coef[sex_looper], mport_v2_drinks_spline_companion[sex_looper])
+            + mport_v2_spline_at_centre(mport_v2_mets_spline_location_coef[sex_looper], mport_v2_mets_spline_companion[sex_looper])
+            + mport_v2_spline_at_centre(mport_v2_immig_spline_location_coef[sex_looper], mport_v2_immig_spline_companion[sex_looper]);
+    }
+}

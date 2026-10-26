@@ -832,6 +832,9 @@ func apiAdminRoutes(router *vestigo.Router) {
 	router.Post("/api/admin/jobs-pause/:pause", jobsPauseHandler, logRequest)
 	router.Post("/api/admin/jobs-pause/", http.NotFound)
 
+	// POST /api/admin/model/:model/delete
+	router.Post("/api/admin/model/:model/delete", modelDeleteHandler, logRequest)
+
 	// POST /api/admin/db-cleanup/:path
 	// POST /api/admin/db-cleanup/:path/name/:name
 	// POST /api/admin/db-cleanup/:path/name/:name/digest/:digest
@@ -853,8 +856,24 @@ func apiAdminRoutes(router *vestigo.Router) {
 	router.Get("/api/admin/db-cleanup/log/:name", dbCleanupFileLogGetHandler, logRequest)
 	router.Get("/api/admin/db-cleanup/log/", http.NotFound)
 
-	// POST /api/admin/model/:model/delete
-	router.Post("/api/admin/model/:model/delete", modelDeleteHandler, logRequest)
+	// POST /api/admin/copy-model/:path
+	// POST /api/admin/copy-model/:path/lang/:lang
+	router.Post("/api/admin/copy-model/:path", copyModelPathHandler, logRequest)
+	router.Post("/api/admin/copy-model/:path/lang/:lang", copyModelPathHandler, logRequest)
+	router.Post("/api/admin/copy-model/:path/lang", http.NotFound)
+
+	// POST /api/admin/copy-model
+	// POST /api/admin/copy-model/lang/:lang
+	router.Post("/api/admin/copy-model", copyModelPostHandler, logRequest)
+	router.Post("/api/admin/copy-model/lang/:lang", copyModelPostHandler, logRequest)
+	router.Post("/api/admin/copy-model/lang/", http.NotFound)
+	router.Post("/api/admin/copy-model/lang", http.NotFound)
+
+	// GET /api/admin/copy-model/log-all
+	// GET /api/admin/copy-model/log/:name
+	router.Get("/api/admin/copy-model/log-all", copyModelAllLogGetHandler, logRequest)
+	router.Get("/api/admin/copy-model/log/:name", copyModelFileLogGetHandler, logRequest)
+	router.Get("/api/admin/copy-model/log/", http.NotFound)
 
 	// add web-service /admin-all/ routes for global administrative tasks, enabled by -oms.AdminAll run option
 	if theCfg.isAdminAll {

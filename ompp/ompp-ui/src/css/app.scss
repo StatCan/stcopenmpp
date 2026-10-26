@@ -30,7 +30,7 @@ $om-secondary-text-color: #616161; // grey-8
   @extend .om-text-body2;
 }
 .om-text-descr-selected {
-  color: primary;
+  color: $primary;
   @extend .om-text-body2;
 }
 .om-text-medium {
@@ -115,3 +115,135 @@ $om-secondary-text-color: #616161; // grey-8
   @extend .om-p-cell;
   text-align: center;
 }
+
+//
+// color scheme: keep dark blue in the top bar, lighter tones and accent colors elsewhere
+//
+
+// section headers (expansion items): each section has its own accent color:
+// light tint of the accent as background, accent bar on the left, accent icons, dark text
+.om-section-header {
+  --om-acc: #{$om-navy};
+  background-color: $om-surface; // fallback for browsers without color-mix()
+  background-color: color-mix(in srgb, var(--om-acc) 9%, white);
+  color: $om-tonal-text;
+  font-weight: map-get($text-weights, "medium");
+  border-left: 5px solid var(--om-acc);
+  border-bottom: 1px solid #dde3ea;
+  border-bottom: 1px solid color-mix(in srgb, var(--om-acc) 22%, white);
+  transition: background-color 0.15s;
+  &:hover {
+    background-color: color-mix(in srgb, var(--om-acc) 16%, white);
+  }
+  .q-icon,
+  .om-section-icon {
+    color: var(--om-acc);
+  }
+}
+// open section: stronger tint, so it is clear which sections are expanded
+.q-expansion-item--expanded > .q-expansion-item__container > .om-section-header {
+  background-color: color-mix(in srgb, var(--om-acc) 18%, white);
+  border-bottom-color: color-mix(in srgb, var(--om-acc) 40%, white);
+}
+.om-accent-run      { --om-acc: #{$om-c-run}; }
+.om-accent-set      { --om-acc: #{$om-c-set}; }
+.om-accent-param    { --om-acc: #{$om-c-param}; }
+.om-accent-table    { --om-acc: #{$om-c-table}; }
+.om-accent-entity   { --om-acc: #{$om-c-entity}; }
+.om-accent-notes    { --om-acc: #{$om-c-notes}; }
+.om-accent-options  { --om-acc: #{$om-c-options}; }
+.om-accent-advanced { --om-acc: #{$om-c-advanced}; }
+.om-accent-cluster  { --om-acc: #{$om-c-cluster}; }
+
+// page spacing: more room between the top bar and the tabs, and on the left and right of pages
+.q-page-container > .q-page {
+  padding-left: $om-page-gutter !important;
+  padding-right: $om-page-gutter !important;
+}
+.om-model-page {
+  padding-top: $om-page-top;
+}
+
+// toolbar and action buttons inside of pages: light tonal style instead of solid dark blue
+// top bar and dialogs are not inside of q-page and keep solid dark blue
+.q-page .q-btn.bg-primary:not(.om-btn-cta),
+.q-page .q-btn.bg-primary.text-white:not(.om-btn-cta) {
+  background-color: $om-tonal !important;
+  color: $om-tonal-text !important;
+  &:hover {
+    background-color: $om-tonal-hover !important;
+  }
+}
+
+// selected button of toggle groups stays dark blue to be clearly visible
+.q-page .q-btn-toggle .q-btn.bg-primary,
+.q-page .q-btn-toggle .q-btn.bg-primary.text-white {
+  background-color: $om-navy !important;
+  color: white !important;
+}
+
+// outline badges inside light buttons and tabs: use text color instead of white
+.q-page .q-btn.bg-primary .q-badge--outline,
+.om-tab-inactive .q-badge--outline,
+.om-section-header .q-badge--outline {
+  color: inherit;
+}
+
+// show / hide section buttons (Parameters, Output Tables, ...):
+// open section: solid dark blue, closed section: light outline, instead of semi-transparent
+.q-page .q-btn.bg-primary.text-white.tab-switch-button:not(.om-bg-inactive),
+.q-page .q-btn.bg-primary.text-white.section-title-button:not(.om-bg-inactive) {
+  background-color: $om-navy !important;
+  color: white !important;
+}
+.q-page .q-btn.bg-primary.text-white.om-bg-inactive {
+  opacity: 1;
+  background-color: white !important;
+  color: $om-tonal-text !important;
+  box-shadow: inset 0 0 0 1px #c3cedb;
+  &:hover {
+    background-color: $om-surface-hover !important;
+  }
+}
+
+// main action button: Run the Model
+.q-btn.om-btn-cta,
+.q-btn.om-btn-cta.bg-primary {
+  background-color: $om-cta !important;
+  color: white !important;
+  &:hover {
+    background-color: $om-cta-hover !important;
+  }
+}
+
+// model page tabs: active tab dark blue, other tabs light, colored top line and icon by kind of tab
+.om-tab-active {
+  background-color: $om-navy;
+  color: white;
+}
+.om-tab-inactive {
+  background-color: $om-tonal;
+  color: $om-tonal-text;
+  &:hover {
+    background-color: $om-tonal-hover;
+  }
+}
+.om-tab-hdr {
+  border-top: 3px solid transparent;
+}
+@mixin om-tab-kind($c) {
+  border-top-color: $c;
+  &.om-tab-inactive .q-icon:not([title]) { // kind icon, close icon has a title
+    color: $c;
+  }
+}
+.om-tab-kind-run-list      { @include om-tab-kind($om-c-run); }
+.om-tab-kind-set-list      { @include om-tab-kind($om-c-set); }
+.om-tab-kind-new-run       { @include om-tab-kind($om-c-new-run); }
+.om-tab-kind-run-parameter { @include om-tab-kind($om-c-param); }
+.om-tab-kind-set-parameter { @include om-tab-kind($om-c-param); }
+.om-tab-kind-table         { @include om-tab-kind($om-c-table); }
+.om-tab-kind-entity        { @include om-tab-kind($om-c-entity); }
+.om-tab-kind-run-log       { @include om-tab-kind($om-c-log); }
+.om-tab-kind-updown-list   { @include om-tab-kind($om-c-updown); }
+

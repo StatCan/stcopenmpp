@@ -160,7 +160,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"net"
 	"net/http"
@@ -235,7 +234,6 @@ var theCfg = struct {
 	doubleFmt    string            // format to convert float or double value to string
 	encodingName string            // "code page" to convert source file into utf-8, for example: windows-1252
 	env          map[string]string // server config environmemt variables to control UI
-	uiExtra      string            // UI extra configuration from etc/ui.extra.json
 }{
 	htmlDir:      "html",
 	etcDir:       "etc",
@@ -389,23 +387,37 @@ func mainBody(args []string) error {
 
 	// change to OM_ROOT directory
 	theCfg.rootDir = filepath.Clean(runOpts.String(rootDirArgKey)) // OM_ROOT directory
-
-	if theCfg.rootDir != "" && theCfg.rootDir != "." {
+	if theCfg.rootDir == "." {
+		theCfg.rootDir = ""
+	}
+	if theCfg.rootDir != "" {
 		if err := os.Chdir(theCfg.rootDir); err != nil {
 			return helper.ErrorNew("Error: unable to change directory:", err)
 		}
 	}
 	omppLog.New(logOpts) // adjust log options, log path can be relative to root directory
 
-	if theCfg.rootDir != "" && theCfg.rootDir != "." {
+	if theCfg.rootDir != "" {
 		omppLog.Log("Change directory to:  ", theCfg.rootDir)
+	} else {
+		if wd, e := os.Getwd(); e == nil {
+			theCfg.rootDir = wd
+			omppLog.Log("Oms Root directory:   ", theCfg.rootDir)
+		}
+	}
+
+	// etc directory contains configuration files and it is required to run MPI models
+	theCfg.etcDir = runOpts.String(etcDirArgKey)
+	if !helper.IsDirExist(theCfg.etcDir) {
+		omppLog.Log("Warning: configuration files directory not found, it is required to run models on MPI cluster:", filepath.Join(theCfg.etcDir))
+	} else {
+		omppLog.Log("Etc directory:        ", theCfg.etcDir)
 	}
 
 	// model directory required to build initial list of model sqlite files
 	modelDir := filepath.Clean(runOpts.String(modelDirArgKey))
-	if modelDir == "" || modelDir == "." {
-		modelDir = ""
-		return helper.ErrorNew("Error: model directory argument cannot be empty or . dot")
+	if modelDir == "" || !helper.IsDirExist(modelDir) {
+		return helper.ErrorNew("Invalid (or empty) model directory:", modelDir)
 	}
 	omppLog.Log("Models directory:     ", modelDir)
 
@@ -417,7 +429,8 @@ func mainBody(args []string) error {
 		modelLogDir = "" // dot . log directory does not allowed
 	}
 
-	if err := theCatalog.refreshSqlite(modelDir, modelLogDir); err != nil {
+	mlb, err := theCatalog.refreshSqlite(modelDir, modelLogDir)
+	if err != nil {
 		return err
 	}
 
@@ -430,6 +443,15 @@ func mainBody(args []string) error {
 		theCfg.docDir = ""
 	} else {
 		omppLog.Log("Models documentation: ", theCfg.docDir)
+	}
+
+	// models library status
+	if mlb.IsLocal {
+		omppLog.Log("Models Library root:  ", mlb.srcRoot)
+	}
+	if mlb.IsCopy {
+		omppLog.Log("Models Library at:    ", mlb.srcRoot)
+		omppLog.Log("Models Library URL:   ", mlb.Url)
 	}
 
 	// check if it is single user run mode and use of home directory enabled
@@ -529,19 +551,6 @@ func mainBody(args []string) error {
 		} else {
 			omppLog.Log("HTML UI directory:    ", theCfg.htmlDir)
 		}
-	}
-
-	// etc subdirectory required to run MPI models
-	theCfg.etcDir = runOpts.String(etcDirArgKey)
-	if !helper.IsDirExist(theCfg.etcDir) {
-		omppLog.Log("Warning: configuration files directory not found, it is required to run models on MPI cluster:", filepath.Join(theCfg.etcDir))
-	} else {
-		omppLog.Log("Etc directory:        ", theCfg.etcDir)
-	}
-
-	// read UI extra configuration from etc/ui.extra.json
-	if bt, err := os.ReadFile(filepath.Join(theCfg.etcDir, "ui.extra.json")); err == nil {
-		theCfg.uiExtra = string(bt)
 	}
 
 	// check if storage control enabled by presence of etc/disk.ini
@@ -698,7 +707,7 @@ func mainBody(args []string) error {
 	}
 	ta, ok := ln.Addr().(*net.TCPAddr)
 	if !ok {
-		return errors.New("Error: unable to find TCP port of:" + addr)
+		return helper.ErrorNew("Error: unable to find TCP port of:" + addr)
 	}
 	localUrl := "http://localhost:" + strconv.Itoa(ta.Port)
 

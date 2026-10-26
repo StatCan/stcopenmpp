@@ -15,11 +15,14 @@ go install -tags sqlite_math_functions,sqlite_omit_load_extension ./dbget
 
 On Windows you may need to use MinGW or similar tools to make sure there is `gcc` in the `PATH`.
 
-By default only SQLite database supported. 
-If you want to use other database vendors (Microsoft SQL, MySQL, PostgreSQL, IBM DB2, Oracle) then compile dbcopy with ODBC support:
+Only SQLite database tested in production.
+You can also connect other database vendors either through ODBC or through native Go driver: Microsoft SQL, MySQL, PostgreSQL, IBM DB2 (ODBC only), Oracle (ODBC only).
+To enable ODBC support please re-build Go executable(s):
 
 ```
 go install -tags odbc,sqlite_math_functions,sqlite_omit_load_extension ./dbcopy
+go install -tags odbc,sqlite_math_functions,sqlite_omit_load_extension ./dbget
+go install -tags odbc,sqlite_math_functions,sqlite_omit_load_extension ./dboms
 ```
 
 Please visit our [wiki](https://github.com/openmpp/openmpp.github.io/wiki) for more information or e-mail to: _openmpp dot org at gmail dot com_.

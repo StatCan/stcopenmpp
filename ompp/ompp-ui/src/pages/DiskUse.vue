@@ -178,7 +178,7 @@
                 />
             </td>
             <td class="om-p-cell-left mono">{{ fromTimeStamp(cf.LogStamp) }}</td>
-            <td class="om-p-cell-left">{{ cf.DbName }}</td>
+            <td class="om-p-cell-left">{{ cf.BaseName }}</td>
             <td class="om-p-cell-left">{{ cf.LogFileName }}</td>
           </tr>
         </tbody>

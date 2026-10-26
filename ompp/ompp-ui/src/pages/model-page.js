@@ -3,6 +3,7 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { isRestoredStale } from 'src/cache/persist-state'
 import RefreshModel from 'components/RefreshModel.vue'
 import RefreshRun from 'components/RefreshRun.vue'
 import RefreshRunList from 'components/RefreshRunList.vue'
@@ -106,7 +107,11 @@ export default {
 
   watch: {
     digest () { this.initalView() },
-    refreshTickle () { this.initalView() }
+    refreshTickle () { this.initalView() },
+    // remember last active tab of the model
+    activeTabKey (path) {
+      if (path && this.digest) this.dispatchActiveTab({ digest: this.digest, path: path })
+    }
   },
 
   emits: [
@@ -128,7 +133,9 @@ export default {
       'dispatchWorksetNameSelected',
       'dispatchViewSelectedRestore',
       'dispatchParamViewDeleteByModel',
-      'dispatchTabsView'
+      'dispatchTabsView',
+      'dispatchActiveTab',
+      'activeTab'
     ]),
 
     // update page view
@@ -176,7 +183,10 @@ export default {
         }
       }
       if (!this.activeTabKey) {
-        this.$router.push(this.tabItems[0].path)
+        // open last active tab of that model, if it is still exist, else first tab
+        const lastPath = this.activeTab(this.digest)
+        const isLast = !!lastPath && this.tabItems.findIndex((t) => t.path === lastPath) >= 0
+        this.$router.push(isLast ? lastPath : this.tabItems[0].path)
       }
     },
 
@@ -187,10 +197,13 @@ export default {
 
       // on successs update run list and workset list if empty or from other model
       if (isSuccess && (dgst || '') === this.digest) {
-        if (!Mdf.isLength(this.runTextList) || (this.runTextListrunTextList?.[0]?.ModelDigest || '') !== dgst) {
+        const isRunStale = isRestoredStale('run-list', dgst) // run list restored from cache after page reload
+        if (isRunStale || !Mdf.isLength(this.runTextList) || (this.runTextListrunTextList?.[0]?.ModelDigest || '') !== dgst) {
           this.refreshRunListTickle = !this.refreshRunListTickle
         }
-        if (!Mdf.isLength(this.worksetTextList) || (this.worksetTextList?.[0]?.ModelDigest || '') !== dgst) {
+        // workset list restored from cache after page reload: refresh it from the server
+        const isWsStale = isRestoredStale('set-list', dgst)
+        if (isWsStale || !Mdf.isLength(this.worksetTextList) || (this.worksetTextList?.[0]?.ModelDigest || '') !== dgst) {
           this.refreshWsListTickle = !this.refreshWsListTickle
         }
       }

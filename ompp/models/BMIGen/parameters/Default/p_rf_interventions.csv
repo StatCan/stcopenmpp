@@ -1,0 +1,8 @@
+﻿sub_id,Risk_factors,RF_Intervention_Parameters,param_value
+0,Body_Mass_Index,Amount_of_change,0
+0,Body_Mass_Index,Risk_group_lower_cut_off,25
+0,Body_Mass_Index,Risk_group_upper_cut_off,9999
+0,Body_Mass_Index,Floor,0
+0,Body_Mass_Index,Floor_buffer_size,0
+0,Body_Mass_Index,Ceiling,9999
+0,Body_Mass_Index,Ceiling_buffer_size,0

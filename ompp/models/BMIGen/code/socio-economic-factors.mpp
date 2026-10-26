@@ -1,0 +1,265 @@
+﻿//LABEL(socio-economic-factors, EN) Education and income quartile models
+/* NOTE(socio-economic-factors, EN)
+	This file updates the values (categories) of education and income at two year intervals.
+	  It implements regressions of individual education and income evolution observed in the longitudinal
+	  National Population Health Survey (1994-2006).
+	  BEGIN needs to be updated
+	    This module can be deactived by setting p_education_model and p_income_model to FALSE
+
+	  END needs to be updated
+*/
+
+partition age_group_from18_to25_by1_t { 18, 19, 20, 21, 22, 23, 24, 25 };                  //EN Age group
+partition age_group_from25_to80_by5_t { 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80 };  //EN Age group
+range range_12_to_80_t { 12, 80 };
+range range_2001_to_2009_t { 2001, 2009 };
+
+classification cchs_cycle_t { //EN CCHS cycles
+    cchs_cycle_2001,  //EN CCHS cycle 2001
+    cchs_cycle_2003,  //EN CCHS cycle 2003
+    cchs_cycle_2005,  //EN CCHS cycle 2005
+    cchs_cycle_2007,  //EN CCHS cycle 2007
+    cchs_cycle_2009   //EN CCHS cycle 2009
+};
+
+classification ar_order_index_3_t { //EN Auto-regressive model
+    ar3_1,  //EN Auto-regressive model of order 1
+    ar3_2,  //EN Auto-regressive model of order 2
+    ar3_3   //EN Auto-regressive model of order 3
+};
+
+range bootstrap_index_39_t { 0, 39 }; //EN Bootstrap id (0 is Full sample)
+
+parameter_group pg_income { //EN Income coefficients (NPHS)
+    income_quartile_age_group_at_t,
+    income_quartile_calendar_time,
+    income_quartile_drink_cat_at_t,
+    income_quartile_education_at_t,
+    income_quartile_inc_qrt_lt,
+    income_quartile_inc_qrt_l2t,
+    income_quartile_inc_qrt_l3t,
+    income_quartile_intercept,
+    income_quartile_malesex
+};
+
+parameter_group pg_education { //EN Education coefficients (NPHS)
+    education_age_cap25_at_t,
+    education_calendar_time,
+    education_education_lt,
+    education_intercept,
+    education_malesex,
+    education_sp3_age_t_1,
+    education_sp3_age_t_2,
+    education_education_lt_inter_sp3_age_t_1,
+    education_education_lt_inter_sp3_age_t_2,
+    education_distribution_by_cchs_cycle
+};
+
+parameter_group pg_ses_control { //EN Control parameters
+    pg_ses_education_control,
+    pg_ses_income_control
+};
+
+parameter_group pg_ses_education_control { //EN Education
+    p_education_model,
+    educ_bootstrap_index_multiplier,
+    educ_bootstrap_offset,
+    educ_calendar_time_cap,
+    adjust_initial_education_age_range
+};
+
+parameter_group pg_ses_income_control { //EN Income
+    p_income_model,
+    income_max_auto_regressive_order,
+    income_bootstrap_index_multiplier,
+    income_bootstrap_offset,
+    income_calendar_time_cap
+};
+
+parameter_group pg_ses_all { //EN Socio-economic model parameters
+    pg_ses_control,
+    pg_education,
+    pg_income
+};
+
+parameters {
+    /* NOTE(income_max_auto_regressive_order, EN)
+     We have models of different auto-regressive order.
+	   order 1: Income_Q(t) modeled from Income_Q(t-2) and other covariates
+	   order 2: Income_Q(t) modeled from Income_Q(t-2),  Income_Q(t-4) and other covariates
+	   order 3: Income_Q(t) modeled from Income_Q(t-2),  Income_Q(t-4), Income_Q(t-6) and other covariates
+	   etc ...
+	   The first Income_Q generated is from a model of auto-regressive order 1, the second Income_Q from order 2, etc...
+	   At some point, we keep the same model as indicated by "income_max_auto_regressive_order". Default value is 3.
+    */
+    ar_order_index_3_t income_max_auto_regressive_order;  //EN Auto-regressive model to be used as default for income model
+    int income_bootstrap_index_multiplier;                //EN Allow the use of the bootstrap replicates (1) or not (0) for income model
+    int educ_bootstrap_index_multiplier;                  //EN Allow the use of bootstrap replicates (1) or not (0) for education model
+    int income_bootstrap_offset;                          //EN Bootstrap estimate to be used initially for income model
+    int educ_bootstrap_offset;                            //EN Bootstrap estimate to be used initially for education model
+
+    logical p_education_model;  //EN Switch Education model on or off
+    logical p_income_model;     //EN Switch Income model on or off
+
+    double income_calendar_time_cap;  //EN Time cap on calendar trend applied to income model
+    double educ_calendar_time_cap;    //EN Time cap on calendar trend applied to education model
+
+    double education_distribution_by_cchs_cycle[sex_t][cchs_cycle_t][range_12_to_80_t][education_t];
+    model_generated cumrate education_distribution_by_year[sex_t][range_2001_to_2009_t][range_12_to_80_t][education_t];
+    double adjust_initial_education_age_range[c_lower_upper_bounds_t];
+
+    double income_quartile_intercept[bootstrap_index_39_t][ar_order_index_3_t][income_quartile_t]; //EN Intercept
+    double income_quartile_age_group_at_t[bootstrap_index_39_t][ar_order_index_3_t][age_group_from25_to80_by5_t][income_quartile_t]; //EN Age
+    double income_quartile_calendar_time[bootstrap_index_39_t][ar_order_index_3_t][income_quartile_t]; //EN Calendar time
+    double income_quartile_drink_cat_at_t[bootstrap_index_39_t][ar_order_index_3_t][alcohol5_t][income_quartile_t]; //EN Alcohol
+    double income_quartile_education_at_t[bootstrap_index_39_t][ar_order_index_3_t][education_t][income_quartile_t]; //EN Education
+    double income_quartile_inc_qrt_l2t[bootstrap_index_39_t][ar_order_index_3_t][income_quartile_t][income_quartile_t]; //EN Income (4 year lag)
+    double income_quartile_inc_qrt_l3t[bootstrap_index_39_t][ar_order_index_3_t][income_quartile_t][income_quartile_t]; //EN Income (6 year lag)
+    double income_quartile_inc_qrt_lt[bootstrap_index_39_t][ar_order_index_3_t][income_quartile_t][income_quartile_t]; //EN Income (2 year lag)
+    double income_quartile_malesex[bootstrap_index_39_t][ar_order_index_3_t][sex_t][income_quartile_t]; //EN Sex
+
+    double education_intercept[bootstrap_index_39_t][education_t]; //EN Intercept
+    double education_age_cap25_at_t[bootstrap_index_39_t][age_group_from18_to25_by1_t][education_t]; //EN Age
+    double education_calendar_time[bootstrap_index_39_t][education_t]; //EN Calendar time
+    double education_education_lt[bootstrap_index_39_t][education_t][education_t]; //EN Education (2 year lag)
+    double education_sp3_age_t_1[bootstrap_index_39_t][education_t]; //EN Linear spline at age 25
+    double education_sp3_age_t_2[bootstrap_index_39_t][education_t]; //EN Linear spline at age 40
+    double education_malesex[bootstrap_index_39_t][sex_t][education_t]; //EN Sex
+    double education_education_lt_inter_sp3_age_t_1[bootstrap_index_39_t][education_t][education_t]; //EN Interaction : education * (spline at age 25)
+    double education_education_lt_inter_sp3_age_t_2[bootstrap_index_39_t][education_t][education_t]; //EN Interaction : education * (spline at age 40)
+};
+
+actor person
+{
+    education_na_t g_education_na = education_na_t(lifespan_age > 19 ? g_education : educ_na_na);
+    logical education_ever_changed = g_education_startpop != g_education;
+
+    income_quartile_t histo_income[ar_order_index_3_t]; //EN history of Income
+
+    int income_bootstrap_index = { 0 };
+    int educ_bootstrap_index = { 0 };
+
+    logical due_for_biennial_update = (truncated_age >= lifespan_age_start + years_to_first_update) && ((truncated_age - (lifespan_age_start + years_to_first_update)) % 2) == 0; //EN Person due for update based on truncated_age
+
+    void update_income();
+    void update_education();
+    void initialize_education();
+
+    hook update_education, risk_factors_updates_empty_hub, 10;
+    hook update_income, risk_factors_updates_empty_hub, 20;
+};
+
+void person::initialize_education()
+{
+    if (calendar_year > 2001
+        && truncated_age >= (int) adjust_initial_education_age_range[bound_lower]
+        && truncated_age <= (int) adjust_initial_education_age_range[bound_upper])
+    {
+        int n_year;
+        int n_age;
+        int n_educ;
+
+        n_age = RANGE_POS(range_12_to_80_t, truncated_age);
+        n_year = RANGE_POS(range_2001_to_2009_t, calendar_year);
+
+        Lookup_education_distribution_by_year(RandUniform(92), sex, n_year, n_age, &n_educ);
+        g_education = (education_t) n_educ;
+    }
+
+    hook_initialize_education();
+}
+
+void person::update_income()
+{
+    if ((truncated_age - lifespan_age_start) == years_to_first_update)
+    {
+        histo_income[0] = g_income_quartile;
+        histo_income[1] = g_income_quartile;
+        histo_income[2] = g_income_quartile;
+
+        income_bootstrap_index = income_bootstrap_offset + income_bootstrap_index_multiplier* (GetCaseSample() % (SIZE(bootstrap_index_39_t) - income_bootstrap_offset));
+    }
+
+    if (p_income_model && due_for_biennial_update)
+    {
+        int ar_order = { 0 };
+        ar_order = (truncated_age - (lifespan_age_start + years_to_first_update)) / 2;
+        ar_order = min(ar_order, (int) income_max_auto_regressive_order);
+        ar_order = min(ar_order, SIZE(ar_order_index_3_t) - 1);
+
+        double p_next[SIZE(income_quartile_t)];
+
+        for (int i = 0; i < SIZE(income_quartile_t); i++)
+        {
+            p_next[i] =
+                income_quartile_intercept[income_bootstrap_index][ar_order][i]
+                + income_quartile_calendar_time[income_bootstrap_index][ar_order][i]* (min(time, income_calendar_time_cap) - 1992.0)
+                + income_quartile_age_group_at_t[income_bootstrap_index][ar_order][SPLIT(truncated_age, age_group_from25_to80_by5_t)][i]
+                + income_quartile_drink_cat_at_t[income_bootstrap_index][ar_order][g_alcohol5][i]
+                + income_quartile_education_at_t[income_bootstrap_index][ar_order][g_education][i]
+                + income_quartile_malesex[income_bootstrap_index][ar_order][sex][i]
+                + income_quartile_inc_qrt_lt[income_bootstrap_index][ar_order][histo_income[0]][i]
+                + income_quartile_inc_qrt_l2t[income_bootstrap_index][ar_order][histo_income[1]][i]
+                + income_quartile_inc_qrt_l3t[income_bootstrap_index][ar_order][histo_income[2]][i];
+            p_next[i] = exp(p_next[i]);
+        }
+        g_income_quartile = (income_quartile_t) pps_sampling(RandUniform(77), p_next, SIZE(income_quartile_t));
+
+        for (int i = SIZE(ar_order_index_3_t) - 1; i > 0; i--)
+            histo_income[i] = histo_income[i - 1];
+        histo_income[0] = g_income_quartile;
+    }
+
+    hook_update_income();
+}
+
+void person::update_education()
+{
+    if ((truncated_age - lifespan_age_start) == years_to_first_update)
+    {
+        educ_bootstrap_index = educ_bootstrap_offset + educ_bootstrap_index_multiplier* (GetCaseSample() % (SIZE(bootstrap_index_39_t) - educ_bootstrap_offset));
+    }
+
+    if (p_education_model && due_for_biennial_update && (truncated_age >= 17 && truncated_age <= 69))
+    {
+        double p_next[SIZE(education_t)];
+
+        for (int i = 0; i < SIZE(education_t); i++)
+        {
+            p_next[i] =
+                education_intercept[educ_bootstrap_index][i]
+                + education_calendar_time[educ_bootstrap_index][i]* (min(time, educ_calendar_time_cap) - 1992.0)
+                + education_age_cap25_at_t[educ_bootstrap_index][SPLIT(truncated_age, age_group_from18_to25_by1_t)][i]
+                + education_sp3_age_t_1[educ_bootstrap_index][i]* (max(truncated_age, 25.0) - 25.0)
+                + education_sp3_age_t_2[educ_bootstrap_index][i]* (max(truncated_age, 40.0) - 40.0)
+                + education_education_lt[educ_bootstrap_index][g_education][i]
+                + education_education_lt_inter_sp3_age_t_1[educ_bootstrap_index][g_education][i] * (max(truncated_age, 25.0) - 25.0)
+                + education_education_lt_inter_sp3_age_t_2[educ_bootstrap_index][g_education][i] * (max(truncated_age, 40.0) - 40.0)
+                + education_malesex[educ_bootstrap_index][sex][i];
+
+            p_next[i] = exp(p_next[i]);
+        }
+        g_education = (education_t) pps_sampling(RandUniform(78), p_next, SIZE(education_t));
+    }
+
+    hook_update_education();
+}
+
+void PreSimulation4()
+{
+    for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+        for (int n_educ = 0; n_educ < SIZE(education_t); n_educ++)
+            for (int n_age = 0; n_age < SIZE(range_12_to_80_t); n_age++)
+                for (int cycle = 0; cycle < SIZE(cchs_cycle_t); cycle++)
+                {
+                    education_distribution_by_year[n_sex][RANGE_POS(range_2001_to_2009_t, 2001 + 2*cycle)][n_age][n_educ] =
+                        education_distribution_by_cchs_cycle[n_sex][cycle][n_age][n_educ];
+
+                    if (cycle)
+                    {
+                        education_distribution_by_year[n_sex][RANGE_POS(range_2001_to_2009_t, 2001 + 2*cycle - 1)][n_age][n_educ] = (
+                            education_distribution_by_cchs_cycle[n_sex][cycle][n_age][n_educ] +
+                            education_distribution_by_cchs_cycle[n_sex][cycle - 1][n_age][n_educ]) / 2.0;
+                    }
+                }
+}

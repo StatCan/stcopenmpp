@@ -1,6 +1,129 @@
-# `stcopenmpp` 0.2 Release Notes/Notes de Mise à Jour
+# `stcopenmpp` 0.3 Release Notes/Notes de Mise à Jour
 
 <details open>
+
+<summary>English</summary>
+
+### Upstream sync
+
+Selectively merged upstream changes from [OpenM++ v1.17.14](https://github.com/openmpp/main/releases/tag/v1.17.14) (2026-09-01) 
+and [OpenM++ v1.17.15](https://github.com/openmpp/main/releases/tag/v1.17.15) (2026-10-01).
+
+### Docker changes
+
+See [ompp/ompp-docker/README.md](ompp/ompp-docker/README.md) for updates to `stcopenmpp` 
+build dependencies.
+
+### Core changes
+
+- **Output tables:** `null` values have been replaced with `""` values.
+- **Microdata table:** the primary key on `run_id` and `entity_key` has been removed from the
+  microdata data table in the model database. This change is relevant when model users are
+  outputting microdata in database mode. An alert will appear in the UI notifying model users 
+  of this change: "The microdata table no longer has a primary key on run_id and entity_key. 
+  If duplicate rows are written to the microdata table, the model run will not fail. 
+  But duplicate rows may be present and results may be double counted."
+
+### UI changes
+
+- **Caching:** new caching system remembers various UI states as set by the model user. 
+  This system can be cleared and turned on/off from `Settings` > `Browser cache`.
+- **Modals:** model parameters on the `Input Scenarios` tab now open in modals (pop-up windows) 
+  instead of tabs.
+- **Checkbox lists:** on the `Run the Model` tab, the two output table lists have been
+  replaced with a single checkbox list. Likewise for the microdata entity lists.
+- **Microdata output toggle:** under the `Advanced Run Options` accordion on the 
+  `Run the Model` tab, a microdata output toggle has been added so that model users
+  can decide whether to output microdata to the database or to a text file (.csv format).
+ - **Styling:** the color scheme has been updated, new icons have been added and more space
+  has been placed between selected elements.
+  
+### Toy models
+
+A new toy model, `BMIGen`, now ships with `stcopenmpp`. This model is a microsimulation
+model of body mass index and mortality. `BMIGen` is a reduced version of Statistic Canada's
+[Population Health Model (`POHEM`)](https://www.statcan.gc.ca/en/microsimulation/index#pohem), 
+which is a microsimulation model of select chronic diseases and risk factors in which 
+the individual is the unit of analysis.
+
+### Bundled plugin updates
+
+- **auditr**: upgraded to v0.33.
+- **openmpp:** upgraded to v0.0.2.9000.
+- **inst_ubuntu:** initial version added. This plugin provides shell scripts for installing 
+  Statistic Canada's OpenM++ distribution (`stcopenmpp`) on Ubuntu, along with the compiler 
+  toolchain and build tools it needs.
+  
+### Documentation
+ 
+A new [Building from source](docs/building-from-source) guide has been added to the `docs` folder with 
+instructions on how to build `stcopenmpp` manually from source on both Linux and Windows.
+
+</details>
+
+<details open>
+
+<summary>Français</summary>
+
+### Synchronisation en amont
+
+Fusion sélective des modifications en amont de [OpenM++ v1.17.14](https://github.com/openmpp/main/releases/tag/v1.17.14) (01/09/2026) 
+et [OpenM++ v1.17.15](https://github.com/openmpp/main/releases/tag/v1.17.15) (01/10/2026).
+
+### Changements de Docker
+
+Voir [ompp/ompp-docker/README.md](ompp/ompp-docker/README.md) pour les mises à jour des dépendances de compilation de `stcopenmpp`.
+
+### Changements fondamentaux
+
+- **Tables de sortie :** les valeurs `null` ont été remplacées par des valeurs `""`.
+- **Tableau de microdonnées :** la clé primaire sur `run_id` et `entity_key` a été supprimée de la section
+Tableau de données de microdonnées dans la base de données modèle. Ce changement est pertinent lorsque les utilisateurs du modèle sont
+Sortie de microdonnées en mode base de données. Une alerte apparaîtra dans l’interface utilisateur pour informer les utilisateurs du modèle.
+de ce changement : « Le tableau de microdonnées n’a plus de clé primaire sur run_id et entity_key. Si des lignes en double sont écrites dans 
+la table de microdonnées, l’exécution du modèle n’échouera pas. Mais des lignes en double peuvent être présentes et les résultats peuvent être 
+comptés en double. »
+
+### Modifications de l’interface utilisateur
+
+- **Mise en cache :** Le nouveau système de mise en cache se souvient des différents états de l’interface utilisateur tels que définis 
+  par l’utilisateur du modèle. Ce système peut être effacé et activé/désactivé à partir de `Règlage` > `Cache du navigateur`.
+- **Modaux** : les paramètres du modèle sur l’onglet 'Scénarios d’entrée' sont désormais ouverts dans les modaux (fenêtres contextuelles) 
+  au lieu d’onglets.
+- **Listes de cases à cocher :** dans l’onglet `Exécutez le modèle`, les deux listes de tableaux de résultats ont été
+  remplacé par une seule liste de cases à cocher. Cela vaut égalment pour les listes d’entités de microdonnées.
+- **Basculement de sortie de microdonnées :** sous l’accordéon `Options d'exécution avancées` sur l’onglet `Exécutez le modèle`, une 
+  bascule de sortie de microdonnées a été ajoutée pour que les utilisateurs du modèle puissent choisir d'exporter les microdonnées 
+  dans la base de données ou dans un fichier texte (format .csv).
+ - **Style :** la palette de couleurs a été mise à jour, de nouvelles icônes ont été ajoutées et plus d’espace
+  a été placé entre les éléments sélectionnés.
+  
+### Modèles de jouets
+
+Un nouveau modèle de jouet, `BMIGen`, est désormais livré avec `stcopenmpp`. Ce modèle est modèle de microsimulation portant sur 
+l’indice de masse corporelle et la mortalité. `BMIGen` est une version réduite de la 
+[Modèle de santé de la population (`POHEM`)](https://www.statcan.gc.ca/en/microsimulation/index#pohem), 
+qui est un modèle de microsimulation portant sur certaines des maladies chroniques et des certains facteurs de risque dans lequel 
+l’individu est l’unité d’analyse.
+
+### Mises à jour des plugins groupés
+
+- **auditr** : mis à niveau vers la v0.33.
+- **openmpp :** mis à niveau vers la v0.0.2.9000.
+- **inst_ubuntu :** version initiale ajoutée. Ce plugin fournit des scripts shell pour installer la distribution 
+  OpenM++ de Statistique Canada (`stcopenmpp`) sur Ubuntu, ainsi que le compilateur   la chaîne d’outils et les outils de construction 
+  dont il a besoin.
+  
+### Documentation
+ 
+Un nouveau guide [Building from source](docs/building-from-source) a été ajouté au dossier `docs` avec 
+des instructions comment compiler manuellement `stcopenmpp` à partir des sources sous Linux et sous Windows.
+
+</details>
+
+# `stcopenmpp` 0.2 Release Notes/Notes de Mise à Jour
+
+<details close>
 
 <summary>English</summary>
 
@@ -25,7 +148,7 @@
 
 </details>
 
-<details open>
+<details close>
 
 <summary>Français</summary>
 

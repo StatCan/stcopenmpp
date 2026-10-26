@@ -1,0 +1,11 @@
+﻿sub_id,Sex,BMI_categories,param_value
+0,Female,Underweight,0.174296126
+0,Female,Normal_weight,-0.097212881
+0,Female,Overweight,-0.203233987
+0,Female,Obese,-0.142070189
+0,Female,Not_applicable_age_18,0
+0,Male,Underweight,0.276726881
+0,Male,Normal_weight,-0.638671608
+0,Male,Overweight,-0.322039545
+0,Male,Obese,-0.608809726
+0,Male,Not_applicable_age_18,0

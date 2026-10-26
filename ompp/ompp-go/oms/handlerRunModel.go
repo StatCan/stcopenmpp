@@ -125,11 +125,12 @@ func runModelHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Location", "/api/model/"+job.ModelDigest+"/run/"+rStamp)
 	jsonResponse(w, r,
 		&RunState{
-			ModelName:      job.ModelName,
-			ModelDigest:    job.ModelDigest,
-			RunStamp:       rStamp,
-			SubmitStamp:    submitStamp,
-			UpdateDateTime: helper.MakeDateTime(tNow),
+			RunStatePub: RunStatePub{ModelName: job.ModelName,
+				ModelDigest:    job.ModelDigest,
+				RunStamp:       rStamp,
+				SubmitStamp:    submitStamp,
+				UpdateDateTime: helper.MakeDateTime(tNow),
+			},
 		})
 }
 

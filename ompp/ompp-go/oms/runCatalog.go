@@ -189,24 +189,29 @@ type historyJobFile struct {
 	RunTitle    string // model run title: run name, task run name or workset name
 }
 
+// Public portion of model run state.
+type RunStatePub struct {
+	ModelName      string // model name
+	ModelDigest    string // model digest
+	RunStamp       string // model run stamp, may be auto-generated as timestamp
+	SubmitStamp    string // submission timestamp
+	IsFinal        bool   // final state, model run completed
+	UpdateDateTime string // last update date-time
+	RunName        string // if not empty then run name
+	TaskRunName    string // if not empty then task run name
+	IsLog          bool   // if true then use run log file
+	LogFileName    string // log file name
+}
+
 // RunState is model run state.
 // Model run console output redirected to log file: modelName.YYYY_MM_DD_hh_mm_ss_SSS.console.log
 type RunState struct {
-	ModelName      string    // model name
-	ModelDigest    string    // model digest
-	RunStamp       string    // model run stamp, may be auto-generated as timestamp
-	SubmitStamp    string    // submission timestamp
-	IsFinal        bool      // final state, model completed
-	UpdateDateTime string    // last update date-time
-	RunName        string    // if not empty then run name
-	TaskRunName    string    // if not empty then task run name
-	IsLog          bool      // if true then use run log file
-	LogFileName    string    // log file name
-	logPath        string    // log file path: models/log/modelName.RunStamp.console.log
-	pid            int       // process id
-	cmdPath        string    // executable path
-	killC          chan bool // channel to kill model process
-	isKill         bool      // if true then process killed
+	RunStatePub
+	logPath string    // log file path: models/log/modelName.RunStamp.console.log
+	pid     int       // process id
+	cmdPath string    // executable path
+	killC   chan bool // channel to kill model process
+	isKill  bool      // if true then process killed
 }
 
 // runStateLog is model run state and log file lines.

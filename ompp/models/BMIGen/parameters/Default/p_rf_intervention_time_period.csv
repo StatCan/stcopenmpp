@@ -1,0 +1,4 @@
+﻿sub_id,Risk_factors,rf_intervention_time_parameter_t,param_value
+0,Body_Mass_Index,Intervention_start_year,0
+0,Body_Mass_Index,Intervention_end_year,9999
+0,Body_Mass_Index,Max_interventions_per_person,9999

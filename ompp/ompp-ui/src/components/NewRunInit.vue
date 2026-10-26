@@ -34,7 +34,8 @@ export default {
         mpiNpCount: 0,
         mpiUseJobs: false,
         mpiOnRoot: false,
-        mpiTmpl: ''
+        mpiTmpl: '',
+        microdataMode: 'db'
       })
     },
     tablesRetain: { type: Array, default: () => [] },
@@ -121,7 +122,17 @@ export default {
 
       rv.Tables = Array.from(this.tablesRetain)
 
-      if (this.serverConfig.AllowMicrodata) rv.Microdata = this.microdataOpts
+      if (this.serverConfig.AllowMicrodata) {
+        rv.Microdata = this.microdataOpts
+
+        // microdata text mode: also write microdata into CSV files, if INI-file is used then microdata output is defined by INI-file
+        // oms server accepts entity attributes only as run request Microdata (not as Microdata.EntityName run options)
+        // and it always writes such microdata into database, Microdata.ToCsv run option adds CSV files output
+        const isIni = this.runOpts.useIni && (this.runOpts.iniName || '') !== ''
+        const isMd = !!this.microdataOpts?.IsToDb && Array.isArray(this.microdataOpts?.Entity) && this.microdataOpts.Entity.length > 0
+
+        if (this.runOpts.microdataMode === 'csv' && !isIni && isMd) rv.Opts['Microdata.ToCsv'] = 'true'
+      }
 
       if ((this.runOpts.mpiNpCount || 0) <= 0) {
         if (this.runOpts.runTmpl) rv.Template = this.runOpts.runTmpl

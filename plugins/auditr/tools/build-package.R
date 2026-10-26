@@ -1,11 +1,8 @@
-# Create package structure
-usethis::create_package(path = getwd())
-
 # Create DESCRIPTION file
 usethis::use_description(
   fields = list(
     Package = "auditr",
-    Version = "0.31",
+    Version = "0.33",
     Title = "R6 methods for auditing two releases of stcopenmpp",
     Description = "This package provides R6 methods for auditing two releases of stcopenmpp.",
     `Authors@R` = c(
@@ -23,8 +20,10 @@ usethis::use_description(
 # Add dependencies to DESCRIPTION file
 usethis::use_package("archive", "Imports")
 usethis::use_package("cli", "Imports")
+usethis::use_package("config", "Suggests")
 usethis::use_package("DBI", "Imports")
 usethis::use_package("dplyr", "Imports")
+usethis::use_package("fs", "Imports")
 usethis::use_package("jsonlite", "Imports")
 usethis::use_package("kableExtra", "Suggests")
 usethis::use_package("knitr", "Imports")
@@ -46,14 +45,8 @@ usethis::use_namespace()
 # Create license
 usethis::use_mit_license()
 
-# Create tests folder
-usethis::use_testthat()
-
-# Create tests
-usethis::use_test("")
-
-# Run tests
-devtools::test()
+# Lint package
+lintr::lint_package()
 
 # Update NAMESPACE and create documentation
 devtools::check_man()

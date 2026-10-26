@@ -43,6 +43,11 @@ export const emptyConfig = () => {
       IsLogDirEnabled: false,
       LastTimeStamp: ''
     },
+    ModelLib: {
+      Url: '',
+      IsCopy: true,
+      IsLocal: false
+    },
     RunCatalog: {
       RunTemplates: [],
       DefaultMpiTemplate: 'mpi.ModelRun.template.txt',
@@ -59,7 +64,7 @@ export const isConfig = (c) => {
     !c.hasOwnProperty('AllowDownload') || !c.hasOwnProperty('AllowUpload') ||
     !c.hasOwnProperty('AllowFiles') || !c.hasOwnProperty('AllowMicrodata') ||
     !c.hasOwnProperty('DiskUse') || !c.hasOwnProperty('Env') ||
-    !c.hasOwnProperty('UiExtra') || !c.hasOwnProperty('ModelCatalog') || !c.hasOwnProperty('RunCatalog')) {
+    !c.hasOwnProperty('UiExtra') || !c.hasOwnProperty('ModelCatalog') || !c.hasOwnProperty('ModelLib') || !c.hasOwnProperty('RunCatalog')) {
     return false
   }
   if (!c.hasOwnProperty('MpiMaxThreads') || typeof c.MpiMaxThreads !== typeof 1) return false
@@ -68,6 +73,7 @@ export const isConfig = (c) => {
   if (!c.hasOwnProperty('LocalRes') || !c.LocalRes.hasOwnProperty('Cpu') || typeof c.LocalRes.Cpu !== typeof 1) return false
 
   if (!c.ModelCatalog.hasOwnProperty('ModelDir') || !c.ModelCatalog.hasOwnProperty('ModelLogDir') || !c.ModelCatalog.hasOwnProperty('IsLogDirEnabled')) return false
+  if (!c.ModelLib.hasOwnProperty('Url') || !c.ModelLib.hasOwnProperty('IsCopy') || !c.ModelLib.hasOwnProperty('IsLocal')) return false
   if (!c.RunCatalog.hasOwnProperty('RunTemplates') || !c.RunCatalog.hasOwnProperty('DefaultMpiTemplate') ||
     !c.RunCatalog.hasOwnProperty('MpiTemplates') || !c.RunCatalog.hasOwnProperty('Presets')) {
     return false

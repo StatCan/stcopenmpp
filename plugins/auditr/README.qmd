@@ -12,13 +12,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Getting started
+## Overview
 
 `auditr` is a cross-platform (Windows and Linux) R package that provides R6 methods for auditing two releases of <a href="https://github.com/statcan/stcopenmpp" target="_blank">stcopenmpp</a>. The methods in this package allow users to download and extract two releases of `stcopenmpp`, clone and checkout a model from any point in its history, compile the model asynchronously in both releases, run the model asynchronously in both releases and generate an audit report in Quarto (`.html`). 
 
 `auditr` interacts with model `.exe` files directly and relies on SQL queries to interact with model `.sqlite` files. This design eliminates the need for the OpenM++ web service and, consequently, reduces time significantly when doing model runs. `auditr` also cleans up model databases immediately after model runs and audits to avoid any unexpected incursions on storage capacity in the case of models with large and/or numerous output tables.
 
-### Loading auditr
+## Installation
 
 ```{r, eval = FALSE}
 # Set working directory
@@ -28,26 +28,28 @@ setwd("path/to/auditr")
 devtools::load_all()
 ```
 
-### Using auditr
+## Usage
+
+### Auditing two releases with one model
 
 ```{r, eval = FALSE}
-# Initialize auditr R6 class
-audit <- auditr$new(
+# Initialize release_audit R6 class
+audit <- release_audit$new(
   releases = c(
-    "https://github.com/openmpp/main/releases/download/v1.17.9/openmpp_win_20250601.zip",
-    "https://github.com/openmpp/main/releases/download/v1.17.10/openmpp_win_20250923.zip"
+    "https://github.com/StatCan/stcopenmpp/releases/download/v0.2/stcopenmpp-windows-v0.2-gh-release.zip",
+    "https://github.com/StatCan/stcopenmpp/releases/download/v0.3/stcopenmpp-windows-v0.3-gh-release.zip"
   ),
   labels = c(
-    "OpenM++ v1.17.9",
-    "OpenM++ v1.17.10"
+    "stcopenmpp v0.2",
+    "stcopenmpp v0.3"
   ),
   sln = "RiskPaths-ompp.sln",
   mode = "release",
   bit = 64,
   git_url = "https://github.com/openmpp/main.git",
-  git_commit = "v1.17.9",
-  vs_cmd = "c:/program files/microsoft visual studio/18/professional/common7/tools/vsdevcmd.bat",
-  platform_toolset = "v145"
+  git_commit = "v1.17.15",
+  vs_cmd = find_vsdevcmd(),
+  platform_toolset = find_msvc_toolset()
 )
 
 # Download and extract releases
@@ -108,7 +110,7 @@ readRDS("inst/rds/demo-audit.rds") |>
   print(n = Inf, width = Inf)
 ```
 
-#### Model run meta
+##### Model run meta
 
 ```{r, eval = FALSE}
 # View model run meta
@@ -138,7 +140,7 @@ readRDS("inst/rds/demo-model-runs.rds") |>
   print(n = Inf, width = Inf)
 ```
 
-#### Output tables
+##### Output tables
 
 ```{r, eval = FALSE}
 # View list of non-hidden output tables
@@ -167,4 +169,3 @@ readRDS("inst/rds/demo-output-tables.rds")  |>
   ) |> 
   print(n = Inf, width = Inf)
 ```
-

@@ -136,7 +136,7 @@ func Open(dbConnStr, dbDriver string) (Dbc, error) {
 	}
 
 	if facet == DefaultFacet {
-		if dbDriver != "odbc" {
+		if dbDriver != "odbc" || !IsOdbcSupported {
 			return Dbc{Dbf: DefaultFacet}, helper.ErrorNew("Invalid database driver name", dbDriver)
 		}
 

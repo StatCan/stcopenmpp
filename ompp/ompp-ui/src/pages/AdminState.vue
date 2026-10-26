@@ -67,7 +67,7 @@
       v-model="isShowServers"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header"
       >
       <template v-slot:header>
         <q-item-section>
@@ -128,7 +128,7 @@
       v-model="isShowOmsActive"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header"
       class="q-my-sm"
       >
       <template v-slot:header>
@@ -199,7 +199,7 @@
       v-model="isShowActiveRuns"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header"
       class="q-my-sm"
       >
       <template v-slot:header>
@@ -418,7 +418,7 @@
       v-model="isShowQueueRuns"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header"
       class="q-my-sm"
       >
       <template v-slot:header>
@@ -593,7 +593,7 @@
       v-model="isShowPastRuns"
       switch-toggle-side
       expand-separator
-      header-class="bg-primary text-white"
+      header-class="om-section-header"
       class="q-my-sm"
       >
       <template v-slot:header>

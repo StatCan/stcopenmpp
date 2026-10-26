@@ -535,6 +535,23 @@
       />
     <q-separator vertical inset spaced="sm" color="secondary" />
 
+    <table class="om-text-secondary">
+      <tbody>
+        <tr class="cell-count-item"
+          :title="$t('Visible values count:') + ' ' + visibleCellCount.toLocaleString()"
+          >
+          <td class="q-py-none"><q-icon name="check" size="xs" class="cell-count-icon rounded-borders"></q-icon></td>
+          <td class="text-right text-caption q-py-none">{{ (visibleCellCount).toLocaleString() }}</td>
+        </tr>
+        <tr class="cell-count-item"
+          :title="$t('Filtered out values:') + ' ' + filterCellCount.toLocaleString()"
+          >
+          <td class="q-py-none"><q-icon name="mdi-close" size="xs" class="cell-count-icon rounded-borders"></q-icon></td>
+          <td class="text-right text-caption q-py-none">{{ (filterCellCount).toLocaleString() }}</td>
+        </tr>
+      </tbody>
+    </table>
+
     <template v-if="isPages">
       <q-btn
         @click="isShowPageControls = !isShowPageControls"
@@ -542,7 +559,7 @@
         :outline="isShowPageControls"
         dense
         :class="!isShowPageControls ? 'bar-button-on' : 'bar-button-off'"
-        class="col-auto rounded-borders q-mr-xs"
+        class="col-auto rounded-borders q-mx-xs"
         icon="mdi-unfold-more-vertical"
         :title="isShowPageControls ? $t('Hide pagination controls') : $t('Show pagination controls')"
         />
@@ -568,7 +585,8 @@
         <div
           class="page-start-item rounded-borders om-text-secondary q-px-xs q-py-xs q-mr-xs"
           :title="$t('Position')"
-          >{{ (!!pageStart && typeof pageStart === typeof 1) ? pageStart.toLocaleString() : pageStart }}</div>
+          >{{ pageStartLabel }}</div>
+
         <q-btn
           @click="onNextPage"
           :disable="isLastPage"
@@ -589,9 +607,10 @@
           />
         <q-select
           :model-value="pageSize"
-           @update:model-value="onPageSize"
-          :options="[10, 40, 100, 200, 400, 1000, 2000, 4000, 10000, 20000, 0]"
-          :option-label="(val) => (!val || typeof val !== typeof 1 || val <= 0) ? $t('All') : val.toLocaleString()"
+          @update:model-value="onPageSize"
+          :options="pageSizeOpts"
+          emit-value
+          map-options
           outlined
           options-dense
           dense
@@ -601,8 +620,9 @@
           >
         </q-select>
       </template>
-      <q-separator vertical inset spaced="sm" color="secondary" />
     </template>
+
+    <q-separator vertical inset spaced="sm" color="secondary" />
 
     <q-btn
       @click="doExpressionPage"
@@ -1334,6 +1354,7 @@
         :refreshDimsTickle="ctrl.isPvDimsTickle"
         :refreshRangeTickle="ctrl.isPvRangeTickle"
         @pv-key-pos="onPvKeyPos"
+        @pv-size="onPvSize"
         >
       </pv-table>
 
@@ -1402,6 +1423,13 @@
     background: rgba(0, 0, 0, 0.1);
     min-width: 2rem;
     text-align: center;
+  }
+  .cell-count-item {
+    min-width: 2rem;
+    text-align: center;
+  }
+  .cell-count-icon {
+    background: rgba(0, 0, 0, 0.1);
   }
 
   .drag-area {

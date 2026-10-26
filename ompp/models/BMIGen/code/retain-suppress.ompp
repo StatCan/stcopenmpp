@@ -1,0 +1,9 @@
+﻿//LABEL(retain-suppress, EN) Retain and Suppress statements for BMIGen
+
+#include "omc/omSimulation.h"
+
+#if 0
+parameters_suppress
+p_start_pop
+;
+#endif

@@ -3308,7 +3308,7 @@ border: 0;
 <div id="quarto-sidebar-toc-left" class="sidebar toc-left">
   <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="99">
     <h2 id="toc-title">Table of contents</h2>
-
+   
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#audit-status" id="toc-audit-status" class="nav-link" data-scroll-target="#audit-status">Audit status</a></li>
@@ -3326,24 +3326,24 @@ border: 0;
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <div class="quarto-title-block"><div><h1 class="title">Audit of the <code>RiskPaths</code> microsimulation model</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
-<p class="subtitle lead">OpenM++ v1.17.9 vs. OpenM++ v1.17.10 in Windows (10 x64 build 22631)</p>
+<p class="subtitle lead">stcopenmpp v0.1 vs. stcopenmpp v0.2 in Windows (10 x64 build 22631)</p>
 </div>
 
 
 
 <div class="quarto-title-meta column-page-right">
 
-
+    
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">Jan 26, 2026</p>
+      <p class="date">Jun 26, 2026</p>
     </div>
   </div>
-
-
+  
+    
   </div>
-
+  
 
 
 </header>
@@ -3365,7 +3365,7 @@ border: 0;
 </div>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The RiskPaths<sub>v1.17.9</sub> (<a href="https://github.com/openmpp/main" target="_blank">2890d0e3…</a>) microsimulation model was audited in <a href="https://github.com/openmpp/main/releases/download/v1.17.9/openmpp_win_20250601.zip" target="_blank">OpenM++ v1.17.9</a> and <a href="https://github.com/openmpp/main/releases/download/v1.17.10/openmpp_win_20250923.zip" target="_blank">OpenM++ v1.17.10</a>. The model was compiled and run in each release simultaneously. The values of 7 non-hidden output tables were compared. Total model run time was 0.80 minutes.</p>
+<p>The RiskPaths<sub>v1.17.13</sub> (<a href="https://github.com/openmpp/main" target="_blank">8322972b…</a>) microsimulation model was audited in <a href="https://github.com/StatCan/stcopenmpp/releases/download/v0.1/stcopenmpp-windows-v0.1-gh-release.zip" target="_blank">stcopenmpp v0.1</a> and <a href="https://github.com/StatCan/stcopenmpp/releases/download/v0.2/stcopenmpp-windows-v0.2-gh-release.zip" target="_blank">stcopenmpp v0.2</a>. The model was compiled and run in each release simultaneously. The values of 7 non-hidden output tables were compared. Total model run time was 0.70 minutes.</p>
 </section>
 <section id="audit-status" class="level2">
 <h2 class="anchored" data-anchor-id="audit-status">Audit status</h2>
@@ -3379,43 +3379,38 @@ border: 0;
 # Load auditr
 library(auditr)
 
-# Initialize audit R6 object
 # Initialize auditr R6 class
 audit &lt;- auditr$new(
   releases = c(
-    &quot;https://github.com/openmpp/main/releases/download/v1.17.9/openmpp_win_20250601.zip&quot;,
-    &quot;https://github.com/openmpp/main/releases/download/v1.17.10/openmpp_win_20250923.zip&quot;
+    &quot;https://github.com/StatCan/stcopenmpp/releases/download/v0.1/stcopenmpp-windows-v0.1-gh-release.zip&quot;,
+    &quot;https://github.com/StatCan/stcopenmpp/releases/download/v0.2/stcopenmpp-windows-v0.2-gh-release.zip&quot;
   ),
   labels = c(
-    &quot;OpenM++ v1.17.9&quot;,
-    &quot;OpenM++ v1.17.10&quot;
+    &quot;stcopenmpp v0.1&quot;,
+    &quot;stcopenmpp v0.2&quot;
   ),
   sln = &quot;RiskPaths-ompp.sln&quot;,
   mode = &quot;release&quot;,
   bit = 64,
   git_url = &quot;https://github.com/openmpp/main.git&quot;,
-  git_commit = &quot;v1.17.9&quot;,
-  vs_cmd = &quot;c:/program files/microsoft visual studio/2022/enterprise/common7/tools/vsdevcmd.bat&quot;
+  git_commit = &quot;v1.17.13&quot;,
+  vs_cmd = &quot;c:/program files/microsoft visual studio/18/professional/common7/tools/vsdevcmd.bat&quot;,
+  platform_toolset = &quot;v145&quot;
 )
 
-# Download/extract releases
 # Download and extract releases
 audit$load_releases()
 
-# Rebuild OpenM++ Library<br>audit$rebuild_openm()<br>
-# Clone model repo
+<div style="margin-top: -1.5rem;"></div>
 # Download model
 audit$load_model()
 
-# Compile models
 # Compile model in both releases asynchronously
 audit$build_models()
 
-# Get list of non-hidden output tables
 # Get list of model&#39;s non-hidden output tables
 audit$load_output_tables()
 
-# Do model runs
 # Initiate model runs and audit output tables in both releases asynchronously
 audit$run_models(
   cases = 1e6,
@@ -3424,7 +3419,7 @@ audit$run_models(
   tables_per_run = 5
 )
 
-# Render HTML report in Quarto
+# Generate Quarto report
 audit$load_report()
 </code>
 <button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre>
@@ -3577,37 +3572,37 @@ Differences
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;">0</td>
+<td style="text-align: right;">101</td>
 <td style="text-align: left;">T01_LifeExpectancy</td>
 <td style="text-align: left;">Life Expectancy</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">102</td>
 <td style="text-align: left;">T02_TotalPopulationByYear</td>
 <td style="text-align: left;">Life table</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">103</td>
 <td style="text-align: left;">T03_FertilityByAge</td>
 <td style="text-align: left;">Age-specific fertility</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">3</td>
+<td style="text-align: right;">104</td>
 <td style="text-align: left;">T04_FertilityRatesByAgeGroup</td>
 <td style="text-align: left;">Fertility rates by age group</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">4</td>
+<td style="text-align: right;">105</td>
 <td style="text-align: left;">T05_CohortFertility</td>
 <td style="text-align: left;">Cohort fertility</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">5</td>
+<td style="text-align: right;">106</td>
 <td style="text-align: left;">T06_BirthsByUnion</td>
 <td style="text-align: left;">Pregnancies by union status &amp; order</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">6</td>
+<td style="text-align: right;">107</td>
 <td style="text-align: left;">T07_FirstUnionFormation</td>
 <td style="text-align: left;">First union formation</td>
 </tr>
@@ -3626,8 +3621,8 @@ Differences
 <thead>
 <tr class="header">
 <th style="text-align: left;" data-quarto-table-cell-role="th">Variable</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">OpenM++ v1.17.9</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">OpenM++ v1.17.10</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">stcopenmpp v0.1</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">stcopenmpp v0.2</th>
 </tr>
 </thead>
 <tbody>
@@ -3642,37 +3637,47 @@ Differences
 <td style="text-align: left;">102</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">model_id</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">101</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">run_stamp</td>
-<td style="text-align: left;">20260126083744688</td>
-<td style="text-align: left;">20260126083745372</td>
+<td style="text-align: left;">20260626105730944</td>
+<td style="text-align: left;">20260626105731048</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">run_digest</td>
-<td style="text-align: left;">828e0b4ddf2a83051ad44d1c67441ebf</td>
-<td style="text-align: left;">7032002bf830d7f0e6b53a762871c66d</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">create_dt</td>
-<td style="text-align: left;">2026-01-26 08:37:44.709</td>
-<td style="text-align: left;">2026-01-26 08:37:45.39</td>
+<td style="text-align: left;">4602a77c0d4594457abd73d696a73667</td>
+<td style="text-align: left;">2d0710739c9bf2a235a2fa2584aee3dc</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">update_dt</td>
-<td style="text-align: left;">2026-01-26 08:38:05.812</td>
-<td style="text-align: left;">2026-01-26 08:38:06.222</td>
+<td style="text-align: left;">create_dt</td>
+<td style="text-align: left;">2026-06-26 10:57:30.963</td>
+<td style="text-align: left;">2026-06-26 10:57:31.067</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">update_dt</td>
+<td style="text-align: left;">2026-06-26 10:57:53.592</td>
+<td style="text-align: left;">2026-06-26 10:57:53.282</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">cases</td>
 <td style="text-align: left;">1000000</td>
 <td style="text-align: left;">1000000</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">sub_count</td>
 <td style="text-align: left;">4</td>
 <td style="text-align: left;">4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">sub_started</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">sub_restart</td>
 <td style="text-align: left;">4</td>
 <td style="text-align: left;">4</td>
 </tr>
@@ -3693,23 +3698,13 @@ Differences
 </tr>
 <tr class="odd">
 <td style="text-align: left;">release_path</td>
-<td style="text-align: left;">C:/Users/.../auditr/auditr-downloads/openmpp_win_20250601</td>
-<td style="text-align: left;">C:/Users/.../auditr/auditr-downloads/openmpp_win_20250923</td>
+<td style="text-align: left;">auditr/auditr-downloads/stcopenmpp-windows-v0.1-gh-release</td>
+<td style="text-align: left;">auditr/auditr-downloads/stcopenmpp-windows-v0.2-gh-release</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">output_tables</td>
 <td style="text-align: left;">T01_LifeExpectancy, T02_TotalPopulationByYear, T03_FertilityByAge, T04_FertilityRatesByAgeGroup, T05_CohortFertility</td>
 <td style="text-align: left;">T01_LifeExpectancy, T02_TotalPopulationByYear, T03_FertilityByAge, T04_FertilityRatesByAgeGroup, T05_CohortFertility</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">descr</td>
-<td style="text-align: left;">Default</td>
-<td style="text-align: left;">Default</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lang_code</td>
-<td style="text-align: left;">EN</td>
-<td style="text-align: left;">EN</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">run_number</td>
@@ -3722,37 +3717,47 @@ Differences
 <td style="text-align: left;">102</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">model_id</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">101</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">run_stamp</td>
-<td style="text-align: left;">20260126083811612</td>
-<td style="text-align: left;">20260126083811616</td>
+<td style="text-align: left;">20260626105754448</td>
+<td style="text-align: left;">20260626105754460</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">run_digest</td>
-<td style="text-align: left;">a2aaba2f09ec018416eb155dffc84d2b</td>
-<td style="text-align: left;">8610d6750f623f02b6a8292374f1da94</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">create_dt</td>
-<td style="text-align: left;">2026-01-26 08:38:11.633</td>
-<td style="text-align: left;">2026-01-26 08:38:11.638</td>
+<td style="text-align: left;">3644b498f3e7831b86c74e6f90e5ad99</td>
+<td style="text-align: left;">8d8323705bd43d04d142be9db7205262</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">update_dt</td>
-<td style="text-align: left;">2026-01-26 08:38:29.916</td>
-<td style="text-align: left;">2026-01-26 08:38:32.576</td>
+<td style="text-align: left;">create_dt</td>
+<td style="text-align: left;">2026-06-26 10:57:54.469</td>
+<td style="text-align: left;">2026-06-26 10:57:54.480</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">update_dt</td>
+<td style="text-align: left;">2026-06-26 10:58:11.969</td>
+<td style="text-align: left;">2026-06-26 10:58:12.869</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">cases</td>
 <td style="text-align: left;">1000000</td>
 <td style="text-align: left;">1000000</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">sub_count</td>
 <td style="text-align: left;">4</td>
 <td style="text-align: left;">4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">sub_started</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">sub_restart</td>
 <td style="text-align: left;">4</td>
 <td style="text-align: left;">4</td>
 </tr>
@@ -3773,23 +3778,13 @@ Differences
 </tr>
 <tr class="odd">
 <td style="text-align: left;">release_path</td>
-<td style="text-align: left;">C:/Users/.../auditr/auditr-downloads/openmpp_win_20250601</td>
-<td style="text-align: left;">C:/Users/.../auditr/auditr-downloads/openmpp_win_20250923</td>
+<td style="text-align: left;">auditr/auditr-downloads/stcopenmpp-windows-v0.1-gh-release</td>
+<td style="text-align: left;">auditr/auditr-downloads/stcopenmpp-windows-v0.2-gh-release</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">output_tables</td>
 <td style="text-align: left;">T06_BirthsByUnion, T07_FirstUnionFormation</td>
 <td style="text-align: left;">T06_BirthsByUnion, T07_FirstUnionFormation</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">descr</td>
-<td style="text-align: left;">Default</td>
-<td style="text-align: left;">Default</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lang_code</td>
-<td style="text-align: left;">EN</td>
-<td style="text-align: left;">EN</td>
 </tr>
 </tbody>
 </table>
@@ -3822,7 +3817,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       toggleBodyColorMode(bsSheetEl);
     }
   }
-  toggleBodyColorPrimary();
+  toggleBodyColorPrimary();  
   const icon = "";
   const anchorJS = new window.AnchorJS();
   anchorJS.options = {
@@ -3832,7 +3827,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   anchorJS.add('.anchored');
   const isCodeAnnotation = (el) => {
     for (const clz of el.classList) {
-      if (clz.startsWith('code-annotation-')) {
+      if (clz.startsWith('code-annotation-')) {                     
         return true;
       }
     }
@@ -3852,11 +3847,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       button.setAttribute("data-bs-toggle", "tooltip");
       button.setAttribute("data-bs-placement", "left");
       button.setAttribute("data-bs-title", "Copied!");
-      tooltip = new bootstrap.Tooltip(button,
-        { trigger: "manual",
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
           customClass: "code-copy-button-tooltip",
           offset: [0, -8]});
-      tooltip.show();
+      tooltip.show();    
     }
     setTimeout(function() {
       if (tooltip) {
@@ -3931,7 +3926,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         if (codeDiv.classList.contains(fromCls)) {
           codeDiv.classList.remove(fromCls);
           codeDiv.classList.add(toCls);
-        }
+        } 
       }
       return false;
     }
@@ -3985,7 +3980,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     if (onUntriggerFn) {
       config.onUntrigger = onUntriggerFn;
     }
-    window.tippy(el, config);
+    window.tippy(el, config); 
   }
   const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
   for (var i=0; i<noterefs.length; i++) {
@@ -4061,7 +4056,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     tippyHover(xref, undefined, function(instance) {
       instance.disable();
       let url = xref.getAttribute('href');
-      let hash = undefined;
+      let hash = undefined; 
       if (url.startsWith('#')) {
         hash = url;
       } else {
@@ -4089,7 +4084,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             if (note !== null) {
               const html = processXRef(id, note);
               instance.setContent(html);
-            }
+            } 
           }).finally(() => {
             instance.enable();
             instance.show();
@@ -4113,7 +4108,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             }
             const html = processXRef(null, note);
             instance.setContent(html);
-          }
+          } 
         }).finally(() => {
           instance.enable();
           instance.show();
@@ -4153,7 +4148,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             height = bottom - top;
           }
           if (top !== null && height !== null && parent !== null) {
-            // cook up a div (if necessary) and position it
+            // cook up a div (if necessary) and position it 
             let div = window.document.getElementById("code-annotation-line-highlight");
             if (div === null) {
               div = window.document.createElement("div");
@@ -4319,7 +4314,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="fu">## Introduction</span></span>
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE, results = &quot;asis&quot;}</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, eval = TRUE, echo = FALSE, results = &quot;asis&quot;}</span></span>
 <span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="in"># Get model version</span></span>
 <span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="in">if(isTRUE(params$args$git_commit != params$args$git_commit_hash)) {</span></span>
 <span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="in">  model &lt;- paste0(params$args$model, &quot;&lt;sub&gt;&quot;, params$args$git_commit, &quot;&lt;/sub&gt; (&lt;a href=&#39;&quot;, tools::file_path_sans_ext(params$args$git_url), &quot;&#39; target=&#39;_blank&#39;&gt;&quot;, stringr::str_trunc(string = params$args$git_commit_hash, width = 11), &quot;&lt;/a&gt;)&quot;)</span></span>
@@ -4393,9 +4388,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a><span class="fu">## Audit status</span></span>
 <span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE, results = &quot;asis&quot;}</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, eval = TRUE, echo = FALSE, results = &quot;asis&quot;}</span></span>
 <span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a><span class="in"># Render audit status</span></span>
-<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a><span class="in">if(params$results$audit |&gt; dplyr::as_tibble() |&gt; dplyr::select(diff_count) |&gt; unlist() |&gt; unname() |&gt; as.numeric() |&gt; sum() == 0) {</span></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a><span class="in">if(params$results$audit |&gt; dplyr::as_tibble() |&gt; dplyr::select(diff_count) |&gt; unlist() |&gt; unname() |&gt; as.numeric() |&gt; sum(na.rm = TRUE) == 0) {</span></span>
 <span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a><span class="in">  cat(&quot;Passed: &amp;#x2705;&quot;)</span></span>
 <span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a><span class="in">} else {</span></span>
 <span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a><span class="in">  cat(&quot;Failed: &amp;#x274c;&quot;)</span></span>
@@ -4413,92 +4408,85 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Load auditr&#39;,</span></span>
 <span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;library(auditr)&#39;,</span></span>
 <span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Initialize audit R6 object&#39;,</span></span>
-<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$new),</span></span>
-<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Download/extract releases&#39;,</span></span>
-<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_releases),</span></span>
-<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a><span class="in">  ifelse(</span></span>
-<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="in">    test = &quot;rebuild_openm&quot; %in% names(params$code),</span></span>
-<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a><span class="in">    yes = paste0(&#39;# Rebuild OpenM++ Library&lt;br&gt;&#39;, htmltools::htmlEscape(params$code$rebuild_openm), &#39;&lt;br&gt;&#39;),</span></span>
-<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="in">    no = NULL</span></span>
-<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a><span class="in">  ),</span></span>
-<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Clone model repo&#39;,</span></span>
-<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_model),</span></span>
-<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Compile models&#39;,</span></span>
-<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$build_models),</span></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$new),</span></span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_releases),</span></span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a><span class="in">  ifelse(</span></span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a><span class="in">    test = &quot;rebuild_openm&quot; %in% names(params$code),</span></span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a><span class="in">    yes = paste0(&#39;# Rebuild OpenM++ Library&lt;br&gt;&#39;, htmltools::htmlEscape(params$code$rebuild_openm), &#39;&lt;br&gt;&#39;),</span></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="in">    &quot;&lt;div style=&#39;margin-top: -1.5rem;&#39;&gt;&lt;/div&gt;&quot;</span></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a><span class="in">  ),</span></span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_model),</span></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$build_models),</span></span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_output_tables),</span></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$run_models),</span></span>
 <span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Get list of non-hidden output tables&#39;,</span></span>
-<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_output_tables),</span></span>
-<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Do model runs&#39;,</span></span>
-<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$run_models),</span></span>
-<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&#39;,</span></span>
-<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;# Render HTML report in Quarto&#39;,</span></span>
-<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_report),</span></span>
-<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/code&gt;&#39;,</span></span>
-<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/pre&gt;&#39;,</span></span>
-<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/div&gt;&#39;,</span></span>
-<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/div&gt;&#39;, </span></span>
-<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="in">  sep = &quot;\n&quot;</span></span>
-<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
-<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a><span class="fu">## Audit</span></span>
-<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
-<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
-<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
-<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$audit |&gt;</span></span>
-<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble() |&gt;</span></span>
-<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::rename(</span></span>
-<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a><span class="in">      Table = table,</span></span>
-<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a><span class="in">      Size = table_size,</span></span>
-<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a><span class="in">      Expressions = expression_count,</span></span>
-<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a><span class="in">      Dimensions = dimension_count,</span></span>
-<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a><span class="in">      Values = value_count,</span></span>
-<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="in">      Differences = diff_count,</span></span>
-<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a><span class="in">      Percent = diff_percent,</span></span>
-<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="in">      Min = min_diff,</span></span>
-<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a><span class="in">      Max = max_diff,</span></span>
-<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="in">      Median = median_diff</span></span>
-<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a><span class="in">    ),</span></span>
-<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a><span class="in">  align = c(rep(x = &quot;l&quot;, times = 2), rep(x = &quot;c&quot;, times = 8))</span></span>
-<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
-<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;)) |&gt;</span></span>
-<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::add_header_above(</span></span>
-<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a><span class="in">    header = c(</span></span>
-<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot; &quot; = 2,</span></span>
-<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot;Counts&quot; = 4,</span></span>
-<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot;Differences&quot; = 4</span></span>
-<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a><span class="in">    )</span></span>
-<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="in">  )</span></span>
-<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a><span class="fu">## Output table meta</span></span>
-<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
-<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
-<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
-<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$output_tables |&gt;</span></span>
-<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble() |&gt;</span></span>
-<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::rename(ID = id, Table = name, Label = label)</span></span>
-<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
-<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;))</span></span>
-<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a><span class="fu">## Model run meta</span></span>
-<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
-<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
-<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
-<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$model_runs |&gt;</span></span>
-<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble()</span></span>
-<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
-<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;))</span></span>
-<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a><span class="in">  htmltools::htmlEscape(params$code$load_report),</span></span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/code&gt;&#39;,</span></span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/pre&gt;&#39;,</span></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/div&gt;&#39;,</span></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a><span class="in">  &#39;&lt;/div&gt;&#39;, </span></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a><span class="in">  sep = &quot;\n&quot;</span></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="fu">## Audit</span></span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$audit |&gt;</span></span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble() |&gt;</span></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::rename(</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a><span class="in">      Table = table,</span></span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a><span class="in">      Size = table_size,</span></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="in">      Expressions = expression_count,</span></span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a><span class="in">      Dimensions = dimension_count,</span></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a><span class="in">      Values = value_count,</span></span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a><span class="in">      Differences = diff_count,</span></span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a><span class="in">      Percent = diff_percent,</span></span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a><span class="in">      Min = min_diff,</span></span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a><span class="in">      Max = max_diff,</span></span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a><span class="in">      Median = median_diff</span></span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a><span class="in">    ),</span></span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a><span class="in">  align = c(rep(x = &quot;l&quot;, times = 2), rep(x = &quot;c&quot;, times = 8))</span></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;)) |&gt;</span></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::add_header_above(</span></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a><span class="in">    header = c(</span></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot; &quot; = 2,</span></span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot;Counts&quot; = 4,</span></span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a><span class="in">      &quot;Differences&quot; = 4</span></span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a><span class="in">    )</span></span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="in">  )</span></span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a><span class="fu">## Output table meta</span></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$output_tables |&gt;</span></span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble() |&gt;</span></span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::rename(ID = id, Table = name, Label = label)</span></span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;))</span></span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a><span class="fu">## Model run meta</span></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, echo = FALSE}</span></span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="in"># Render table</span></span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="in">kableExtra::kbl(</span></span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a><span class="in">  x = params$results$model_runs |&gt;</span></span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="in">    dplyr::as_tibble()</span></span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a><span class="in">) |&gt;</span></span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a><span class="in">  kableExtra::kable_styling(bootstrap_options = c(&quot;hover&quot;, &quot;striped&quot;))</span></span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

@@ -8,13 +8,13 @@
 #     .
 
 # Declare base image
-FROM mcr.microsoft.com/windows/servercore:20H2
+FROM mcr.microsoft.com/windows/servercore:ltsc2025
 
 # Ensure C:\Temp exists
 RUN mkdir C:\Temp
 
 # Download 7-Zip
-ADD https://www.7-zip.org/a/7z2601-x64.exe C:\Temp\7z_setup.exe
+ADD https://www.7-zip.org/a/7z2604-x64.exe C:\Temp\7z_setup.exe
 
 # Install 7-Zip
 RUN C:\Temp\7z_setup.exe /S /D=C:\7zip\ && `
@@ -56,7 +56,7 @@ RUN msiexec /i C:\Temp\msmpisdk.msi /q /norestart /L* C:\Temp\msmpisdk.log && `
   del C:\Temp\msmpisdk.log
 
 # Download Git
-RUN curl -L "https://github.com/git-for-windows/git/releases/download/v2.52.0.windows.1/Git-2.52.0-64-bit.exe" `
+RUN curl -L "https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.3/Git-2.55.0.3-64-bit.exe" `
   --output C:\Temp\git_setup.exe
   
 # Install Git
@@ -78,7 +78,7 @@ RUN C:\7zip\7z.exe x -o%BISON_FLEX_DIR% C:\Temp\winflexbison.zip && `
 ENV SQLITE_EXE_DIR=C:\sqlite
 
 # Download SQLite command line tools for Windows
-RUN curl -L "https://www.sqlite.org/2025/sqlite-tools-win-x64-3510100.zip" `
+RUN curl -L "https://sqlite.org/2026/sqlite-tools-win-x64-3530300.zip" `
   --output C:\Temp\sqlite_bin.zip
 
 # Install SQLite command line tools for Windows
@@ -86,7 +86,7 @@ RUN C:\7zip\7z.exe e -o%SQLITE_EXE_DIR% C:\Temp\sqlite_bin.zip && `
   del C:\Temp\sqlite_bin.zip
 
 # Download Go
-RUN curl -L "https://go.dev/dl/go1.26.1.windows-amd64.zip" `
+RUN curl -L "https://go.dev/dl/go1.26.5.windows-amd64.zip" `
   --output C:\Temp\go_setup.zip
   
 # Install Go
@@ -102,12 +102,12 @@ RUN C:\7zip\7z.exe x -oC:\ C:\Temp\mingw_setup.exe && `
   del C:\Temp\mingw_setup.exe
   
 # Download Node.js
-RUN curl -L "https://nodejs.org/dist/v24.14.1/node-v24.14.1-win-x64.zip" `
+RUN curl -L "https://nodejs.org/dist/v24.18.0/node-v24.18.0-win-x64.zip" `
   --output C:\Temp\node.zip
 
 # Install Node.js
 RUN C:\7zip\7z.exe x -oC:\ C:\Temp\node.zip && `
-  rename C:\node-v24.14.1-win-x64 node && `
+  rename C:\node-v24.18.0-win-x64 node && `
   del C:\Temp\node.zip
 
 # Download Perl portal release (x86)
@@ -120,7 +120,7 @@ RUN C:\7zip\7z.exe x -oC:\perl32 C:\Temp\perl32_setup.zip && `
   del C:\Temp\perl32_setup.zip
 
 # Download Perl portal release (x64)
-RUN curl -L "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip" `
+RUN curl -L "https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_54221_64bit/strawberry-perl-5.42.2.1-64bit-portable.zip" `
   --output C:\Temp\perl64_setup.zip
   
 # Install Perl portable release (x64)

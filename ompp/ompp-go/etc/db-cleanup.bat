@@ -10,13 +10,13 @@ REM   delete old database file modelName-sqlite.db
 REM   rename modelName.db into modelName.sqlite
 REM
 REM Environment:
-REM   OM_ROOT   - openM++ root folder, default: ..
+REM   OMPP_ROOT   common openM++ root folder, default: ..
 REM               must exist:
-REM                 OM_ROOT\bin\dbcopy.exe
-REM                 OM_ROOT\bin\sqlite3.exe
-REM                 OM_ROOT\sql\create_db.sql
-REM                 OM_ROOT\sql\insert_default.sql
-REM                 OM_ROOT\sql\sqlite\optional_meta_views_sqlite.sql
+REM                OMPP_ROOT\bin\dbcopy.exe
+REM                OMPP_ROOT\bin\sqlite3.exe
+REM                OMPP_ROOT\sql\create_db.sql
+REM                OMPP_ROOT\sql\insert_default.sql
+REM                OMPP_ROOT\sql\sqlite\optional_meta_views_sqlite.sql
 REM Arguments:
 REM        %1 - path to model database
 REM        %2 - (optional) model name   (or: no-name), default: database file name
@@ -37,10 +37,10 @@ IF not [%4] == [] (
   IF not "%4" == "" set msg_lang=%4
 )
 
-IF "%OM_ROOT%" == "" (
-  set "OM_ROOT=%~dp0.."
+IF "%OMPP_ROOT%" == "" (
+  set "OMPP_ROOT=%~dp0.."
 )
-@echo OM_ROOT  : %OM_ROOT%
+@echo OMPP_ROOT  : %OMPP_ROOT%
 
 REM check if database file exist
 
@@ -106,37 +106,37 @@ IF DEFINED msg_lang (
 
 
 
-REM check OM_ROOT, following must exist:
-REM   OM_ROOT/bin/dbcopy.exe
-REM   OM_ROOT/bin/sqlite3.exe
-REM   OM_ROOT/sql/create_db.sql
-REM   OM_ROOT/sql/insert_default.sql
-REM   OM_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
+REM check OMPP_ROOT, following must exist:
+REM   OMPP_ROOT/bin/dbcopy.exe
+REM   OMPP_ROOT/bin/sqlite3.exe
+REM   OMPP_ROOT/sql/create_db.sql
+REM   OMPP_ROOT/sql/insert_default.sql
+REM   OMPP_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
 
-set dbcopy_exe=%OM_ROOT%\bin\dbcopy.exe
+set dbcopy_exe=%OMPP_ROOT%\bin\dbcopy.exe
 
 IF not exist "%dbcopy_exe%" (
   @echo "ERROR: dbcopy utility not found (or invalid): %dbcopy_exe%"
   EXIT 1
 )
 
-set SQLITE_EXE=%OM_ROOT%\bin\sqlite3.exe
+set SQLITE_EXE=%OMPP_ROOT%\bin\sqlite3.exe
 
 IF not exist "%SQLITE_EXE%" (
   @echo "ERROR: sqlite3 utility not found: %SQLITE_EXE%"
   EXIT 1
 )
 
-IF not exist "%OM_ROOT%\sql\create_db.sql" (
-  @echo "ERROR: SQL script not found: %OM_ROOT%\sql\create_db.sql"
+IF not exist "%OMPP_ROOT%\sql\create_db.sql" (
+  @echo "ERROR: SQL script not found: %OMPP_ROOT%\sql\create_db.sql"
   EXIT 1
 )
-IF not exist "%OM_ROOT%\sql\insert_default.sql" (
-  @echo "ERROR: SQL script not found: %OM_ROOT%\sql\insert_default.sql"
+IF not exist "%OMPP_ROOT%\sql\insert_default.sql" (
+  @echo "ERROR: SQL script not found: %OMPP_ROOT%\sql\insert_default.sql"
   EXIT 1
 )
-IF not exist "%OM_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql" (
-  @echo "ERROR: SQL script not found: %OM_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql"
+IF not exist "%OMPP_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql" (
+  @echo "ERROR: SQL script not found: %OMPP_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql"
   EXIT 1
 )
 
@@ -169,9 +169,9 @@ if exist "%new_db%" (
   EXIT 1
 )
 
-call :do_sql_script "%new_db%" "%OM_ROOT%\sql\create_db.sql"
-call :do_sql_script "%new_db%" "%OM_ROOT%\sql\insert_default.sql"
-call :do_sql_script "%new_db%" "%OM_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql"
+call :do_sql_script "%new_db%" "%OMPP_ROOT%\sql\create_db.sql"
+call :do_sql_script "%new_db%" "%OMPP_ROOT%\sql\insert_default.sql"
+call :do_sql_script "%new_db%" "%OMPP_ROOT%\sql\sqlite\optional_meta_views_sqlite.sql"
 
 REM prepare source database:
 REM report run status and lock all worksets

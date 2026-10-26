@@ -1,0 +1,5 @@
+﻿sub_id,Risk_factors,Risk_Factor_Switches,param_value
+0,Body_Mass_Index,Baseline_Evolution,true
+0,Body_Mass_Index,Relative_Change,true
+0,Body_Mass_Index,Apply_Change_to_Value,true
+0,Body_Mass_Index,Allow_re_intervention,true

@@ -4,13 +4,13 @@ REM environmemnt variables:
 REM
 REM  set OM_MSG_USE=MPI                 (default: EMPTY)
 REM  set OM_DATE_STAMP=20220817         (default: current date as YYYYMMDD)
-REM  set MODEL_DIRS=modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjX,OzProjGenX,SM1
+REM  set MODEL_DIRS=BMIGen,modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjX,OzProjGenX,SM1
 
 setlocal enabledelayedexpansion
 
 if /I "%OM_MSG_USE%"=="MPI" set OM_SFX_MPI=_mpi
 
-set OM_BLD_MDLS=modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjX,OzProjGenX,SM1
+set OM_BLD_MDLS=BMIGen,modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjX,OzProjGenX,SM1
 if defined MODEL_DIRS       set OM_BLD_MDLS=%MODEL_DIRS%
 
 REM push into ompp root and make log directory if not exist
@@ -170,6 +170,7 @@ call :do_copy_files %DEPLOY_DIR%\etc\mpi.ModelRun.template.txt   ompp-go\etc\mpi
 call :do_copy_files %DEPLOY_DIR%\etc\mpi.ModelDebug.template.txt ompp-go\etc\mpi-Windows.ModelDebug.template.txt
 call :do_copy_files %DEPLOY_DIR%\etc\disk.ini                    ompp-go\etc\disk_win.ini
 call :do_copy_files %DEPLOY_DIR%\etc\                            ompp-go\etc\db-cleanup.bat
+call :do_copy_files %DEPLOY_DIR%\etc\                            ompp-go\etc\model-copy.bat
 call :do_copy_files %DEPLOY_DIR%\etc\                            ompp-go\etc\ui.extra.json
 call :do_copy_files %DEPLOY_DIR%\etc\                            ompp-go\etc\run-options.any_model.1.Use_Defaults.json
 
@@ -206,7 +207,11 @@ for %%m in (%OM_BLD_MDLS%) do (
   
     call :rcopy_files    %DEPLOY_DIR%\models\%%m        models\%%m          "*.*"
     call :rcopy_sub_dirs %DEPLOY_DIR%\models\%%m        models\%%m          "code,parameters"
-    call :rcopy_files    %DEPLOY_DIR%\models\%%m\modgen models\%%m\modgen   "*.vcxproj *.vcxproj.filters *.props"
+    	
+    if exist models\%%m\modgen\ (
+      call :rcopy_files  %DEPLOY_DIR%\models\%%m\modgen models\%%m\modgen   "*.vcxproj *.vcxproj.filters *.props"
+    )
+	
     call :do_copy_files  %DEPLOY_DIR%\models\sql        models\%%m\ompp\src\*.sql
 
     if exist models\%%m\microdata (
@@ -235,7 +240,7 @@ for %%m in (%OM_BLD_MDLS%) do (
   call :rcopy_files ^
     %DEPLOY_DIR%\models\bin ^
     models\%%m\ompp\bin ^
-    "!MDL_DIR!%OM_SFX_MPI%.exe !MDL_DIR!.sqlite !MDL_DIR!*.ini"
+    "!MDL_DIR!%OM_SFX_MPI%.exe !MDL_DIR!.sqlite !MDL_DIR!*.ini !MDL_DIR!*.publish.lst"
 
   call :rcopy_files %DEPLOY_DIR%\models\log models\%%m\ompp\bin "!MDL_DIR!.*.log"
 )

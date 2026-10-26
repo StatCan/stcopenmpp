@@ -90,7 +90,8 @@ export default {
     notesEditable: { type: Boolean, default: false },
     isHideSave: { type: Boolean, default: false },
     isHideCancel: { type: Boolean, default: false },
-    langCode: { type: String, default: 'en-US' }
+    langCode: { type: String, default: 'en-US' },
+    isSyncProps: { type: Boolean, default: false } // if true then update editor on description or notes props change and emit update-descr-note on edit
   },
 
   data () {
@@ -101,9 +102,27 @@ export default {
     }
   },
 
-  emits: ['save-note', 'cancel-note'],
+  emits: ['save-note', 'cancel-note', 'update-descr-note'],
+
+  watch: {
+    // if sync enabled then use new value of description or notes props, for example restored from cache
+    theDescr (d) {
+      if (this.isSyncProps && this.descriptionEditable && (d || '') !== (this.descrEdit || '')) this.descrEdit = d || ''
+    },
+    theNote (n) {
+      if (this.isSyncProps && this.notesEditable && (n || '') !== (this.noteEdit || '')) this.noteEdit = n || ''
+    },
+    // if sync enabled then notify parent about description or notes changes
+    descrEdit () { this.emitDescrNote() },
+    noteEdit () { this.emitDescrNote() }
+  },
 
   methods: {
+    emitDescrNote () {
+      if (!this.isSyncProps) return
+      this.$emit('update-descr-note', this.theKey, this.descriptionEditable ? this.descrEdit : this.theDescr, this.notesEditable ? this.noteEdit : this.theNote)
+    },
+
     // cleanup description input
     onDescrBlur (e) {
       this.descrEdit = Mdf.cleanTextInput(this.descrEdit || '')

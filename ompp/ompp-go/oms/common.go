@@ -263,6 +263,34 @@ func fileCopy(isLog bool, src, dst string) bool {
 	return true
 }
 
+// return true if child path is under the parent directory, also it return false if parent path is the same as child.
+func isChildOfDir(child, parent string) (bool, error) {
+
+	if parent == "" || parent == "." || parent == ".." {
+		return false, nil
+	}
+	if child == "" || child == "." || child == ".." || child == "/" || child == "\\" || child == "C:\\" || child == "C:" || child == "C:." {
+		return false, nil
+	}
+
+	ar, er := filepath.Abs(parent)
+	if er != nil {
+		return false, er
+	}
+	ac, es := filepath.Abs(child)
+	if es != nil {
+		return false, es
+	}
+	if ar == ac {
+		return false, nil // child is the same as parent
+	}
+	p, ep := filepath.Rel(ar, ac)
+	if ep != nil {
+		return false, ep
+	}
+	return p != ".." && !strings.HasPrefix(p, ".."+string(filepath.Separator)), nil
+}
+
 // append to message to log file
 func writeToCmdLog(logPath string, isDoTimestamp bool, msg ...string) bool {
 

@@ -6,6 +6,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"slices"
 	"strconv"
 )
 
@@ -206,9 +207,29 @@ func ReadOutputTableTo(dbConn *sql.DB, modelDef *ModelMeta, layout *ReadTableLay
 		return nil, errors.New("double type not found, output table " + table.Name)
 	}
 
+	// make value filters e.g.: ( (expr_value < 2 AND expr_id = 1) OR expr_id IN (2, 3) )
+	idColName := ""
+	if !layout.IsAccum {
+		idColName = "expr_id"
+	} else {
+		if !layout.IsAllAccum {
+			idColName = "acc_id"
+		}
+	}
+	orIds := []int{}
+	orFlt := ""
+
+	appendToOr := func(flt string, id int) { // append value filter to OR list
+		if orFlt != "" {
+			orFlt = orFlt + " OR "
+		}
+		orFlt += flt
+		orIds = append(orIds, id)
+	}
+
 	for k := range layout.Filter {
 
-		// filter by expression value or accumulator value or find dimension index by name
+		// filter by expression value or accumulator value or by dimension items
 		var err error
 		f := ""
 
@@ -223,10 +244,11 @@ func ReadOutputTableTo(dbConn *sql.DB, modelDef *ModelMeta, layout *ReadTableLay
 			}
 			if eix >= 0 {
 				f, err = makeWhereValueFilter(
-					&layout.Filter[k], "", "expr_value", "expr_id", table.Expr[eix].ExprId, &modelDef.Type[iDbl], layout.Filter[k].Name, "output table "+table.Name)
+					&layout.Filter[k], "", "expr_value", idColName, table.Expr[eix].ExprId, &modelDef.Type[iDbl], layout.Filter[k].Name, "output table "+table.Name)
 				if err != nil {
 					return nil, err
 				}
+				appendToOr(f, table.Expr[eix].ExprId)
 			}
 		} else {
 
@@ -241,10 +263,11 @@ func ReadOutputTableTo(dbConn *sql.DB, modelDef *ModelMeta, layout *ReadTableLay
 				if !layout.IsAllAccum {
 
 					f, err = makeWhereValueFilter(
-						&layout.Filter[k], "", "acc_value", "acc_id", table.Acc[aix].AccId, &modelDef.Type[iDbl], layout.Filter[k].Name, "output table "+table.Name)
+						&layout.Filter[k], "", "acc_value", idColName, table.Acc[aix].AccId, &modelDef.Type[iDbl], layout.Filter[k].Name, "output table "+table.Name)
 					if err != nil {
 						return nil, err
 					}
+					appendToOr(f, table.Acc[aix].AccId)
 				} else {
 
 					f, err = makeWhereFilter(
@@ -252,6 +275,7 @@ func ReadOutputTableTo(dbConn *sql.DB, modelDef *ModelMeta, layout *ReadTableLay
 					if err != nil {
 						return nil, err
 					}
+					q += " AND " + f
 				}
 			}
 		}
@@ -273,9 +297,41 @@ func ReadOutputTableTo(dbConn *sql.DB, modelDef *ModelMeta, layout *ReadTableLay
 			if err != nil {
 				return nil, err
 			}
+			q += " AND " + f
+		}
+	}
+
+	// append OR value filters and include all expr_id or acc_id which are not filtered by value
+	// for example: AND ( (expr_id = 2 and expr_value > 5) OR expr_id IN (3, 4) )
+	if orFlt != "" {
+
+		// make list of id's which are not filtered by value, eg: "3, 4"
+		inIds := ""
+		appendToIn := func(id int) {
+			if inIds != "" {
+				inIds += ", "
+			}
+			inIds += strconv.Itoa(id)
+		}
+		if !layout.IsAccum {
+			for j := range table.Expr {
+				if !slices.Contains(orIds, table.Expr[j].ExprId) {
+					appendToIn(table.Expr[j].ExprId)
+				}
+			}
+		} else {
+			for j := range table.Acc {
+				if !table.Acc[j].IsDerived && !slices.Contains(orIds, table.Acc[j].AccId) {
+					appendToIn(table.Acc[j].AccId)
+				}
+			}
 		}
 
-		q += " AND " + f
+		q += " AND (" + orFlt
+		if inIds != "" {
+			q += " OR " + idColName + " IN (" + inIds + ")"
+		}
+		q += ")"
 	}
 
 	// append dimension enum id filters, if specified

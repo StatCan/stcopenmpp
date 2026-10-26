@@ -10,6 +10,13 @@
         :label="$t('Apply')"
         outline rounded
         />
+      <q-btn
+        @click="onClear()"
+        :disable="!filterList.length"
+        icon="mdi-filter-off"
+        :label="$t('Clear')"
+        outline rounded
+        />
       <q-space />
       <q-btn icon="mdi-close" :label="$t('Cancel')" outline rounded v-close-popup />
     </q-bar>
@@ -354,6 +361,14 @@ export default {
       }
 
       this.$emit('value-filter-apply', fltLst) // send filters to parent page
+      this.showDlg = false
+    },
+
+    // remove all filters by sending empty filters array to parent page
+    onClear () {
+      this.filterList = []
+      this.skipFilter = []
+      this.$emit('value-filter-apply', [])
       this.showDlg = false
     },
 

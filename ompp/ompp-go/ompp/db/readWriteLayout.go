@@ -300,11 +300,11 @@ func makeWhereFilter(
 	}
 
 	// else make filter for other types: int, float, strings
-	return makeCodeWhereFiler(alias, colName, typeOf.IsString(), flt, msgName, msgParent)
+	return makeCodeWhereFilter(alias, colName, typeOf.IsString(), flt, msgName, msgParent)
 }
 
 // return filter by enum code or value comparison, e.g.: E.attr4 < 1234 or E.dim0 IN ('a', 'b', 'c')
-func makeCodeWhereFiler(alias, colName string, isStrType bool, flt *FilterColumn, msgName, msgParent string) (string, error) {
+func makeCodeWhereFilter(alias, colName string, isStrType bool, flt *FilterColumn, msgName, msgParent string) (string, error) {
 
 	// use sql-quotes for string type
 	var vals []string
@@ -398,7 +398,7 @@ func makeWhereValueFilter(
 
 	} else { // make filter for other types: int, float, strings
 
-		c, err := makeCodeWhereFiler(alias, colName, typeOf.IsString(), flt, msgName, msgParent)
+		c, err := makeCodeWhereFilter(alias, colName, typeOf.IsString(), flt, msgName, msgParent)
 		if err != nil {
 			return "", err
 		}

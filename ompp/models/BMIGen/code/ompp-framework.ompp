@@ -1,0 +1,25 @@
+﻿// Copyright (c) 2013-2014 OpenM++
+// This code is licensed under MIT license (see LICENSE.txt for details)
+
+//LABEL(ompp-framework, EN) OpenM++ simulation framework
+
+/* NOTE(ompp-framework, EN)
+    This module specifies the simulation framework
+    and supplies function definitions required by the framework.
+*/
+
+#include "omc/omSimulation.h"
+#if 0
+use "common.ompp";
+use "common_modgen.ompp";
+use "random/random_lcg41.ompp";
+use "calendar/leapless_modgen.ompp";
+use "case_based/case_based_lcg41.ompp";
+use "case_based/case_based_common.ompp";
+use "case_based/case_based_scaling_endogenous_or_none.ompp";
+
+#endif
+
+namespace fmk {
+    const int model_streams = 400;
+}

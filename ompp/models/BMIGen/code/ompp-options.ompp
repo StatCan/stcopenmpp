@@ -1,0 +1,31 @@
+﻿// Copyright (c) 2024-2024 OpenM++ Contributors
+// This code is licensed under the MIT license (see LICENSE.txt for details)
+
+//LABEL(ompp-options, EN) OpenM++ model options
+//LABEL(ompp-options, FR) Options de modèle d'OpenM++
+
+/* NOTE(ompp-options, EN)
+    This module contains some commonly modified OpenM++ model options.
+*/
+/* NOTE(ompp-options, FR)
+    Ce module contient des options de modèle d'OpenM++ souvent modifiées.
+*/
+
+#include "omc/optional_IDE_helper.h"
+
+#if 0
+
+options bounds_errors = on;
+
+options lifecycle_attributes = person;
+
+options censor_event_time = on;
+
+options use_heuristic_short_names = on;
+options short_name_max_length = 32;
+
+options symref_developer_edition = on;
+options symref_parameter_major_groups = off;
+options symref_table_major_groups = off;
+
+#endif

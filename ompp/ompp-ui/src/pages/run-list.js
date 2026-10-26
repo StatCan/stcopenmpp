@@ -3,6 +3,7 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import RunParameterList from 'components/RunParameterList.vue'
 import TableList from 'components/TableList.vue'
 import EntityList from 'components/EntityList.vue'
@@ -19,10 +20,36 @@ import DeleteConfirmDialog from 'components/DeleteConfirmDialog.vue'
 import NewWorkset from 'components/NewWorkset.vue'
 import CreateWorkset from 'components/CreateWorkset.vue'
 import MarkdownEditor from 'components/MarkdownEditor.vue'
+import ParameterPage from 'pages/ParameterPage.vue'
 
 export default {
   name: 'RunList',
+  mixins: [tabStateMixin],
+
+  // cache tab state: run filter, selected runs and expanded sections
+  tabState: {
+    fields: ['runFilter', 'runTreeTicked', 'isParamTreeShow', 'isTableTreeShow', 'isEntityTreeShow', 'paramDialogName', 'paramDialogRun'],
+    key () { return 'run-list:' + (this.digest || '') },
+    afterRestore () {
+      // only one of parameters, tables or microdata sections can be open
+      if (this.isParamTreeShow) {
+        this.isTableTreeShow = false
+        this.isEntityTreeShow = false
+      }
+      if (this.isTableTreeShow) this.isEntityTreeShow = false
+      if (!this.isMicrodata) this.isEntityTreeShow = false
+      this.doRunTextListUpdated() // remove selection of runs which do not exist anymore
+
+      // re-open parameter dialog only if that run still exist
+      if (!this.paramDialogName || !this.paramDialogRun ||
+        !Mdf.isNotEmptyRunText(this.runTextByDigest({ ModelDigest: this.digest, RunDigest: this.paramDialogRun }))) {
+        this.paramDialogName = ''
+        this.paramDialogRun = ''
+      }
+    }
+  },
   components: {
+    ParameterPage,
     RunParameterList,
     TableList,
     EntityList,
@@ -108,7 +135,9 @@ export default {
       uploadFileSelect: false,
       uploadFile: null,
       isShowNoteEditor: false,
-      noteEditorLangCode: ''
+      noteEditorLangCode: '',
+      paramDialogName: '', // name of run parameter open in dialog
+      paramDialogRun: '' // run digest of parameter open in dialog
     }
   },
 
@@ -157,6 +186,7 @@ export default {
     'run-log-select',
     'set-select',
     'run-parameter-select',
+    'user-view-updated',
     'table-select',
     'entity-select',
     'download-select',
@@ -602,10 +632,28 @@ export default {
       this.isTableTreeShow = false
       this.isEntityTreeShow = false
     },
-    // click on parameter: open current run parameter values tab
+    // click on parameter: open run parameter values in a modal dialog instead of a new tab
     onRunParamClick (name) {
-      this.$emit('run-parameter-select', name)
+      if (!name || !this.runDigestSelected) return
+      this.paramDialogRun = this.runDigestSelected
+      this.paramDialogName = name
     },
+    // close parameter dialog: if there are unsaved notes then parameter page asks user to save or discard
+    onParamDialogClose () {
+      const pp = this.$refs.paramDialogPage
+      if (pp && typeof pp.dialogCanClose === 'function' && !pp.dialogCanClose()) return // wait for user answer
+      this.doParamDialogHide()
+    },
+    // click outside of parameter dialog or Esc key: close dialog
+    onParamDialogModel (isShow) {
+      if (!isShow) this.onParamDialogClose()
+    },
+    doParamDialogHide () {
+      this.paramDialogName = ''
+      this.paramDialogRun = ''
+    },
+    // forward parameter dialog events to the model page
+    onParamDialogUserView (dgst, mName) { this.$emit('user-view-updated', dgst, mName) },
     // show run parameter notes dialog
     // parameters tree updated and leafs counted
     onParamTreeUpdated  (cnt) {

@@ -1,0 +1,166 @@
+﻿//LABEL(tab-risk-factors, EN) Tables of output for BMI and socio-economic risk factors
+/* NOTE(tab-risk-factors, EN)
+	 Tables of output for BMI (and education and income, which drive BMI model 2).
+*/
+
+partition age_group_rf20_t { 20, 40, 60, 80 };  //EN Age groups
+partition age_group_rf20_79_t { 20, 80 };       //EN Age groups
+partition from20_80_t { 20, 80 };               //EN Age group
+
+table_group tg_risk_factor_tables { //EN Risk factors
+    t_risk_factors_cross_sectional,
+    t_risk_factors_longitudinal,
+    t_bmi_cat,
+    t_measured_sr_adult_bmi,
+    t_measured_sr_adult_bmi_prov
+};
+
+table person t_bmi_cat //EN BMI distribution
+[in_tabulation_scope && alive && WITHIN(report_year_t, year)]
+{
+    sex + * //EN Sex
+    {
+        nz_delta(duration(bmi_phac, bmi_cat_1)) / unit,  //EN BMI self-reported <18.5 decimals=4
+        nz_delta(duration(bmi_phac, bmi_cat_2)) / unit,  //EN BMI self-reported 18.5 to <25 decimals=4
+        nz_delta(duration(bmi_phac, bmi_cat_3)) / unit,  //EN BMI self-reported 25 to <30 decimals=4
+        nz_delta(duration(bmi_phac, bmi_cat_4)) / unit,  //EN BMI self-reported >=30 decimals=4
+        unit                                             //EN Total count of persons
+    }
+    * report_calendar_year //EN Year
+};
+
+table person t_measured_sr_adult_bmi //EN  Adult BMI distribution and average (self-reported or measured) by sex, age, year
+[in_tabulation_scope && alive && WITHIN(report_year_t, year)]
+{
+    sex + //EN Sex
+    *
+    split(lifespan_age, from20_80_t) + //EN Age (current)
+    *
+    report_calendar_year + //EN Year
+    *
+    {
+        duration(bmi_phac, bmi_cat_1) / duration(),  //EN Underweight: self-reported BMI <18.5 decimals=4
+        duration(bmi_phac, bmi_cat_2) / duration(),  //EN Normal weight: self-reported BMI 18.5 to <25 decimals=4
+        duration(bmi_phac, bmi_cat_3) / duration(),  //EN Overweight: self-reported BMI 25 to <30 decimals=4
+        duration(bmi_phac, bmi_cat_4) / duration(),  //EN Obese: self-reported BMI >=30 decimals=4
+        weighted_duration(g_bmi_phac) / duration(),  //EN Average BMI (self-reported) decimals=2
+
+        duration(), //EN People count (person-years)
+
+        duration(bmi4cat_measured_phac, underweight) / duration(),    //EN Underweight: measured BMI <18.5 decimals=4
+        duration(bmi4cat_measured_phac, normal_weight) / duration(),  //EN Normal weight: measured BMI 18.5 to <25 decimals=4
+        duration(bmi4cat_measured_phac, overweight) / duration(),     //EN Overweight: measured BMI 25 to <30 decimals=4
+        duration(bmi4cat_measured_phac, obese) / duration(),          //EN Obese: measured BMI >=30 decimals=4
+        weighted_duration(g_bmi_measured_phac) / duration()           //EN Average BMI (measured) decimals=2
+    }
+};
+
+table person t_measured_sr_adult_bmi_prov //EN  Adult BMI distribution and average (self-reported or measured) by sex, age, year and province
+[in_tabulation_scope && alive && WITHIN(report_year_t, year)]
+{
+    sex + //EN Sex
+    *
+    split(lifespan_age, age_group_rf20_t) + //EN Age, 20 year age groups (current)
+    *
+    report_calendar_year + //EN Year
+    *
+    g_province + //EN Province
+    *
+    {
+        duration(bmi_phac, bmi_cat_1) / duration(),  //EN Underweight: self-reported BMI <18.5 decimals=4
+        duration(bmi_phac, bmi_cat_2) / duration(),  //EN Normal weight: self-reported BMI 18.5 to <25 decimals=4
+        duration(bmi_phac, bmi_cat_3) / duration(),  //EN Overweight: self-reported BMI 25 to <30 decimals=4
+        duration(bmi_phac, bmi_cat_4) / duration(),  //EN Obese: self-reported BMI >=30 decimals=4
+        weighted_duration(g_bmi_phac) / duration(),  //EN Average BMI (self-reported) decimals=2
+
+        duration(), //EN People count (person-years)
+
+        duration(bmi4cat_measured_phac, underweight) / duration(),    //EN Underweight: measured BMI <18.5 decimals=4
+        duration(bmi4cat_measured_phac, normal_weight) / duration(),  //EN Normal weight: measured BMI 18.5 to <25 decimals=4
+        duration(bmi4cat_measured_phac, overweight) / duration(),     //EN Overweight: measured BMI 25 to <30 decimals=4
+        duration(bmi4cat_measured_phac, obese) / duration(),          //EN Obese: measured BMI >=30 decimals=4
+        weighted_duration(g_bmi_measured_phac) / duration()           //EN Average BMI (measured) decimals=2
+    }
+};
+
+/* NOTE(t_risk_factors_cross_sectional, EN)
+This table provides the distribution (and mean for age and BMI) of BMI, education and income.
+These are cross-sectional snapshots so that the age dimension reflect current age (in 2012 for instance).
+
+*/
+
+table person t_risk_factors_cross_sectional [in_tabulation_scope && alive && report_calendar_year == calendar_year] //EN Risk factors per year, sex, BMI and age group  (cross-sectional view)
+{
+    sex +                                         //EN Sex
+    * split(lifespan_age, age_group_rf20_79_t) +  //EN Age
+    * split(g_bmi_phac, bmi4cat_t) +              //EN BMI category
+    *
+    {
+        duration(), //EN Person-years (denominator of all others)
+
+        weighted_duration(lifespan_age) / duration(), //EN Average integer age                decimals=2
+
+        duration(bmi_phac, bmi_cat_1) / duration(),  //EN Self-reported BMI: Underweight <18.5        decimals=4
+        duration(bmi_phac, bmi_cat_2) / duration(),  //EN Self-reported BMI: Normal weight [18.5,25)  decimals=4
+        duration(bmi_phac, bmi_cat_3) / duration(),  //EN Self-reported BMI: Overweight 25 to <30       decimals=4
+        duration(bmi_phac, bmi_cat_4) / duration(),  //EN Self-reported BMI: Obese >=30               decimals=4
+        weighted_duration(g_bmi_phac) / duration(),  //EN Self-reported BMI: Average                  decimals=2
+
+        duration(bmi4cat_measured_phac, underweight) / duration(),    //EN Measured BMI: Underweight <18.5        decimals=4
+        duration(bmi4cat_measured_phac, normal_weight) / duration(),  //EN Measured BMI: Normal weight 18.5 to <25  decimals=4
+        duration(bmi4cat_measured_phac, overweight) / duration(),     //EN Measured BMI: Overweight 25 to <30       decimals=4
+        duration(bmi4cat_measured_phac, obese) / duration(),          //EN Measured BMI: Obese >=30               decimals=4
+        weighted_duration(g_bmi_measured_phac) / duration(),          //EN Measured BMI: Average                  decimals=2
+
+        duration(g_education, educ1) / duration(),            //EN Education: Less than secondary  decimals=4
+        duration(g_education, educ2) / duration(),            //EN Education: Secondary grad       decimals=4
+        duration(g_education, educ3) / duration(),            //EN Education: Other post-secondary decimals=4
+        duration(g_education, educ4) / duration(),            //EN Education: Post-secondary grad  decimals=4
+        duration(g_income_quartile, income_q1) / duration(),  //EN Income: Quartile 1 (poorest)       decimals=4
+        duration(g_income_quartile, income_q2) / duration(),  //EN Income: Quartile 2 (lower middle)  decimals=4
+        duration(g_income_quartile, income_q3) / duration(),  //EN Income: Quartile 3 (upper middle)  decimals=4
+        duration(g_income_quartile, income_q4) / duration()   //EN Income: Quartile 4 (richest)       decimals=4
+    }
+    * report_calendar_year + //EN Calendar year
+};
+
+/* NOTE(t_risk_factors_longitudinal, EN)
+This table provides the distribution (and mean for age and BMI) of BMI, education and income.
+These are cross-sectional snapshots of the cohort of people who were Canadian residents in 2001. Except for calendar time, the dimensions of the table show characteristics of people in 2001.
+
+*/
+
+table person t_risk_factors_longitudinal //EN Risk factors per year, sex, BMI and age group  (longitudinal view)
+[in_tabulation_scope && alive && report_calendar_year == calendar_year && calendar_year_start == p_start_year]
+{
+    sex +
+    * split(lifespan_age_start, age_group_rf20_79_t) +  //EN Initial age in 2001
+    * split(g_bmi_start, bmi4cat_t) +                   //EN Initial BMI category in 2001
+    *
+    {
+        duration(), //EN Person-years (denominator of all others)
+
+        weighted_duration(lifespan_age) / duration(), //EN Average integer age                decimals=2
+
+        duration(bmi_phac, bmi_cat_1) / duration(),                   //EN Self-reported BMI: Underweight <18.5        decimals=4
+        duration(bmi_phac, bmi_cat_2) / duration(),                   //EN Self-reported BMI: Normal weight [18.5,25)  decimals=4
+        duration(bmi_phac, bmi_cat_3) / duration(),                   //EN Self-reported BMI: Overweight 25 to <30       decimals=4
+        duration(bmi_phac, bmi_cat_4) / duration(),                   //EN Self-reported BMI: Obese >=30               decimals=4
+        weighted_duration(g_bmi_phac) / duration(),                   //EN Self-reported BMI: Average                  decimals=2
+        duration(bmi4cat_measured_phac, underweight) / duration(),    //EN Measured BMI: Underweight <18.5        decimals=4
+        duration(bmi4cat_measured_phac, normal_weight) / duration(),  //EN Measured BMI: Normal weight 18.5 to <25  decimals=4
+        duration(bmi4cat_measured_phac, overweight) / duration(),     //EN Measured BMI: Overweight 25 to <30       decimals=4
+        duration(bmi4cat_measured_phac, obese) / duration(),          //EN Measured BMI: Obese >=30               decimals=4
+        weighted_duration(g_bmi_measured_phac) / duration(),          //EN Measured BMI: Average                  decimals=2
+
+        duration(g_education, educ1) / duration(),            //EN Education: Less than secondary  decimals=4
+        duration(g_education, educ2) / duration(),            //EN Education: Secondary grad       decimals=4
+        duration(g_education, educ3) / duration(),            //EN Education: Other post-secondary decimals=4
+        duration(g_education, educ4) / duration(),            //EN Education: Post-secondary grad  decimals=4
+        duration(g_income_quartile, income_q1) / duration(),  //EN Income: Quartile 1 (poorest)       decimals=4
+        duration(g_income_quartile, income_q2) / duration(),  //EN Income: Quartile 2 (lower middle)  decimals=4
+        duration(g_income_quartile, income_q3) / duration(),  //EN Income: Quartile 3 (upper middle)  decimals=4
+        duration(g_income_quartile, income_q4) / duration()   //EN Income: Quartile 4 (richest)       decimals=4
+    }
+    * report_calendar_year + //EN Calendar year
+};

@@ -5,9 +5,9 @@ job/        : this folder must be shared between all oms instances
     history/  : completed (success or fail) model runs
     past/     : (optinal) shadow copy of history folder, invisible to end user
     queue/    : model runs queue
-    state/    : servers state and, jobs state and oms instances state
-           jobs.queue-#-$INSTANCE-#-paused : if this file exist the instance model runs queue is paused
-           jobs.queue.all.paused : if this file exist all model runs queues are paused
+    state/    : servers state and, jobs state and oms instances state:
+                jobs.queue-#-$OMS-#-paused : if this file exist the OMS model runs queue is paused
+                jobs.queue.all.paused : if this file exist all model runs queues are paused
     job.ini   : job control settings
 
 To use model run jobs use -oms.JobDir option, for example:

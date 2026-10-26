@@ -13,22 +13,23 @@ docker build `
   .
 </pre>
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
-| :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| 7-Zip ![Updated](https://img.shields.io/badge/Updated-green)        | 26.01                             | `https://www.7-zip.org/a/7z2601-x64.exe`                                                            |
-| Git                                                                 | 2.52.0                            | `https://github.com/git-for-windows/git/releases/download/v2.52.0.windows.1/Git-2.52.0-64-bit.exe`  |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://go.dev/dl/go1.26.1.windows-amd64.zip`                                                      |
-| Microsoft MPI                                                       | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisetup.exe` |
-| Microsoft MPI SDK                                                   | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisdk.msi`   |
-| Microsoft Visual Studio Build Tools                                 | 17.4.35026.314                    | `https://aka.ms/vs/17/release.ltsc.17.4/vs_buildtools.exe`                                          |
-| MinGW                                                               | 20.0                              | `https://nuwen.net/files/mingw/history/mingw-20.0.exe`                                              |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-win-x64.zip`                                        |
-| Perl (x64)                                                          | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip`          |
-| Perl (x86)                                                          | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-no64-5.32.1.1-32bit-portable.zip`     |
-| SQLite                                                              | 3.51.0                            | `https://www.sqlite.org/2025/sqlite-tools-win-x64-3510100.zip`                                      |
-| winflexbison                                                        | 2.5.25                            | `https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip`      |
+| Package                                                               | Version                           | URL                                                                                                                                   |
+| :-------------------------------------------------------------------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | 
+| 7-Zip ![Updated](https://img.shields.io/badge/Updated-green)          | 26.04                             | `https://www.7-zip.org/a/7z2604-x64.exe`                                                                                              |
+| Git ![Updated](https://img.shields.io/badge/Updated-green)            | 2.55.0                            | `https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.3/Git-2.55.0.3-64-bit.exe`                                  |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)             | 1.26.5                            | `https://go.dev/dl/go1.26.5.windows-amd64.zip`                                                                                        |
+| Microsoft MPI                                                         | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisetup.exe`                                   |
+| Microsoft MPI SDK                                                     | 10.1.12498.52                     | `https://download.microsoft.com/download/7/2/7/72731ebb-b63c-4170-ade7-836966263a8f/msmpisdk.msi`                                     |
+| Microsoft Visual Studio Build Tools                                   | 17.4.35026.314                    | `https://aka.ms/vs/17/release.ltsc.17.4/vs_buildtools.exe`                                                                            |
+| MinGW                                                                 | 20.0                              | `https://nuwen.net/files/mingw/history/mingw-20.0.exe`                                                                                |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)        | 24.20.0                           | `https://nodejs.org/dist/v24.20.0/node-v24.20.0-win-x64.zip`                                                                          |
+| Perl (x64) ![Updated](https://img.shields.io/badge/Updated-green)     | 5.42.2.1                          | `https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_54221_64bit/strawberry-perl-5.42.2.1-64bit-portable.zip` |
+| Perl (x86)                                                            | 5.32.1.1                          | `https://strawberryperl.com/download/5.32.1.1/strawberry-perl-no64-5.32.1.1-32bit-portable.zip`                                       |
+| SQLite ![Updated](https://img.shields.io/badge/Updated-green)         | 3.53.3                            | `https://sqlite.org/2026/sqlite-tools-win-x64-3530300.zip`                                                                            |
+| Windows Server ![Updated](https://img.shields.io/badge/Updated-green) | ltsc2025                          | `https://hub.docker.com/r/microsoft/windows-servercore`                                                                               |
+| winflexbison                                                          | 2.5.25                            | `https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip`                                        |
 
 ### Building stcopenmpp
 

@@ -207,7 +207,7 @@ export default {
     }
   },
 
-  emits: ['pv-edit', 'pv-key-pos'],
+  emits: ['pv-edit', 'pv-key-pos', 'pv-size'],
 
   methods: {
     // table body cell render keys to force update
@@ -705,6 +705,10 @@ export default {
       this.rangeDef = Pcvt.emptyRangeDef()
       this.heatStyles = Pcvt.HeatMixStyle
 
+      const dataLength = data?.length ?? 0 // source rows count
+      let totalCellCount = 0  // number of cells, e.g. for tables: rows count * expressions count
+      let filterCellCount = 0 // number of cells filtered out
+
       // if response is empty or invalid: clean table and exit
       if (!data || (data?.length || 0) <= 0) return
 
@@ -765,6 +769,7 @@ export default {
         if (!rRow) {
           break // end of data
         }
+        totalCellCount++
 
         // check if record match selection filters
         let isSel = true
@@ -781,7 +786,10 @@ export default {
           if (p.isCol) c[j++] = v
           if (p.isCellKey) b[p.keyPos] = v
         }
-        if (!isSel) continue // skip row: dimension item is not in filter values
+        if (!isSel) {
+          filterCellCount++
+          continue  // skip row: dimension item is not in filter values
+        }
 
         // build list of rows and columns keys
         const rk = Pcvt.itemsToKey(r)
@@ -906,6 +914,7 @@ export default {
       }
 
       this.$emit('pv-key-pos', this.keyPos)
+      this.$emit('pv-size', totalCellCount, filterCellCount, dataLength)
     }
   },
 

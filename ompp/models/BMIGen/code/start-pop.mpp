@@ -1,0 +1,665 @@
+﻿//LABEL(start-pop, EN) StartPop
+/* NOTE(start-pop, EN)
+	Core simulation functions to initialize the starting population
+	>Contains:
+	- simulation and case_simulation code
+	- code to read sequentially all records on the input db StartPop
+	or to sameple (with replacement) from it.
+	- complex Presimulation that calculates the number of
+	births and immigrants to genereate in future years (should the appropriate
+	parameter be set by the user to request it).
+*/
+
+model_type case_based;
+time_type double;
+
+classification dummy_row_or_column_t //EN Value
+{
+    row_1 //EN Value
+};
+
+classification db_fields_t {
+    c_db_age_grp,          //EN Five year age group
+    c_db_sex,              //EN Sex
+    c_db_province,         //EN Province
+    c_db_immig,            //EN Recent immigrant (last 9 years)
+    c_db_education,        //EN Education
+    c_db_income_quartile,  //EN Income
+    c_db_alcohol,          //EN Alcohol drinks per week (dpw)
+    c_db_bmi,              //EN Body mass index in kg/(m^2)
+    c_db_height_m,         //EN Height in meters
+    c_db_weight            //EN Survey weight
+};
+
+classification startpop_subpopulations_t { //EN Sub-populations
+    startpop_subpopulation_1,  //EN Sub-population 1
+    startpop_subpopulation_2,  //EN Sub-population 2
+    startpop_subpopulation_3,  //EN Sub-population 3
+    startpop_subpopulation_4,  //EN Sub-population 4
+    startpop_subpopulation_5,  //EN Sub-population 5
+    startpop_subpopulation_6,  //EN Sub-population 6
+    startpop_subpopulation_7,  //EN Sub-population 7
+    startpop_subpopulation_8,  //EN Sub-population 8
+    startpop_subpopulation_9   //EN Sub-population 9
+};
+
+classification start_time_method_t { //EN Method of initializing time and birthday for StartPop cases
+    c_start_jan01,         //EN Time starts January 1, birthdays assigned uniformly
+    c_start_bday,          //EN Time starts on Birthday which is assigned uniformly
+    c_start_bday_is_jan01  //EN Time starts January 1, Birthday is set to January 1 (recommended)
+};
+
+classification c_population_start_method_t {
+    c_sample,  //EN Sample (random selection with replacement)
+    c_full     //EN Full (sequentially process every case on DB and clone for case weight)
+};
+
+classification c_population_source_t { //EN BMIGen entry point
+    c_start_pop,  //EN StartPop database
+    c_new_birth,  //EN New births
+    c_new_immig   //EN New immigrants
+};
+
+classification db_age_decode_t { //EN StartPop age decode
+    c_db_begin_age,  //EN Start age of group
+    c_db_end_age     //EN End age of group
+};
+
+range db_records_t { 0, 9999 };         //EN database records
+range db_records_immig_t { 0, 99 };     //EN database records: immigrants
+range db_records_births_t { 0, 1000 };  //EN database records: new births
+
+range db_age_code_t { 0, 99 }; //EN Age code in StartPop database
+
+classification conditions_reweight_t //EN Conditions to reweight a CCHS record
+{
+    conditions_reweight_1,  //EN First condition
+    conditions_reweight_2,  //EN Second condition
+    conditions_reweight_3,  //EN Third condition
+    conditions_reweight_4,  //EN Fourth condition
+    conditions_reweight_5   //EN Fifth condition
+};
+
+hide(p_start_pop);
+hide(p_start_pop_year);
+hide(p_population_start_method);
+
+parameter_group pg_start_pop_immigrants { //EN StartPop - Population controls : Immigrants
+    p_immig,
+    aim_at_all_future_immigrants
+};
+
+parameter_group pg_start_pop_reweight { //EN StartPop - Population controls : Case reweighting
+    p_start_pop_reweight_definition_fields,
+    p_start_pop_reweight_definition_bounds,
+    p_start_pop_reweight_multiplier
+};
+
+parameter_group pg_start_pop { //EN StartPop - Population controls
+    pg_key_demography_controls,
+    p_population_start_method,
+    p_start_year,
+
+    aim_at_all_future_young_adults,
+    use_new_unduplication_method,
+    p_start_time_method,
+    p_db_age_decode,
+
+    timing_first_update,
+
+    p_use_input_population_to_assign_age,
+    p_population,
+    fictive_person_characteristics,
+    pg_start_pop_reweight,
+    pg_start_pop_immigrants
+};
+
+parameter_group pg_key_demography_controls { //EN Some key demography controls
+    p_new_arrivals_control,
+    p_max_year_new_arrivals,
+    max_year,
+    min_life,
+    max_life
+};
+
+parameters
+{
+    //EN Open or Closed population
+    logical p_new_arrivals_control[c_population_source_t];
+
+    //EN Last year for generating Future Births and Immigrants
+    int p_max_year_new_arrivals;
+
+    /* NOTE(p_population_start_method, EN)
+	The "Sample" option initializes simulation cases by random sampling (with replacement)
+	of the records on p_start_pop database according to their weight.
+
+	The "Full" option sequentially processes every record on the database (p_start_pop),
+	cloning according to the sample weight associated with each record.
+
+	*/
+    //EN Sample or Full population
+    c_population_start_method_t p_population_start_method;
+
+    /* NOTE(aim_at_all_future_immigrants, EN)
+	Set this parameter to TRUE (checked) if want all immigrants in future years.
+	Set this parameter to FALSE (unchecked) if want some future immigrants to be denied access to Canada.
+
+	If the parameter "Number of new immigrants by sex, age, province and year" (aka p_immig) states that
+	there were (or will be) 200 male immigrants of a given age in given province in a given year, this model will aim at creating 200*p = 196
+	such immigrants. p essentially represents the proportion of the adult population that is in scope for the CCHS survey
+	(e.g. poeple living in institutions are out of scope for CCHS).  p is a little bit less than 98%.
+	*/
+
+    //EN Include all future immigrants
+    logical aim_at_all_future_immigrants;
+
+    /* NOTE(aim_at_all_future_young_adults, EN)
+	Set this parameter to TRUE (checked   ) if, in future years, you want to generate all new young (20 year old) adults in future years.
+	Set this parameter to FALSE (unchecked) if, in future years, you want to generate only those new young (20 year old) adults that would be in scope according to CCHS definition.
+	*/
+
+    //EN Include all future young adults
+    logical aim_at_all_future_young_adults;
+
+    /* NOTE(use_new_unduplication_method, EN)
+	Parameter "Number of new immigrants by sex, age, province and year" (aka p_immig) and parameter "Population by sex, age and province and territory" (aka p_population) may both call for
+	the introduction of new young (20 year old) adults in future year.  Some cautionary steps need to be done to avoid duplication. Two different methodologies may be used.
+
+	The main difference is that the old methodology would carry out unnecessary un-duplication for a scenario that calls for the creation of new young adults but
+	no immigrants (see parameter "Open or Closed population" aka p_new_arrivals_control).
+	*/
+
+    //EN Use new unduplication method
+    logical use_new_unduplication_method;
+
+    /* NOTE(p_start_time_method, EN)
+	This applies to how the time and birthdate are assigned for cases generated in the
+	starting year of the simulation from the initializaiton database.
+
+	c_start_jan01		=> Time starts January 1, birthdays assigned uniformly through year
+	c_start_bday			=> Time starts on Birthday which is assigned uniformly through year
+	c_start_bday_is_jan01	=> Time starts January 1, Birthday is set to January 1 (recommended)
+
+	It does not apply to births and new immigrants created in subsequent years.
+	*/
+    //EN Start person on their birthday and/or on beginning of year.
+    start_time_method_t p_start_time_method;
+
+    //EN Distribution of population at beginning of simulation
+    double p_start_pop[db_records_t][db_fields_t];
+
+    //EN Reweight population data base: field
+    db_fields_t p_start_pop_reweight_definition_fields[startpop_subpopulations_t][conditions_reweight_t];
+
+    //EN Reweight population data base: acceptance range
+    double p_start_pop_reweight_definition_bounds[startpop_subpopulations_t][conditions_reweight_t][c_lower_upper_bounds_t];
+
+    //EN Reweight population data base: multiplier
+    double p_start_pop_reweight_multiplier[startpop_subpopulations_t][dummy_row_or_column_t];
+
+    int p_start_pop_year; //EN Year corresponing to p_start_pop
+
+    /* NOTE(p_start_year, EN)
+		Start year of the simulation
+	*/
+    //EN Start year of simulation
+    int p_start_year;
+
+    /* NOTE(p_db_age_decode, EN)
+	The initialization database (p_start_pop) contains age codes representing an age range.
+
+	This parameter is used to decode the age ranges.
+
+	The index of this parameter represents the age code (not age itself).
+
+	The begin and end ages identify the age group associated with the age code.
+	Values of -1 indicate that the age code is not applicable.
+
+	For example, if code 5 is used to represent age 20-24, then for index
+	5, the begin age is set to 20 and the end age is set to 24.
+
+	This is interpretted by the simulation to mean the age range: 20 <= age < 25
+
+  	If there is a code in p_start_pop that is not identified with an age range in this
+	parameter, the simulation will stop due to a fatal error, however the error
+	message will not indicate the cause.
+
+	*/
+    //EN StartPop age group decoder
+    int p_db_age_decode[db_age_code_t][db_age_decode_t];
+
+    //EN Number of new immigrants by sex, age, province and year
+    int p_immig[years_t][sex_t][c_province_t][life_t];
+
+    /* NOTE(p_use_input_population_to_assign_age, EN)
+	Cases initialized from p_start_pop are by age group. In the simulation we assign a specific
+	value of age within that age group. To assign the age according to distribution of age in
+	the population (see parameter p_population), check this box (recommended).
+	Otherwise the age will be assigned uniformly within age group.
+	*/
+    //EN Use population structure to assign age from age group
+    logical p_use_input_population_to_assign_age;
+
+    //EN Population by sex, age, province (territory) and year
+    int p_population[years_t][sex_t][c_province_t][life_span_t];
+
+    model_generated double mg_cum_population[province_t][sex_t][life_span_t]; //EN Cum distribution of population within age group, by sex and province
+
+    /* NOTE(mg_birth, EN)
+		Model generated births as a cumrate defined for the range
+		of years determined by p_start_year+1 and p_max_year_new_arrivals
+	*/
+    //EN cum distribution of new "births" at youngest age
+    model_generated cumrate[3] mg_birth[sex_t][years_t][province_t];
+
+    //EN Youngest age on p_start_pop
+    model_generated int mg_youngest_age;
+
+    //EN Youngest age group on p_start_pop
+    model_generated int mg_age_code_youngest;
+
+    //EN Oldest age group on p_start_pop
+    model_generated int mg_age_code_oldest;
+
+    //EN Youngest age group weights on p_start_pop by sex and province
+    model_generated cumrate mg_cum_start_pop_weight_youngest[sex_t][province_t][db_records_births_t];
+
+    //EN Youngest age group case record number on init db, for lookup
+    model_generated int mg_start_pop_youngest_decode[db_records_births_t];
+
+    //EN Immigration cumrate for selected years and age ranges
+    model_generated cumrate[4] mg_immig[years_t][sex_t][c_province_t][life_t];
+
+    //EN Immigration weights as cumrate copied from initialization db for hot-deck lookup by province
+    model_generated cumrate mg_cum_start_pop_weight_immig[sex_t][c_province_t][db_age_code_t][db_records_immig_t];
+
+    //EN Immigration weights as cumrate copied from initialization db for hot-deck lookup by region
+    model_generated cumrate mg_cum_start_pop_weight_immig_reg[sex_t][region_t][db_age_code_t][db_records_immig_t];
+
+    //EN Immigration weights as cumrate copied from initialization db for hot-deck lookup in the whole of Canada
+    model_generated cumrate mg_cum_start_pop_weight_immig_can[sex_t][db_age_code_t][db_records_immig_t];
+
+    //EN Immigration record number on init db, for hot-deck lookup
+    model_generated int mg_start_pop_immig_decode[sex_t][db_age_code_t][db_records_immig_t];
+
+    //EN All valid weights copied from initialization db, typed as cumrate for Lookup fn
+    model_generated cumrate mg_cum_start_pop_weight[db_records_t];
+
+    //EN Probability of initializing case from StartPop Database versus new arrivals in subsequent years
+    model_generated cumrate mg_population_source_distribution[c_population_source_t];
+
+    //EN Number of cases to be generated from StartPop Database versus new arrivals in subsequent years
+    model_generated double mg_num_cases[c_population_source_t];
+
+    model_generated double mg_num_cases_raw[c_population_source_t];
+
+    //EN Number of cases to be generated from StartPop Database versus new arrivals in subsequent years
+    model_generated int mg_num_records_on_start_pop_file;
+
+    //EN adjustment to the number of new births to be similated (relative to naive calculation)
+    model_generated double mg_new_birth_adjust_factor;
+    model_generated double mg_new_birth_adjust_factor_unduplicate;
+    model_generated double mg_new_birth_adjust_factor_reduce_aim;
+
+    //EN adjustment to the number of new immigrants to be similated (relative to naive calculation)
+    model_generated double mg_new_immig_adjust_factor;
+};
+
+void CaseSimulation(case_info& ci)
+{
+    extern void SimulateEvents();
+
+    int lookup_result;
+    Lookup_mg_population_source_distribution(RandUniform(108), &lookup_result);
+
+    person *pr_dominant = new person();
+    pr_dominant->start(c_population_source_t(lookup_result));
+
+    SimulateEvents();
+}
+
+void PreSimulation5()
+{
+    SetMaxTime(2056 + 110);
+
+    int n_record = 0;
+
+    int n_prov = { 0 };
+    int n_province = { 0 };
+    int n_age_code = { 0 };
+    int n_age = { 0 };
+
+    double d_birth_start_year = { 0.0 };
+
+    double d_start_pop_weight_youngest_total = 0.0;
+    double d_total_cases = { 0.0 };
+
+    double d_cum_prev = { 0.0 };
+
+    int immig_count[SIZE(sex_t)][SIZE(db_age_code_t)];
+
+    int n_youngest_record = 0;
+    int n_youngest_group_end = -1;
+
+    int n_total_youngest_group[SIZE(sex_t)][SIZE(province_t)];
+    double d_prop_youngest[SIZE(sex_t)][SIZE(province_t)];
+
+    int n_total_pop[SIZE(db_age_code_t)];
+
+    double d_total_population = { 0.0 };
+
+    if (mg_age_code_youngest < 0 || mg_age_code_youngest >= SIZE(db_age_code_t))
+    {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "StartPop PreSimulation: mg_age_code_youngest=%d is outside db_age_code_t (PreSimulation1 in start-pop-weights.mpp must run first)", mg_age_code_youngest);
+        ModelExit(msg);
+    }
+
+    n_youngest_group_end = p_db_age_decode[mg_age_code_youngest][c_db_end_age];
+    mg_youngest_age = p_db_age_decode[mg_age_code_youngest][c_db_begin_age];
+
+    if (mg_youngest_age < 0 || n_youngest_group_end < mg_youngest_age || n_youngest_group_end >= SIZE(life_span_t))
+    {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "StartPop PreSimulation: youngest age group code %d decodes to invalid ages %d-%d (check p_db_age_decode)", mg_age_code_youngest, mg_youngest_age, n_youngest_group_end);
+        ModelExit(msg);
+    }
+
+    int n_start_year = p_start_year - MIN(years_t);
+    int n_end_year = COERCE(years_t, p_max_year_new_arrivals) - MIN(years_t);
+
+    if (n_start_year < 0 || n_start_year >= SIZE(years_t))
+    {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "StartPop PreSimulation: p_start_year=%d is outside the years_t range", p_start_year);
+        ModelExit(msg);
+    }
+
+    for (n_age_code = 0; n_age_code < SIZE(db_age_code_t); n_age_code++)
+    {
+        for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+        {
+            immig_count[n_sex][n_age_code] = 0;
+        }
+        n_total_pop[n_age_code] = 0;
+    }
+
+    for (n_prov = 0; n_prov < SIZE(province_t); n_prov++)
+    {
+        for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+        {
+            n_age_code = mg_age_code_youngest;
+            n_total_pop[n_age_code] = 0;
+            for (n_age = mg_youngest_age; n_age < SIZE(life_span_t); n_age++)
+            {
+                if (n_age > p_db_age_decode[n_age_code][c_db_end_age])
+                {
+                    n_age_code = COERCE(db_age_code_t, n_age_code + 1);
+                    n_total_pop[n_age_code] = 0;
+                }
+                if (n_age >= p_db_age_decode[n_age_code][c_db_begin_age])
+                {
+                    n_total_pop[n_age_code] += p_population[n_start_year][n_sex][n_prov][n_age];
+                    d_total_population += p_population[n_start_year][n_sex][n_prov][n_age];
+                }
+            }
+
+            n_age_code = mg_age_code_youngest;
+            for (n_age = mg_youngest_age; n_age < SIZE(life_span_t); n_age++)
+            {
+                if (n_age > p_db_age_decode[n_age_code][c_db_end_age])
+                {
+                    n_age_code = COERCE(db_age_code_t, n_age_code + 1);
+                    d_cum_prev = 0.0;
+                }
+                if (n_age >= p_db_age_decode[n_age_code][c_db_begin_age])
+                {
+                    if (n_total_pop[n_age_code] > 0)
+                    {
+                        mg_cum_population[n_prov][n_sex][n_age] = d_cum_prev +
+                            (double) p_population[n_start_year][n_sex][n_prov][n_age]
+                            / n_total_pop[n_age_code];
+                        d_cum_prev = mg_cum_population[n_prov][n_sex][n_age];
+                    }
+                }
+            }
+        }
+    }
+
+    int n_equal_parts = n_youngest_group_end - mg_youngest_age + 1;
+    for (n_prov = 0; n_prov < SIZE(province_t); n_prov++)
+    {
+        for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+        {
+            n_total_youngest_group[n_sex][n_prov] = 0;
+            d_prop_youngest[n_sex][n_prov] = 0.0;
+            for (n_age = mg_youngest_age; n_age <= n_youngest_group_end; n_age++)
+            {
+                n_total_youngest_group[n_sex][n_prov] += p_population[n_start_year][n_sex][n_prov][n_age];
+            }
+            if (n_total_youngest_group[n_sex][n_prov] > 0)
+            {
+                d_prop_youngest[n_sex][n_prov] =
+                    (double) p_population[n_start_year][n_sex][n_prov][mg_youngest_age]
+                    / n_total_youngest_group[n_sex][n_prov];
+            }
+            else
+            {
+                d_prop_youngest[n_sex][n_prov] = (double)(1.0 / n_equal_parts);
+            }
+        }
+    }
+
+    mg_num_records_on_start_pop_file = 0;
+    mg_num_cases[c_start_pop] = 0.0;
+
+    for (n_record = 0; n_record < SIZE(db_records_t); n_record++)
+    {
+        double d_record_weight = mg_cum_start_pop_weight[n_record];
+
+        if (d_record_weight > 0.0)
+        {
+            mg_num_records_on_start_pop_file++;
+            mg_num_cases[c_start_pop] += d_record_weight;
+
+            int donor_sex = (int) p_start_pop[n_record][c_db_sex];
+            int donor_age_code = (int) p_start_pop[n_record][c_db_age_grp];
+            {
+                int donor_prov = (int) p_start_pop[n_record][c_db_province];
+                if (donor_sex < 0 || donor_sex >= SIZE(sex_t) ||
+                    donor_age_code < 0 || donor_age_code >= SIZE(db_age_code_t) ||
+                    donor_prov < 0 || donor_prov >= SIZE(province_t))
+                {
+                    char msg[200];
+                    snprintf(msg, sizeof(msg), "p_start_pop record %d has invalid values: sex=%d agegrp=%d province=%d (check that p_start_pop matches the db_fields_t layout)",
+                        n_record, donor_sex, donor_age_code, donor_prov);
+                    ModelExit(msg);
+                }
+            }
+
+            if (p_start_pop[n_record][c_db_immig] == 1)
+            {
+                n_province = (int) p_start_pop[n_record][c_db_province];
+                int n_region = region_of_province(n_province);
+
+                if (immig_count[donor_sex][donor_age_code] >= SIZE(db_records_immig_t))
+                {
+                    char msg[200];
+                    snprintf(msg, sizeof(msg), "SIZE(db_records_immig_t) too small: more than %d recent immigrants for sex=%d agegrp=%d",
+                        (int) SIZE(db_records_immig_t), donor_sex, donor_age_code);
+                    ModelExit(msg);
+                }
+
+                int donor_id_within_age_sex = immig_count[donor_sex][donor_age_code];
+                mg_cum_start_pop_weight_immig[donor_sex][n_province][donor_age_code][donor_id_within_age_sex] = d_record_weight;
+
+                mg_cum_start_pop_weight_immig_reg[donor_sex][n_region][donor_age_code][donor_id_within_age_sex] = d_record_weight;
+
+                mg_cum_start_pop_weight_immig_can[donor_sex][donor_age_code][donor_id_within_age_sex] = d_record_weight;
+
+                mg_start_pop_immig_decode[donor_sex][donor_age_code][donor_id_within_age_sex] = n_record;
+
+                immig_count[donor_sex][donor_age_code]++;
+            }
+
+            if (donor_age_code == mg_age_code_youngest)
+            {
+                if (n_youngest_record >= SIZE(db_records_births_t))
+                {
+                    char msg[200];
+                    snprintf(msg, sizeof(msg), "StartPop has more than %d in-scope records in the youngest age group; increase db_records_births_t",
+                        (int) SIZE(db_records_births_t));
+                    ModelExit(msg);
+                }
+
+                n_province = (int) p_start_pop[n_record][c_db_province];
+
+                mg_cum_start_pop_weight_youngest[donor_sex][n_province][n_youngest_record] = d_prop_youngest[donor_sex][n_province] * d_record_weight;
+
+                d_start_pop_weight_youngest_total += d_prop_youngest[donor_sex][n_province] * d_record_weight;
+
+                mg_start_pop_youngest_decode[n_youngest_record] = n_record;
+                n_youngest_record++;
+            }
+        }
+    }
+    mg_num_cases_raw[c_start_pop] = mg_num_cases[c_start_pop];
+
+    mg_num_cases[c_new_birth] = 0.0;
+    for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+    {
+        for (int n_year = n_start_year; n_year <= n_end_year; n_year++)
+        {
+            for (n_prov = 0; n_prov < SIZE(province_t); n_prov++)
+            {
+                if (n_year == n_start_year)
+                {
+                    d_birth_start_year += p_population[n_year][n_sex][n_prov][mg_youngest_age];
+                }
+                else
+                {
+                    mg_birth[n_sex][n_year][n_prov] = p_population[n_year][n_sex][n_prov][mg_youngest_age];
+
+                    mg_num_cases[c_new_birth] += p_population[n_year][n_sex][n_prov][mg_youngest_age];
+                }
+            }
+        }
+    }
+    mg_num_cases_raw[c_new_birth] = mg_num_cases[c_new_birth];
+
+    mg_num_cases[c_new_immig] = 0.0;
+    double d_immig_start_year_youngest = { 0.0 };
+    double d_immig_multi_year_youngest = { 0.0 };
+    for (n_age_code = mg_age_code_youngest, n_age = mg_youngest_age; n_age < SIZE(life_t); n_age++)
+    {
+        if (n_age > p_db_age_decode[n_age_code][c_db_end_age])
+        {
+            n_age_code++;
+            if (n_age_code >= SIZE(db_age_code_t))
+                break;
+        }
+
+        if (0 <= p_db_age_decode[n_age_code][c_db_begin_age] &&
+            p_db_age_decode[n_age_code][c_db_begin_age] <= n_age)
+        {
+            for (int n_sex = 0; n_sex < SIZE(sex_t); n_sex++)
+                for (n_prov = 0; n_prov < SIZE(province_t); n_prov++)
+                {
+                    if (n_age == mg_youngest_age)
+                    {
+                        d_immig_start_year_youngest += p_immig[n_start_year][n_sex][n_prov][n_age];
+                    }
+
+                    for (int n_year = n_start_year + 1; n_year <= n_end_year; n_year++)
+                    {
+                        if (n_age == mg_youngest_age)
+                        {
+                            d_immig_multi_year_youngest += p_immig[n_year][n_sex][n_prov][n_age];
+                        }
+
+                        mg_immig[n_year][n_sex][n_prov][n_age] = p_immig[n_year][n_sex][n_prov][n_age];
+
+                        mg_num_cases[c_new_immig] += p_immig[n_year][n_sex][n_prov][n_age];
+                    }
+                }
+        }
+    }
+    mg_num_cases_raw[c_new_immig] = mg_num_cases[c_new_immig];
+
+    mg_new_immig_adjust_factor = 1.0;
+    if (d_total_population > 0 && !aim_at_all_future_immigrants)
+    {
+        mg_new_immig_adjust_factor = mg_num_cases[c_start_pop] / d_total_population;
+        mg_num_cases[c_new_immig] *= mg_new_immig_adjust_factor;
+        d_immig_start_year_youngest *= mg_new_immig_adjust_factor;
+    }
+
+    mg_new_birth_adjust_factor = -1.0;
+    if (d_birth_start_year > 0)
+    {
+        mg_new_birth_adjust_factor_reduce_aim = aim_at_all_future_young_adults ? 1.0 : d_start_pop_weight_youngest_total / d_birth_start_year;
+        double removal = 0.0;
+        if (use_new_unduplication_method)
+        {
+            mg_num_cases[c_new_birth] *= mg_new_birth_adjust_factor_reduce_aim;
+
+            removal += (p_new_arrivals_control[c_new_immig] ? d_immig_multi_year_youngest : 0.0);
+
+            if (mg_num_cases[c_new_birth] > 0.0)
+            {
+                mg_new_birth_adjust_factor_unduplicate = 1.0 - removal / mg_num_cases[c_new_birth];
+                mg_num_cases[c_new_birth] *= mg_new_birth_adjust_factor_unduplicate;
+            }
+        }
+        else
+        {
+            removal += d_immig_start_year_youngest;
+
+            mg_new_birth_adjust_factor_unduplicate = 1.0 - removal / d_start_pop_weight_youngest_total;
+
+            mg_num_cases[c_new_birth] *= mg_new_birth_adjust_factor_unduplicate * mg_new_birth_adjust_factor_reduce_aim;
+
+            mg_new_birth_adjust_factor = (d_start_pop_weight_youngest_total - d_immig_start_year_youngest) / d_birth_start_year;
+        }
+    }
+
+    mg_num_cases[c_start_pop] *= (p_new_arrivals_control[c_start_pop] ? 1.0 : 0.0);
+    mg_num_cases[c_new_birth] *= (p_new_arrivals_control[c_new_birth] ? 1.0 : 0.0);
+    mg_num_cases[c_new_immig] *= (p_new_arrivals_control[c_new_immig] ? 1.0 : 0.0);
+
+    if (p_population_start_method == c_full)
+    {
+        ModelExit("Full Run (i.e. sequentially process every case on DB and clone for case weight) has been decomissioned");
+    }
+    else
+    {
+        d_total_cases = mg_num_cases[c_start_pop] + mg_num_cases[c_new_immig] + mg_num_cases[c_new_birth];
+
+        if (d_total_cases > 0)
+        {
+            mg_population_source_distribution[c_start_pop] = mg_num_cases[c_start_pop] / d_total_cases;
+            mg_population_source_distribution[c_new_immig] = mg_num_cases[c_new_immig] / d_total_cases;
+            mg_population_source_distribution[c_new_birth] = mg_num_cases[c_new_birth] / d_total_cases;
+        }
+        else
+            ModelExit("No case requested.  May want to check if something was selected in parameter \"Open or Closed population\" (aka p_new_arrivals_control). \n");
+    }
+
+    int scenario_cases = (int)(mg_num_records_on_start_pop_file + mg_num_cases[c_new_birth] + mg_num_cases[c_new_immig]);
+    int case_clones = (int)(mg_num_cases[c_start_pop] - mg_num_records_on_start_pop_file);
+    long l_population = long(scenario_cases + case_clones);
+    SetPopulation(l_population);
+
+    char line[99];
+    snprintf(line, 99, "Not an error --> Number of Canadians per case: %9.4f \n", ((double) GetPopulation()) / GetAllCases());
+    WarningMsg(line);
+}
+
+void Simulation_start(case_info& ci)
+{
+}
+
+void Simulation_end(case_info& ci)
+{
+}

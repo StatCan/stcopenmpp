@@ -1,0 +1,437 @@
+﻿//LABEL(bmi-core, EN) Model of Change in Body Mass Index (BMI)
+/* NOTE(bmi-core, EN)
+
+	This file updates the value (and category) of Body Mass Index (BMI) update at two year intervals.
+	It implements regressions of individual change in BMI observed in the longitudinal
+	National Population Health Survey (1994-2006). This module can be deactived using
+	Intervention Parameters for BMI (see parameter "Risk Factor Control Panel").
+*/
+
+classification bmi_state_t {
+    bmi_nul,
+    bmi_cat_1,
+    bmi_cat_2,
+    bmi_cat_3,
+    bmi_cat_4
+};
+
+classification bmi_index_t { //EN Weight category
+    underweight,    //EN Underweight BMI <18.5
+    normal_weight,  //EN Normal weight BMI [18.5,25)
+    overweight,     //EN Overweight BMI [25,30)
+    obese           //EN Obese BMI >=30
+};
+
+classification bmi_index_all_ages_t { //EN Weight category(4)
+    bmi_underweight,    //EN Underweight
+    bmi_normal_weight,  //EN Normal weight
+    bmi_overweight,     //EN Overweight
+    bmi_obese           //EN Obese
+};
+
+classification bmi_state_na_t { //EN BMI categories
+    bmi_state_na_uw,     //EN Underweight
+    bmi_state_na_nw,     //EN Normal weight
+    bmi_state_na_ow,     //EN Overweight
+    bmi_state_na_obese,  //EN Obese
+    bmi_state_na_na      //EN Not applicable  (age < 18)
+};
+
+classification bmi_model_t { //EN BMI model
+    bmi_model0,  //EN No BMI model (BMI carried forward unchanged)
+    bmi_model2   //EN BMI model 2 (8 reg equations education, income and region)
+};
+
+classification ar_order_index_4_t { //EN BMI Auto-regressive model
+    ar4_1,  //EN Auto-regressive model of order 1
+    ar4_2,  //EN Auto-regressive model of order 2
+    ar4_3,  //EN Auto-regressive model of order 3
+    ar4_4   //EN Auto-regressive model of order 4
+};
+
+classification bmi_compound_change_parameter_t { //EN Compound change in BMI
+    c_compound_amount,  //EN Amount of change
+    c_compound_start,   //EN Start year
+    c_compound_end,     //EN End year
+    c_compound_floor,   //EN Min allowed BMI
+    c_compound_ceiling  //EN Max allowed BMI
+};
+
+classification bmi_built_in_alteration_specs_t { //EN BMI alteration settings
+    bbias_scope_year_lower_cutoff,  //EN Scope : Year lower bound
+    bbias_scope_year_upper_cutoff,  //EN Scope : Year upper bound
+    bbias_scope_bmi_lower_cutoff,   //EN Scope : BMI lower bound
+    bbias_scope_bmi_upper_cutoff,   //EN Scope : BMI upper bound
+    bbias_intercept,                //EN Transformation : additive term (intercept)
+    bbias_slope,                    //EN Transformation : multiplicative term (slope)
+    bbias_result_lower_limit,       //EN Floor
+    bbias_result_lower_buffer,      //EN Floor buffer size
+    bbias_result_upper_limit,       //EN Ceiling
+    bbias_result_upper_buffer       //EN Ceiling buffer size
+};
+
+range bmi_ar_order_range_t { 0, 3 };  //EN BMI auto-regressive order range
+range bmi_range_t { 12, 55 };         //EN BMI range allowed in the simulation.
+
+partition from_25_to_75_by_10_t { 25, 35, 45, 55, 65, 75 };                                 //EN Age group
+partition from_25_to_80_by_5_t { 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80 };          //EN Age group
+partition from_25_to_90_by_5_t { 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90 };  //EN Age group
+
+partition age_bmi_group3075_t { 30, 45, 60, 75 }; //EN Age group
+
+partition bmi_cat_t { 0, 18.5, 25, 30 };  //EN BMI categories
+partition bmi4cat_t { 18.5, 25, 30 };     //EN BMI categories
+
+classification bmi_intervention_factor_t {
+    bmi_intervention_factor_fruit_veg,          //EN Fruit and vegetable consumption
+    bmi_intervention_factor_food_insecurity,    //EN Food insecurity
+    bmi_intervention_factor_physical_activity,  //EN Physical activity
+    bmi_intervention_factor_breast_fed,         //EN Breast feeding initiation
+    bmi_intervention_factor_marketing           //EN Marketing to kids
+};
+
+classification bmi_intervention_switch_t { //EN BMI Risk Factor Switches
+    bmi_intervention_relative_change,  //EN Relative Change
+    bmi_intervention_min_age,          //EN Minimum intervention age
+    bmi_intervention_max_age,          //EN Maximum intervention age
+    bmi_intervention_min_year,         //EN Minimum intervention year
+    bmi_intervention_max_year          //EN Maximum intervention year
+};
+
+parameter_group pg_bmi_parameters { //EN Body Mass Index (BMI)
+    pg_bmi_control,
+    pg_bmi_interventions,
+    pg_bmi_adult_models_parameters,
+    pg_bmi_conversions
+};
+
+parameter_group pg_bmi_control {
+    bmi_model_user_choice,
+    pg_expert_bmi_intervention_parameters
+};
+
+parameter_group pg_bmi_interventions { //EN BMI interventions
+    p_bmi_elasticity,
+    p_bmi_intervention
+};
+
+parameter_group pg_bmi_conversions { //EN  BMI conversions
+    pg_expert_bmi_conversions
+};
+
+parameter_group pg_bmi_collection_conversion { //EN Self-reported to measured BMI conversion
+    bmi_measured_reported_pivot_mean_bmi,
+    bmi_measured_reported_pivot_mean_education,
+    bmi_measured_reported_pivot_mean_age,
+    bmi_measured_reported_pivot_mean_bmi_cat,
+
+    bmi_measured_reported_pivot_variance_bmi,
+    bmi_measured_reported_pivot_variance_education,
+    pivot_multiplier
+};
+
+parameter_group pg_bmi_time_conversion { //EN Calendar time BMI conversion
+    bmi_time_travel_intercept,
+    bmi_time_travel_slope,
+    bmi_time_travel_scope
+};
+
+parameter_group pg_expert_bmi_intervention_parameters { //EN Experts only
+    p_bmi_compound_change,
+    built_in_bmi_alteration_specs,
+    bmi_feed_back,
+    max_auto_regressive_order,
+    sigma_multiplier
+};
+
+parameter_group pg_bmi_adult_models_parameters { //EN BMI Adult regression parameters
+    pg_bmi_adult_model2
+};
+
+parameter_group pg_expert_bmi_conversions { //EN  Experts only
+    p_mean_diff_bmi_m_sr,
+    pg_bmi_collection_conversion,
+    pg_bmi_time_conversion
+};
+
+parameters {
+    double pivot_multiplier;                                                       //EN Multiplicative factor applied to lifelong error term in the conversion from self-reported to measured BMI
+    double bmi_measured_reported_pivot_variance_bmi[sex_t];                        //EN BMI coefficients for the conversion to measured BMI (variance part)
+    double bmi_measured_reported_pivot_variance_education[sex_t][education_na_t];  //EN education category coefficients for the conversion to measured BMI (variance part)
+
+    double bmi_measured_reported_pivot_mean_bmi[sex_t];                         //EN BMI coefficients for the conversion to measured BMI (mean part)
+    double bmi_measured_reported_pivot_mean_education[sex_t][education_na_t];   //EN education category coefficients for the conversion to measured BMI (mean part)
+    double bmi_measured_reported_pivot_mean_age[sex_t][from_25_to_75_by_10_t];  //EN age category coefficients for the conversion to measured BMI (mean part)
+    double bmi_measured_reported_pivot_mean_bmi_cat[sex_t][bmi_state_na_t];     //EN BMI category coefficients for the conversion to measured BMI (mean part)
+
+    double p_bmi_elasticity[sex_t][bmi_intervention_factor_t];                               //EN Elasticity of BMI with respect to risk factors
+    double p_bmi_intervention[sex_t][bmi_intervention_factor_t][bmi_intervention_switch_t];  //EN Change in risk factors impacting BMI
+
+    logical bmi_feed_back;
+
+    /* NOTE(max_auto_regressive_order, EN)
+     We have models of different auto-regressive order.
+	   order 1: BMI(t) modeled from BMI(t-2) and other covariates
+	   order 2: BMI(t) modeled from BMI(t-2) , (BMI(t-2) - BMI(t-4)) and other covariates
+	   order 3: BMI(t) modeled from BMI(t-2) , (BMI(t-2) - BMI(t-4)), (BMI(t-4) - BMI(t-6)) and other covariates
+	   etc ...
+	   The first BMI generated is from a model of auto-regressive order 1, the second BMI from order 2, etc...
+	   At some point, we keep the same model as indicated by "max_auto_regressive_order". Default value is 4.
+    */
+    int max_auto_regressive_order; //EN Order of auto-regressive model used by default
+
+    /* NOTE(bmi_model_user_choice, EN)
+		User can choose to use one of two sets of equations to update persons BMI as person ages.
+		>
+		Model 2 uses 8 regression equations comprised of 4 AR equations each stratified by sex. Equations involve education, income and region.
+		>
+		Model 0 carries BMI forward unchanged.
+		>
+		All sets of equations were estimated from individual level change in BMI reported in same individuals in NPHS from 1996 to 2006.
+		All sets of equations use past BMI as a predictor (from up to 4 previous time points, 2, 4, 6, and 8 years ago).
+	*/
+    //EN BMI model choice
+    bmi_model_t bmi_model_user_choice;
+
+    //EN Mean adjustment from self-reported to measured BMI
+    double p_mean_diff_bmi_m_sr[sex_t][bmi_index_t][age_bmi_group3075_t];
+
+    /* NOTE(p_bmi_compound_change, EN)
+		Compounding is introduced to allow 18 year olds in year x+1 to be heavier than those in year x
+		(increasing trend in BMI). A number of controls over compounding were added in May 2011:
+		(1) the amount of the change compounded annually
+		(2) when the trend begins
+		(3) when the trend ends (note: if start and end are the same, there will be no effect)
+		(4) minimum BMI after which compounding stops (this only makes sense when simulating negative trend)
+		(5) maximum BMI after which compounding stops
+
+		By default compouning is disabled, i.e. amount of change = 0, start/end year = 0, floor = 0, ceiling = 0
+	*/
+    //EN Compound change in BMI
+    double p_bmi_compound_change[bmi_compound_change_parameter_t];
+
+    double sigma_multiplier; //EN Multiplier used to modify spread of error term (usually 0 or 1)
+
+    double bmi_time_travel_intercept[sex_t];            //EN Intercept in the calendar time BMI adjustment
+    double bmi_time_travel_slope[sex_t];                //EN Slope in the calendar time BMI adjustment
+    int bmi_time_travel_scope[c_lower_upper_bounds_t];  //EN Scope of the calendar time BMI adjustment
+
+    double built_in_bmi_alteration_specs[sex_t][from_25_to_80_by_5_t][bmi_built_in_alteration_specs_t]; //EN BMI model back-end alterations
+};
+
+actor person
+{
+    double g_bmi;        //EN Self-reported BMI value
+    double g_bmi_start;  //EN Self-reported initial BMI value
+
+    double g_bmi_adult_model;
+    double bmi_value_at_t_minus_2;
+    double bmi_value_at_t_minus_4;
+    double bmi_value_at_t_minus_6;
+    double bmi_value_at_t_minus_8;
+    int bmi_ar_order = { -1 };
+
+    double g_bmi_calendar_time_adjusted;
+
+    double measured_reported_bmi_pivot = { 0.0 };
+    double g_bmi_measured_old = g_bmi * p_mean_diff_bmi_m_sr[sex][bmi4cat][age_bmi_group3075]; //EN BMI value self-rep. adjusted to reflect BMI measured
+
+    double g_bmi_phac_intervention_factor = { 1.0 };
+    double g_bmi_phac = g_bmi*g_bmi_phac_intervention_factor;
+
+    bmi_state_t bmi_phac = bmi_state_t(split(g_bmi_phac, bmi_cat_t));      //EN Body Mass Index category
+    bmi_index_t bmi4cat_phac = bmi_index_t(split(g_bmi_phac, bmi4cat_t));  //EN Body Mass Index category
+    double g_bmi_measured_phac = bmi_measured_reported_pivot_mean_bmi[sex] * g_bmi_phac
+        + bmi_measured_reported_pivot_mean_education[sex][g_education_na]
+        + bmi_measured_reported_pivot_mean_age[sex][split(truncated_age, from_25_to_75_by_10_t)]
+        + bmi_measured_reported_pivot_mean_bmi_cat[sex][split(g_bmi_phac, bmi4cat_t)]
+        + measured_reported_bmi_pivot*exp(0.5* (bmi_measured_reported_pivot_variance_bmi[sex] * g_bmi_phac +
+        bmi_measured_reported_pivot_variance_education[sex][g_education_na]));
+    bmi_index_t bmi4cat_measured_phac = bmi_index_t(split(g_bmi_measured_phac, bmi4cat_t)); //EN Probable Measured Body Mass Index category
+    bmi_index_all_ages_t bmi4cat_measured_start_phac;
+
+    bmi_state_t bmi_start;
+    bmi_state_t bmi = bmi_state_t(split(g_bmi, bmi_cat_t)); //EN Body Mass Index category
+
+    bmi_index_t bmi4cat = bmi_index_t(split(g_bmi, bmi4cat_t));                        //EN Body Mass Index category
+    bmi_index_t bmi_measured_old = bmi_index_t(split(g_bmi_measured_old, bmi4cat_t));  //EN Probable Measured Body Mass Index category
+
+    int age_bmi_group3075 = split(truncated_age, age_bmi_group3075_t);
+
+    void compound_bmi_change();
+    double built_in_bmi_alteration(double bmi_to_be_altered);
+    void update_bmi_nphs();
+    hook update_bmi_nphs, risk_factors_updates_empty_hub, 0;
+
+    void update_bmi_intervention_factor();
+
+    double calendar_time_adjustment_bmi(double initial_bmi_value, int reference_year, int year_adjusted_to);
+
+    void read_from_start_pop_bmi();
+    hook read_from_start_pop_bmi, read_from_start_pop, 40;
+
+    void initialize_bmi_stuff();
+    hook initialize_bmi_stuff, initialization_empty_hub, 10;
+};
+
+void person::initialize_bmi_stuff()
+{
+    measured_reported_bmi_pivot = pivot_multiplier * RandLogistic(94) / mg_math_constant_pi_over_sqrt3;
+
+    hook_initialize_bmi_stuff();
+}
+
+void person::read_from_start_pop_bmi()
+{
+    start_pop_record_t record_to_be_read = start_pop_record();
+
+    double d_bmi;
+    d_bmi = (double) record_to_be_read[c_db_bmi];
+    g_bmi = COERCE(bmi_range_t, d_bmi);
+
+    compound_bmi_change();
+
+    g_bmi_adult_model = g_bmi;
+    g_bmi = calendar_time_adjustment_bmi(g_bmi, p_start_pop_year, calendar_year_start);
+    g_bmi_start = g_bmi;
+
+    bmi_start = bmi;
+}
+
+double person::built_in_bmi_alteration(double bmi_to_be_altered)
+{
+    const double *parm_relevant_part = built_in_bmi_alteration_specs[sex][SPLIT(truncated_age, from_25_to_80_by_5_t)];
+
+    if (parm_relevant_part[bbias_scope_year_lower_cutoff] <= calendar_year && calendar_year <= parm_relevant_part[bbias_scope_year_upper_cutoff] &&
+        parm_relevant_part[bbias_scope_bmi_lower_cutoff] <= bmi_to_be_altered && bmi_to_be_altered <= parm_relevant_part[bbias_scope_bmi_upper_cutoff]
+        )
+    {
+        bmi_to_be_altered = parm_relevant_part[bbias_intercept] + parm_relevant_part[bbias_slope] * bmi_to_be_altered;
+
+        double d_lower_trigger = parm_relevant_part[bbias_result_lower_limit] + parm_relevant_part[bbias_result_lower_buffer] / 2;
+        double d_upper_trigger = parm_relevant_part[bbias_result_upper_limit] - parm_relevant_part[bbias_result_upper_buffer] / 2;
+
+        if (bmi_to_be_altered < d_lower_trigger)
+            bmi_to_be_altered = parm_relevant_part[bbias_result_lower_limit] + RandUniform(141) * parm_relevant_part[bbias_result_lower_buffer];
+        else if (bmi_to_be_altered > d_upper_trigger)
+            bmi_to_be_altered = parm_relevant_part[bbias_result_upper_limit] - RandUniform(142) * parm_relevant_part[bbias_result_upper_buffer];
+    }
+
+    return bmi_to_be_altered;
+}
+
+void person::update_bmi_nphs()
+{
+    double d_bmi_value = g_bmi;
+
+    if (
+        due_for_biennial_update &&
+        p_risk_factor_control_panel[c_bmi][rf_evolution_model] &&
+        (truncated_age < p_risk_factor_evolution_off_age_range[c_bmi][bound_lower] ||
+        truncated_age >= p_risk_factor_evolution_off_age_range[c_bmi][bound_upper])
+        )
+    {
+        if (truncated_age < MAX(life_t))
+        {
+            bmi_ar_order++;
+            if (bmi_ar_order > max_auto_regressive_order - 1)
+            {
+                bmi_ar_order = max_auto_regressive_order - 1;
+            }
+            bmi_ar_order = COERCE(bmi_ar_order_range_t, bmi_ar_order);
+
+            if (bmi_feed_back || bmi_model_user_choice == bmi_model0)
+                bmi_value_at_t_minus_2 = g_bmi;
+
+            if (bmi_model_user_choice == bmi_model0)
+            {
+                d_bmi_value = bmi_value_at_t_minus_2;
+            }
+            else if (bmi_model_user_choice == bmi_model2)
+            {
+                d_bmi_value = calculate_bmi_model2();
+            }
+
+            d_bmi_value = built_in_bmi_alteration(d_bmi_value);
+
+            d_bmi_value = COERCE(bmi_range_t, d_bmi_value);
+
+            g_bmi_adult_model = d_bmi_value;
+
+            g_bmi_calendar_time_adjusted = calendar_time_adjustment_bmi(g_bmi_adult_model, p_start_pop_year, calendar_year_start);
+            g_bmi = g_bmi_calendar_time_adjusted;
+        }
+    }
+
+    hook_update_bmi_nphs();
+}
+
+void person::compound_bmi_change()
+{
+    double d_compound_amount = { 0 };
+
+    d_compound_amount = p_bmi_compound_change[c_compound_amount];
+
+    if ((d_compound_amount != 0) &&
+        (p_bmi_compound_change[c_compound_start] <= p_bmi_compound_change[c_compound_end]) &&
+        (calendar_year >= p_bmi_compound_change[c_compound_start]) &&
+        (truncated_age == mg_youngest_age))
+    {
+        int n_compound_start_year = { 0 };
+        int n_compound_end_year = { 0 };
+        int n_compound_years = { 0 };
+
+        n_compound_end_year = (int) p_bmi_compound_change[c_compound_end];
+        n_compound_start_year = (int) p_bmi_compound_change[c_compound_start];
+        n_compound_start_year = max(n_compound_start_year, p_start_year);
+        n_compound_years = min(n_compound_end_year - n_compound_start_year, calendar_year - n_compound_start_year);
+
+        g_bmi *= pow(1.0 + d_compound_amount, n_compound_years);
+
+        if (g_bmi < p_bmi_compound_change[c_compound_floor])
+        {
+            g_bmi = p_bmi_compound_change[c_compound_floor];
+        }
+        else
+        {
+            g_bmi = min(g_bmi, p_bmi_compound_change[c_compound_ceiling]);
+        }
+    }
+
+    hook_compound_bmi_change();
+}
+
+double person::calendar_time_adjustment_bmi(double initial_bmi_value, int reference_year, int year_adjusted_to)
+{
+    double bmi_altered = initial_bmi_value;
+
+    if (bmi_time_travel_scope[bound_lower] <= bmi_time_travel_scope[bound_upper])
+    {
+        int delta_years;
+
+        delta_years = min(max(year_adjusted_to, bmi_time_travel_scope[bound_lower]), bmi_time_travel_scope[bound_upper]) - reference_year;
+
+        bmi_altered = (delta_years == 0.0) ? initial_bmi_value :
+        initial_bmi_value*pow(exp(bmi_time_travel_intercept[sex])*pow(initial_bmi_value, bmi_time_travel_slope[sex]), delta_years);
+    }
+
+    return bmi_altered;
+}
+
+void person::update_bmi_intervention_factor()
+{
+    double tempo = { 1.0 };
+
+    for (int i = 0; i < SIZE(bmi_intervention_factor_t); i++)
+    {
+        if (calendar_year >= p_bmi_intervention[sex][i][bmi_intervention_min_year]
+            && calendar_year <= p_bmi_intervention[sex][i][bmi_intervention_max_year]
+            && lifespan_age >= p_bmi_intervention[sex][i][bmi_intervention_min_age]
+            && lifespan_age <= p_bmi_intervention[sex][i][bmi_intervention_max_age])
+        tempo *= (1.0 + p_bmi_elasticity[sex][i]*p_bmi_intervention[sex][i][bmi_intervention_relative_change]);
+    }
+
+    g_bmi_phac_intervention_factor = tempo;
+
+    hook_update_bmi_intervention_factor();
+}

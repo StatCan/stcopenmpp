@@ -1,44 +1,5 @@
 <template>
-<q-page class="text-body1 q-pt-xs">
-
-  <q-card
-    v-if="runDigestSelected || worksetNameSelected"
-    class="row q-mb-sm q-mx-sm q-pl-sm"
-    >
-      <transition
-        enter-active-class="animated fadeIn"
-        leave-active-class="animated fadeOut"
-        mode="out-in"
-        >
-        <span :key="runDigestSelected">
-        <run-bar
-          v-if="runDigestSelected"
-          :model-digest="digest"
-          :run-digest="runDigestSelected"
-          :refresh-run-tickle="refreshTickle"
-          @run-info-click="doShowRunNote"
-          >
-        </run-bar>
-        </span>
-      </transition>
-    <q-separator v-if="runDigestSelected && worksetNameSelected" vertical inset spaced="lg" color="secondary" />
-      <transition
-        enter-active-class="animated fadeIn"
-        leave-active-class="animated fadeOut"
-        mode="out-in"
-        >
-        <span :key="worksetNameSelected">
-        <workset-bar
-          v-if="worksetNameSelected"
-          :model-digest="digest"
-          :workset-name="worksetNameSelected"
-          :refresh-workset-tickle="refreshTickle"
-          @set-info-click="doShowWorksetNote"
-          >
-        </workset-bar>
-        </span>
-      </transition>
-  </q-card>
+<q-page class="text-body1 om-model-page">
 
   <div class="row no-wrap full-width q-pl-sm">
 
@@ -55,8 +16,8 @@
       <span
         v-for="tb in tabItems"
         :key="tb.path"
-        class="row no-wrap om-tab-hdr text-white"
-        :class="{'om-bg-inactive': tb.path !== activeTabKey}"
+        class="row no-wrap om-tab-hdr"
+        :class="[tb.path !== activeTabKey ? 'om-tab-inactive' : 'om-tab-active', 'om-tab-kind-' + tb.kind]"
         >
         <q-route-tab
           :name="tb.path"
@@ -263,7 +224,6 @@
   }
   .om-tab-hdr {
     border-top-right-radius: 1rem;
-    background-color: $primary;
-    margin-right: 1px;
+    margin-right: 2px;
   }
 </style>

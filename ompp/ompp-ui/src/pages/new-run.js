@@ -3,11 +3,12 @@ import { useModelStore } from '../stores/model'
 import { useServerStateStore } from '../stores/server-state'
 import { useUiStateStore } from '../stores/ui-state'
 import * as Mdf from 'src/model-common'
+import { tabStateMixin } from 'src/cache/tab-state'
 import NewRunInit from 'components/NewRunInit.vue'
 import RunBar from 'components/RunBar.vue'
 import WorksetBar from 'components/WorksetBar.vue'
-import TableList from 'components/TableList.vue'
-import EntityList from 'components/EntityList.vue'
+import TableSelectTree from 'components/TableSelectTree.vue'
+import EntitySelectTree from 'components/EntitySelectTree.vue'
 import RunInfoDialog from 'components/RunInfoDialog.vue'
 import WorksetInfoDialog from 'components/WorksetInfoDialog.vue'
 import TableInfoDialog from 'components/TableInfoDialog.vue'
@@ -22,14 +23,85 @@ const ENTITY_ATTR_WARNING_LIMIT = 16 // total number of entity attributes select
 const ENTITY_DIM_WARNING_LIMIT = 4 // number of selected dimension attributes in any entity to show warning: too many attributes
 const USER_FILES_PREFIX = 'OM_USER_FILES/'
 
+// run options cached between tab switches and page reloads
+const CACHED_RUN_OPTS = [
+  'runName', 'runDescr', 'subCount', 'threadCount', 'progressPercent', 'progressStep', 'workDir',
+  'useCsvDir', 'csvDir', 'csvId', 'iniName', 'useIni', 'iniAnyKey', 'profile', 'sparseOutput',
+  'runTmpl', 'mpiNpCount', 'mpiUseJobs', 'mpiOnRoot', 'mpiTmpl', 'microdataMode'
+]
+
+// microdata run options which are not entity names: Microdata.ToCsv, Microdata.ToDb, etc.
+const MICRODATA_NOT_ENTITY_OPTS = ['tocsv', 'todb', 'useinternal', 'csvdir', 'totrace', 'events', 'csveventcolumn']
+
 export default {
   name: 'NewRun',
+  mixins: [tabStateMixin],
+
+  // cache tab state: run options, description and notes, selected tables and microdata
+  tabState: {
+    fields: [
+      'runOpts', 'microOpts', 'useWorkset', 'useBaseRun', 'tablesRetain', 'entityAttrsUse', 'txtNewRun',
+      'advOptsExpanded', 'mpiOptsExpanded', 'langOptsExpanded', 'isRunOptsShow', 'tablesExpanded', 'microExpanded'
+    ],
+    key () { return 'new-run:' + (this.digest || '') },
+    // base run and input scenario of cached state
+    extra () {
+      return { runDigest: this.runCurrent?.RunDigest || '', worksetName: this.worksetCurrent?.Name || '' }
+    },
+    restore (saved) {
+      if (Mdf.isNotEmptyRunRequest(this.runRequest)) return // re-submit of previous run: run request has priority
+
+      // restore run options entered by user
+      const ro = saved?.runOpts
+      if (ro && typeof ro === 'object') {
+        for (const k of CACHED_RUN_OPTS) {
+          if (Object.prototype.hasOwnProperty.call(ro, k) && typeof ro[k] === typeof this.runOpts[k]) this.runOpts[k] = ro[k]
+        }
+        // run template and MPI template must exist on the server
+        if (Mdf.isLength(this.runTemplateLst) && !this.runTemplateLst.includes(this.runOpts.runTmpl)) this.runOpts.runTmpl = this.runTemplateLst[0]
+        if (Mdf.isLength(this.mpiTemplateLst) && !this.mpiTemplateLst.includes(this.runOpts.mpiTmpl)) this.runOpts.mpiTmpl = this.mpiTemplateLst[0]
+        if (!this.enableIni) this.runOpts.useIni = false
+        if (!this.enableIniAnyKey) this.runOpts.iniAnyKey = false
+        if (!this.serverConfig.AllowFiles) this.runOpts.useCsvDir = false
+      }
+      if (saved?.microOpts && typeof saved.microOpts === 'object' && this.isMicrodata) {
+        this.microOpts = Object.assign(Mdf.emptyRunRequestMicrodata(), saved.microOpts)
+      }
+      for (const k of ['advOptsExpanded', 'mpiOptsExpanded', 'langOptsExpanded', 'isRunOptsShow', 'tablesExpanded', 'microExpanded']) {
+        if (typeof saved?.[k] === typeof true) this[k] = saved[k]
+      }
+
+      // restore run description and notes by language
+      if (Array.isArray(saved?.txtNewRun)) {
+        for (const t of this.txtNewRun) {
+          const st = saved.txtNewRun.find(e => e?.LangCode === t.LangCode)
+          if (st) {
+            t.Descr = st.Descr || ''
+            t.Note = st.Note || ''
+          }
+        }
+      }
+
+      // tables, microdata, use of base run and input scenario depend on selected run and scenario:
+      // restore only if selection is the same as in cached state
+      const isSameBase = (saved?.extra?.runDigest || '') === (this.runCurrent?.RunDigest || '') &&
+        (saved?.extra?.worksetName || '') === (this.worksetCurrent?.Name || '')
+      if (isSameBase) {
+        if (typeof saved?.useWorkset === typeof true) this.useWorkset = saved.useWorkset && this.isReadonlyWorksetCurrent
+        if (typeof saved?.useBaseRun === typeof true) this.useBaseRun = saved.useBaseRun && this.isCompletedRunCurrent && !this.isRunDeleted
+        if (Array.isArray(saved?.tablesRetain)) this.tablesRetain = saved.tablesRetain
+        if (Array.isArray(saved?.entityAttrsUse) && this.isMicrodata) this.entityAttrsUse = saved.entityAttrsUse
+        this.refreshTableTreeTickle = !this.refreshTableTreeTickle
+        this.refreshEntityTreeTickle = !this.refreshEntityTreeTickle
+      }
+    }
+  },
   components: {
     NewRunInit,
     RunBar,
     WorksetBar,
-    TableList,
-    EntityList,
+    TableSelectTree,
+    EntitySelectTree,
     RunInfoDialog,
     WorksetInfoDialog,
     TableInfoDialog,
@@ -82,12 +154,15 @@ export default {
         mpiNpCount: 0,
         mpiUseJobs: false,
         mpiOnRoot: false,
-        mpiTmpl: ''
+        mpiTmpl: '',
+        microdataMode: 'db' // microdata output: 'db' database mode or 'csv' text mode (CSV files)
       },
       microOpts: Mdf.emptyRunRequestMicrodata(),
       advOptsExpanded: false,
       mpiOptsExpanded: false,
       langOptsExpanded: false,
+      tablesExpanded: false, // output tables section expanded
+      microExpanded: false, // microdata section expanded
       retainTablesGroups: [], // if not empty then names of tables and groups to retain
       tablesRetain: [],
       refreshTableTreeTickle: false,
@@ -160,6 +235,8 @@ export default {
     isRunDeleted () { return Mdf.isNotEmptyRunText(this.runCurrent) && Mdf.isRunDeletedStatus(this.runCurrent.Status, this.runCurrent.Name) },
     isNoTables () { return !this.tablesRetain || this.tablesRetain.length <= 0 },
     isMicrodata () { return !!this.serverConfig.AllowMicrodata && Mdf.entityCount(this.theModel) > 0 },
+    // if INI-file is used then microdata output mode is defined by INI-file
+    isMicrodataModeByIni () { return !!this.enableIni && !!this.runOpts.useIni && (this.runOpts.iniName || '') !== '' },
     isNoEntityAttrsUse () { return !this.entityAttrsUse || this.entityAttrsUse.length <= 0 },
     isReadonlyServer () { return this.serverConfig?.IsReadonly ?? true },
 
@@ -208,6 +285,41 @@ export default {
     ]),
 
     fileTimeStamp (t) { return Mdf.modTsToTimeStamp(t) },
+
+    // save cached tab state after run submitted: without run name, description and notes
+    tabStateSaveSubmitted () {
+      try {
+        this.tabStateSave()
+        const key = this.tabStateKey()
+        const uiStore = useUiStateStore()
+        const st = uiStore.tabState(key)
+        if (st) {
+          if (st.runOpts) {
+            st.runOpts.runName = ''
+            st.runOpts.runDescr = {}
+          }
+          if (Array.isArray(st.txtNewRun)) {
+            for (const t of st.txtNewRun) {
+              t.Descr = ''
+              t.Note = ''
+            }
+          }
+          uiStore.dispatchTabState(key, st)
+        }
+        this.tabStateIsRestored = false // stop saving: keep cleared state
+      } catch (e) {
+        console.warn('Unable to save new run tab state', e)
+      }
+    },
+
+    // description or notes edited: keep it in run text to cache tab state
+    onUpdateDescrNote (langCode, descr, note) {
+      const t = this.txtNewRun.find(e => e.LangCode === langCode)
+      if (t) {
+        t.Descr = descr || ''
+        t.Note = note || ''
+      }
+    },
     fileSizeStr (size) {
       const fs = Mdf.fileSizeParts(size)
       return fs.val + ' ' + this.$t(fs.name)
@@ -686,6 +798,20 @@ export default {
       this.$q.notify({ type: 'info', message: this.$t('Retain all output tables') })
     },
 
+    // microdata attributes selected in the entity tree: replace microdata list
+    onEntityAttrsSelected (names) {
+      const lst = Array.isArray(names) ? names : []
+      if (lst.length === this.entityAttrsUse.length && lst.every((an, k) => an === this.entityAttrsUse[k])) return // no changes
+      this.entityAttrsUse = lst
+    },
+
+    // output tables selected in the tables tree: replace retain tables list
+    onTablesSelected (names) {
+      const lst = Array.isArray(names) ? names : []
+      if (lst.length === this.tablesRetain.length && lst.every((tn, k) => tn === this.tablesRetain[k])) return // no changes
+      this.tablesRetain = lst
+    },
+
     // add output table into the retain tables list
     onTableAdd (name) {
       if (this.tablesRetain.length >= this.tableCount) return // all tables already in the retain list
@@ -1044,6 +1170,7 @@ export default {
       }
       this.runOpts.profile = ps.profile ?? this.runOpts.profile
       this.runOpts.sparseOutput = ps.sparseOutput ?? this.runOpts.sparseOutput
+      if (ps.microdataMode === 'db' || ps.microdataMode === 'csv') this.runOpts.microdataMode = ps.microdataMode
       this.runOpts.runTmpl = ps.runTmpl ?? this.runOpts.runTmpl
       this.runOpts.mpiNpCount = ps.mpiNpCount ?? this.runOpts.mpiNpCount
       if (this.runOpts.mpiNpCount < 0) {
@@ -1174,6 +1301,23 @@ export default {
         }
       }
 
+      // restore microdata text mode: Microdata.ToCsv and entity attributes from Microdata.EntityName run options
+      this.runOpts.microdataMode = 'db'
+      if (this.isMicrodata && Mdf.getBoolRunOption(rReq.Opts, 'Microdata.ToCsv')) {
+        this.runOpts.microdataMode = 'csv'
+
+        for (const key in rReq.Opts) {
+          if (!key.toLowerCase().startsWith('microdata.')) continue
+          const eName = key.substring('microdata.'.length)
+          if (!eName || MICRODATA_NOT_ENTITY_OPTS.includes(eName.toLowerCase())) continue
+
+          for (const a of (rReq.Opts[key] || '').split(',')) {
+            const aName = a.trim()
+            if (aName && !this.entityAttrsUse.includes(eName + '.' + aName)) this.entityAttrsUse.push(eName + '.' + aName)
+          }
+        }
+      }
+
       // use existing run description and notes
       for (let k = 0; k < this.txtNewRun.length; k++) {
         const descr = Mdf.getRunOption(rReq.Opts, this.txtNewRun[k].LangCode + '.RunDescription')
@@ -1198,6 +1342,7 @@ export default {
         !!this.runOpts.iniAnyKey ||
         (this.runOpts.profile || '') !== '' ||
         !!this.runOpts.sparseOutput ||
+        this.runOpts.microdataMode === 'csv' ||
         (this.runOpts.runTmpl || '') !== ''
 
       for (let k = 0; !this.langOptsExpanded && k < this.txtNewRun.length; k++) {
@@ -1451,6 +1596,10 @@ export default {
         this.$q.notify({ type: 'negative', message: this.$t('Server offline or model run failed to start') })
         return
       }
+
+      // run submitted: clear run name, description and notes in cached tab state, keep other run options
+      // do not change the page itself: user should see what was submitted
+      this.tabStateSaveSubmitted()
 
       // model wait in the queue
       if (!runStamp) {

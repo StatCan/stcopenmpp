@@ -1,0 +1,86 @@
+﻿//LABEL(risk-factors, EN) Risk factor helpers
+/* NOTE(risk-factors, EN)
+	This file sets the timing of the first biennial update of BMI, education and income,
+	and holds the alcohol category read from StartPop.
+*/
+classification first_update_t { //EN Timing of first update of some attributes such as education and BMI
+    first_update_1,  //EN First update is one year after initialisation
+    first_update_2,  //EN First update is two years after initialisation
+    first_update_3   //EN First update is three years after initialisation
+};
+
+classification alcohol5_t { //EN Alcohol (drinks/week)
+    alcohol_never,     //EN Never drank alcohol
+    alcohol_former,    //EN Former drinker
+    alcohol_light,     //EN Light (less than 2 drinks per week)
+    alcohol_moderate,  //EN Moderate (2-14 drinks per week for males, 2-9 for females)
+    alcohol_heavy      //EN Heavy (15+ drinks per week for males, 10+ for females)
+};
+
+partition age_group_rfi_t { 19, 40, 50, 60 }; //EN Age group
+
+parameters {
+    /* NOTE(timing_first_update, EN)
+	Distribution of timing of first update of some attributes such as education and BMI
+*/
+    cumrate timing_first_update[first_update_t];
+};
+
+actor person
+{
+    int years_to_first_update; //EN Timing of first update of some attributes such as education and BMI
+
+    alcohol5_t g_alcohol5; //EN Self-reported Alcohol (5 categories), read from StartPop and held fixed
+
+    void get_timing_first_update();
+
+    void read_from_start_pop_alcohol();
+    hook read_from_start_pop_alcohol, read_from_start_pop, 10;
+};
+
+void person::get_timing_first_update()
+{
+    int n_time;
+
+    Lookup_timing_first_update(RandUniform(86), &n_time);
+    years_to_first_update = 1 + n_time;
+
+    hook_get_timing_first_update();
+}
+
+void person::read_from_start_pop_alcohol()
+{
+    start_pop_record_t record_to_be_read = start_pop_record();
+
+    g_alcohol5 = get_alcohol5_from_start_pop(int(record_to_be_read[c_db_alcohol]), sex);
+
+    hook_read_from_start_pop_alcohol();
+}
+
+alcohol5_t get_alcohol5_from_start_pop(int alcohol_on_start_pop, sex_t sexe)
+{
+    alcohol5_t answer;
+
+    switch (alcohol_on_start_pop)
+    {
+        case -2: answer = alcohol_never; break;
+        case -1: answer = alcohol_former; break;
+        case 0:
+        case 1: answer = alcohol_light; break;
+        default:
+            if (alcohol_on_start_pop < 0)
+            {
+                ModelExit("Unexpected value (less than -2) for c_db_alcohol on StartPop file.");
+            }
+
+            if (sexe == female)
+            {
+                answer = alcohol_on_start_pop < 10 ? alcohol_moderate : alcohol_heavy;
+            }
+            else
+            {
+                answer = alcohol_on_start_pop < 15 ? alcohol_moderate : alcohol_heavy;
+            }
+    }
+    return answer;
+}

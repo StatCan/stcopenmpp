@@ -13,24 +13,24 @@ docker build `
   .
 </pre>
 
-The following artifacts are used in this build:
+The following packages are used in this build:
 
-| Artifact                                                            | Version                           | URL                                                                                                 |
+| Package                                                             | Version                           | URL                                                                                                 |
 | :------------------------------------------------------------------ | :-------------------------------- | :-------------------------------------------------------------------------------------------------- | 
-| Bison                                                               | 3.8.2                             | `https://packages.guix.gnu.org/packages/bison/3.8.2`                                                |
-| curl                                                                | 8.5.0                             | `https://packages.ubuntu.com/noble/amd64/curl`                                                      |
-| Flex                                                                | 2.6.4                             | `https://packages.guix.gnu.org/packages/flex/2.6.4`                                                 |
-| g++                                                                 | 13.3.0                            | `https://packages.ubuntu.com/noble/amd64/gcc-13`                                                    |
-| Git                                                                 | 2.43.0                            | `https://packages.ubuntu.com/noble/amd64/git`                                                       |
-| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.1                            | `https://pkgs.org/download/golang`                                                                  |
-| Make                                                                | 4.3                               | `https://ubuntu.pkgs.org/22.04/ubuntu-main-amd64/make_4.3-4.1build1_amd64.deb.html`                 |
-| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.14.1                           | `https://nodejs.org/dist/v24.14.1/node-v24.14.1-linux-x64.tar.xz`                                   |
-| Open MPI (libopenmpi-dev)                                           | 4.1.6-7                           | `https://ubuntu.pkgs.org/24.04/ubuntu-universe-amd64/libopenmpi-dev_4.1.6-7ubuntu2_amd64.deb.html`  |
-| Open MPI (openmpi-bin)                                              | 4.1.6                             | `https://ubuntu.pkgs.org/24.04/ubuntu-universe-amd64/openmpi-bin_4.1.6-7ubuntu2_amd64.deb.html`     |
-| Perl                                                                | 5.38.2                            | `https://ubuntu.pkgs.org/24.04/ubuntu-main-amd64/perl_5.38.2-3.2build2_amd64.deb.html`              |
-| SQLite                                                              | 3.45.1                            | `https://packages.ubuntu.com/noble/sqlite3`                                                         |
-| Ubuntu                                                              | 22.04.5 LTS (Jammy Jellyfish)     | `https://releases.ubuntu.com/22.04.5`                                                               |
-| XZ Utils                                                            | 5.4.5                             | `https://packages.ubuntu.com/noble/xz-utils`                                                        |
+| Bison                                                               | 3.8.2                             | `https://packages.ubuntu.com/eu/jammy/amd64/bison`                                                  |
+| curl                                                                | 7.81.0                            | `https://packages.ubuntu.com/noble/amd64/curl`                                                      |
+| Flex                                                                | 2.6.4                             | `https://packages.ubuntu.com/eu/jammy/amd64/flex`                                                   |
+| g++                                                                 | 11.2.0                            | `https://packages.ubuntu.com/eu/jammy/amd64/g++`                                                    |
+| Git                                                                 | 2.34.1                            | `https://packages.ubuntu.com/noble/amd64/git`                                                       |
+| Go ![Updated](https://img.shields.io/badge/Updated-green)           | 1.26.8                            | `https://pkgs.org/download/golang`                                                                  |
+| Make                                                                | 4.3                               | `https://packages.ubuntu.com/eu/jammy/amd64/make`                                                   |
+| Node.js ![Updated](https://img.shields.io/badge/Updated-green)      | 24.20.0                           | `https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz`                                   |
+| Open MPI (libopenmpi-dev)                                           | 4.1.2                             | `https://packages.ubuntu.com/eu/jammy/amd64/libopenmpi-dev`                                         |
+| Open MPI (openmpi-bin)                                              | 4.1.2                             | `https://packages.ubuntu.com/eu/jammy/amd64/openmpi-bin`                                            |
+| Perl                                                                | 5.34.0                            | `https://packages.ubuntu.com/eu/jammy/amd64/perl`                                                   |
+| SQLite                                                              | 3.37.2                            | `https://packages.ubuntu.com/eu/jammy/amd64/sqlite3`                                                |
+| Ubuntu                                                              | 22.04 LTS (Jammy Jellyfish)       | `https://releases.ubuntu.com/22.04`                                                                 | 
+| XZ Utils                                                            | 5.2.5                             | `https://packages.ubuntu.com/eu/jammy/amd64/xz-utils`                                               |
 
 ### Building stcopenmpp
 

@@ -12,13 +12,13 @@
 #   rename modelName.db into modelName.sqlite
 #
 # Environment:
-#   sqlite3   - must be in the $PATH
-#   OM_ROOT   - openM++ root folder, default: ..
+#   sqlite3     must be in the $PATH
+#   OMPP_ROOT   common openM++ root folder, default: ..
 #               must exist:
-#                 $OM_ROOT/bin/dbcopy
-#                 $OM_ROOT/sql/create_db.sql
-#                 $OM_ROOT/sql/insert_default.sql
-#                 $OM_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
+#                 $OMPP_ROOT/bin/dbcopy
+#                 $OMPP_ROOT/sql/create_db.sql
+#                 $OMPP_ROOT/sql/insert_default.sql
+#                 $OMPP_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
 # Arguments:
 #        $1 - path to model database
 #        $2 - (optional) model name   (or: no-name), default: database file name
@@ -96,26 +96,26 @@ then
 fi
 
 
-# check OM_ROOT, following must exist:
-#   $OM_ROOT/bin/dbcopy
-#   $OM_ROOT/sql/create_db.sql
-#   $OM_ROOT/sql/insert_default.sql
-#   $OM_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
+# check OMPP_ROOT, following must exist:
+#   $OMPP_ROOT/bin/dbcopy
+#   $OMPP_ROOT/sql/create_db.sql
+#   $OMPP_ROOT/sql/insert_default.sql
+#   $OMPP_ROOT/sql/sqlite/optional_meta_views_sqlite.sql
 
-[ -z "${OM_ROOT}" ] && OM_ROOT=$(dirname "$self_dir")
+[ -z "${OMPP_ROOT}" ] && OMPP_ROOT=$(dirname "$self_dir")
 
-echo "OM_ROOT  : ${OM_ROOT}"
+echo "OMPP_ROOT  : ${OMPP_ROOT}"
 
-dbcopy_exe="${OM_ROOT}"/bin/dbcopy
+dbcopy_exe="${OMPP_ROOT}"/bin/dbcopy
 
 if [ ! -x "${dbcopy_exe}" ] ;
 then
   echo "ERROR: dbcopy utility not found (or invalid): ${dbcopy_exe}"
   exit 1
 fi
-if [ ! -f "${OM_ROOT}/sql/create_db.sql" ] || [ ! -f "${OM_ROOT}/sql/insert_default.sql" ] || [ ! -f "${OM_ROOT}/sql/sqlite/optional_meta_views_sqlite.sql" ] ;
+if [ ! -f "${OMPP_ROOT}/sql/create_db.sql" ] || [ ! -f "${OMPP_ROOT}/sql/insert_default.sql" ] || [ ! -f "${OMPP_ROOT}/sql/sqlite/optional_meta_views_sqlite.sql" ] ;
 then
-  echo "ERROR: SQL script(s) not found at: ${OM_ROOT}/sql"
+  echo "ERROR: SQL script(s) not found at: ${OMPP_ROOT}/sql"
   exit 1
 fi
 
@@ -160,9 +160,9 @@ do_sql_script()
   fi
 }
 
-do_sql_script "${new_db}" "${OM_ROOT}/sql/create_db.sql"
-do_sql_script "${new_db}" "${OM_ROOT}/sql/insert_default.sql"
-do_sql_script "${new_db}" "${OM_ROOT}/sql/sqlite/optional_meta_views_sqlite.sql"
+do_sql_script "${new_db}" "${OMPP_ROOT}/sql/create_db.sql"
+do_sql_script "${new_db}" "${OMPP_ROOT}/sql/insert_default.sql"
+do_sql_script "${new_db}" "${OMPP_ROOT}/sql/sqlite/optional_meta_views_sqlite.sql"
 
 # prepare source database:
 # report run status and lock all worksets

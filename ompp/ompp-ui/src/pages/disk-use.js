@@ -441,7 +441,7 @@ export default {
       // expected response:
       /*
       [{
-          "DbName": "modelOne.sqlite",
+          "BaseName": "modelOne.sqlite",
           "LogStamp": "2024_03_05_01_31_56_780",
           "LogFileName": "db-cleanup.2024_03_05_01_31_56_780.modelOne.sqlite.console.txt"
         }
@@ -451,11 +451,11 @@ export default {
 
       for (let k = lst.length - 1; k >= 0; k--) { // in reverse time order
         const f = lst[k]
-        if (!f.hasOwnProperty('DbName') || typeof f.DbName !== typeof 'string') continue
+        if (!f.hasOwnProperty('BaseName') || typeof f.BaseName !== typeof 'string') continue
         if (!f.hasOwnProperty('LogStamp') || typeof f.LogStamp !== typeof 'string') continue
         if (!f.hasOwnProperty('LogFileName') || typeof f.LogFileName !== typeof 'string') continue
 
-        if ((f.DbName || '') !== '' && (f.LogStamp || '') !== '' && (f.LogFileName || '') !== '') this.cleanupLogLst.push(f)
+        if ((f.BaseName || '') !== '' && (f.LogStamp || '') !== '' && (f.LogFileName || '') !== '') this.cleanupLogLst.push(f)
       }
     },
 
@@ -475,12 +475,12 @@ export default {
         const response = await this.$axios.get(u)
         if (response.data) {
           fc = response.data
-          if (fc.hasOwnProperty('DbName') && typeof fc.DbName === typeof 'string' &&
+          if (fc.hasOwnProperty('BaseName') && typeof fc.BaseName === typeof 'string' &&
             fc.hasOwnProperty('LogStamp') && typeof fc.LogStamp === typeof 'string' &&
             fc.hasOwnProperty('LogFileName') && typeof fc.LogFileName === typeof 'string' &&
             fc.hasOwnProperty('ModTs') && typeof fc.ModTs === typeof 1 &&
             fc.hasOwnProperty('Lines') && Array.isArray(fc.Lines)) {
-            isOk = (fc.DbName || '') !== '' && (fc.LogStamp || '') !== '' && (fc.LogFileName || '') !== ''
+            isOk = (fc.BaseName || '') !== '' && (fc.LogStamp || '') !== '' && (fc.LogFileName || '') !== ''
           }
         }
       } catch (e) {
@@ -496,14 +496,14 @@ export default {
       }
       // expected response:
       /*
-      "DbName": "modelOne.sqlite",
+      "BaseName": "modelOne.sqlite",
       "LogStamp": "2024_03_05_01_31_56_780",
       "LogFileName": "db-cleanup.2024_03_05_01_31_56_780.modelOne.sqlite.console.txt",
       "Size": 185,
       "ModTs": 1709620320883,
       "Lines": ["2024-03-05 01:31:56.786 , "......"]
       */
-      this.titleCleanupLog = fc.DbName
+      this.titleCleanupLog = fc.BaseName
       this.nameCleanupLog = fc.LogFileName
       this.dtCleanupLog = this.fileTimeStamp(fc.ModTs)
       this.linesCleanupLog = fc.Lines

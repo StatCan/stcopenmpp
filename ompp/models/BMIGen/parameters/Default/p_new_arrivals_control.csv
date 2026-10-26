@@ -1,0 +1,4 @@
+﻿sub_id,BMIGen_entry_point,param_value
+0,StartPop_database,TRUE
+0,New_births,TRUE
+0,New_immigrants,TRUE

@@ -5,14 +5,14 @@
 # environmemnt variables:
 #  OM_BUILD_CONFIGS=RELEASE,DEBUG (default: RELEASE)
 #  OM_MSG_USE=MPI                 (default: EMPTY)
-#  MODEL_DIRS=modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjGenX,OzProjX,SM1
+#  MODEL_DIRS=BMIGen,modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjGenX,OzProjX,SM1
 #  OMPP_BUILD_TAG                 (default: build from latest git)
 #  OMPP_CPP_BUILD_TAG             (default: build from latest git)
 #  OMPP_GIT_URL                   (default: https://github.com/statcan/stcopenmpp)
 #
 #  OMPP_CPP_BUILD_TAG has higher priority over OMPP_BUILD_TAG
 
-OM_BLD_MDLS=${MODEL_DIRS:-modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjGenX,OzProjX,SM1}
+OM_BLD_MDLS=${MODEL_DIRS:-BMIGen,modelOne,NewCaseBased,NewTimeBased,NewCaseBased_bilingual,IDMM,RiskPaths,OzProjGenX,OzProjX,SM1}
 
 OM_BLD_CFG=${OM_BUILD_CONFIGS:-RELEASE}
 

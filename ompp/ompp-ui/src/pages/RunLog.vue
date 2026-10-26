@@ -131,6 +131,7 @@
     @wait="()=>{}"
     >
   </refresh-run-log>
+
   <refresh-run-progress
     v-if="(runState.RunStamp || stamp) !== ''"
     :model-digest="digest"

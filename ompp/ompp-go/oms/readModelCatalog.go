@@ -8,20 +8,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// get "public" configuration of model catalog
-func (mc *ModelCatalog) toPublicConfig() ModelCatalogConfig {
-	mc.theLock.Lock()
-	defer mc.theLock.Unlock()
-
-	return ModelCatalogConfig{
-		ModelDir:        mc.modelDir,
-		ModelLogDir:     mc.modelLogDir,
-		ModelDocDir:     theCfg.docDir,
-		IsLogDirEnabled: mc.isLogDirEnabled,
-		LastTimeStamp:   mc.lastTimeStamp,
-	}
-}
-
 // getModelDir return model directory
 func (mc *ModelCatalog) getModelDir() (string, bool) {
 	mc.theLock.Lock()
@@ -48,6 +34,21 @@ func (mc *ModelCatalog) allModelDigests() []string {
 	return ds
 }
 
+// get "public" configuration of model catalog
+func (mc *ModelCatalog) toPublicConfig() (ModelCatalogConfig, modelLib) {
+	mc.theLock.Lock()
+	defer mc.theLock.Unlock()
+
+	return ModelCatalogConfig{
+			ModelDir:        mc.modelDir,
+			ModelLogDir:     mc.modelLogDir,
+			ModelDocDir:     theCfg.docDir,
+			IsLogDirEnabled: mc.isLogDirEnabled,
+			LastTimeStamp:   mc.lastTimeStamp,
+		},
+		mc.modelLib
+}
+
 // allModels return basic info from catalog about all models: name, digest, files location.
 func (mc *ModelCatalog) allModels() []modelBasic {
 	mc.theLock.Lock()
@@ -64,6 +65,8 @@ func (mc *ModelCatalog) allModels() []modelBasic {
 			isLogDir: mc.modelLst[idx].isLogDir,
 			isIni:    mc.modelLst[idx].isIni,
 			extra:    mc.modelLst[idx].extra,
+			pubLst:   mc.modelLst[idx].pubLst,
+			docDir:   mc.modelLst[idx].docDir,
 		}
 
 	}
@@ -87,6 +90,8 @@ func (mc *ModelCatalog) modelBasicByDigestOrName(dn string) (modelBasic, bool) {
 			logDir:   mc.modelLst[idx].logDir,
 			isLogDir: mc.modelLst[idx].isLogDir,
 			isIni:    mc.modelLst[idx].isIni,
+			pubLst:   mc.modelLst[idx].pubLst,
+			docDir:   mc.modelLst[idx].docDir,
 			extra:    mc.modelLst[idx].extra,
 		},
 		true
@@ -232,4 +237,28 @@ func (mc *ModelCatalog) indexByDigestOrName(dn string) (int, bool) {
 		return n, true // return: name found
 	}
 	return 0, false // not found
+}
+
+// parse model.extra.json to get documentaion path list from ModelDoc.Link
+func getModelDocLinks(mExtra map[string]any) ([]string, error) {
+
+	// get array of ModelDoc.Link
+	/*
+		"ModelDoc": [{
+			"LangCode": "EN",
+			"Link": "RiskPaths-3.2.1/RiskPaths.doc.EN.html"
+		}, .... ]
+	*/
+	linkLst := []string{}
+
+	if mDoc, ok := mExtra["ModelDoc"].([]any); ok {
+		for _, d := range mDoc {
+			if md, ok := d.(map[string]any); ok {
+				if link, ok := md["Link"].(string); ok {
+					linkLst = append(linkLst, link)
+				}
+			}
+		}
+	}
+	return linkLst, nil
 }

@@ -1,0 +1,42 @@
+﻿//LABEL(start-pop-weights, EN) Start population weights
+/* NOTE(start-pop-weights, EN)
+	This file contains PreSimulation code that needs to be run before other PreSimulation (it is PreSimulation1)
+*/
+
+void PreSimulation1()
+{
+    for (int n_record = 0; n_record < SIZE(db_records_t); n_record++)
+    {
+        mg_cum_start_pop_weight[n_record] = p_start_pop[n_record][c_db_weight] > 0.0 ? p_start_pop[n_record][c_db_weight] : 0.0;
+
+        for (int subpop = 0; subpop < SIZE(startpop_subpopulations_t); subpop++)
+        {
+            logical in_this_sub_pop = TRUE;
+            for (int condition = 0; condition < SIZE(conditions_reweight_t); condition++)
+            {
+                double value = p_start_pop[n_record][p_start_pop_reweight_definition_fields[subpop][condition]];
+                in_this_sub_pop = in_this_sub_pop && p_start_pop_reweight_definition_bounds[subpop][condition][bound_lower] <= value &&
+                    value <= p_start_pop_reweight_definition_bounds[subpop][condition][bound_upper];
+            }
+
+            mg_cum_start_pop_weight[n_record] *= (in_this_sub_pop ? p_start_pop_reweight_multiplier[subpop][row_1] : 1.0);
+        }
+    }
+
+    int n_age_code_oldest = -99;
+    int n_age_code_youngest = 99;
+    int n_age_code;
+    for (int n_record = 0; n_record < SIZE(db_records_t); n_record++)
+    {
+        if (mg_cum_start_pop_weight[n_record] > 0.0)
+        {
+            n_age_code = (int) p_start_pop[n_record][c_db_age_grp];
+            if (n_age_code < n_age_code_youngest)
+                n_age_code_youngest = n_age_code;
+            if (n_age_code > n_age_code_oldest)
+                n_age_code_oldest = n_age_code;
+        }
+    }
+    mg_age_code_youngest = n_age_code_youngest;
+    mg_age_code_oldest = n_age_code_oldest;
+}

@@ -1,0 +1,13 @@
+﻿sub_id,Sex,Cubic_spline_companion,param_value
+0,Female,cubic_spline_companion_min,-1000000000
+0,Female,cubic_spline_companion_max,1000000000
+0,Female,Power_of_knot_range_for_scaling,0.666666666666667
+0,Female,Center_linear_term,1.8600395
+0,Female,Coefficient_for_linear_term,-0.270693903
+0,Female,Center_cubic_spline_term,1.8600395
+0,Male,cubic_spline_companion_min,-1000000000
+0,Male,cubic_spline_companion_max,1000000000
+0,Male,Power_of_knot_range_for_scaling,0.666666666666667
+0,Male,Center_linear_term,2.2110374
+0,Male,Coefficient_for_linear_term,-0.178390018
+0,Male,Center_cubic_spline_term,2.2110374

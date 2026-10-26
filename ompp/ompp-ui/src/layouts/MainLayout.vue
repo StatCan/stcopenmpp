@@ -207,6 +207,25 @@
         </q-item-section>
       </q-item>
 
+      <template v-if="isNotEmptyRunCurrent">
+      <q-item
+          @click="doShowRunNote(runDigestSelected)"
+          clickable
+          >
+          <q-item-section avatar>
+            <q-icon
+              :color="isRunDeleted(runCurrent.Status, runCurrent.Name) ? 'negative' : ((isSuccess(runCurrent.Status) || isInProgress(runCurrent.Status)) ? 'primary' : 'warning')"
+              :name="isSuccess(runCurrent.Status) ? 'mdi-information-outline' : (isInProgress(runCurrent.Status) ? 'mdi-run' : 'mdi-alert-circle-outline')"
+              />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="label-break om-text-descr-selected">{{ runCurrent.Name }}</q-item-label>
+            <q-item-label caption class="label-break">{{ descrRunCurrent }}</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-separator />
+      </template>
+
       <q-item
         clickable
         :disable="!isModel || !worksetTextCount"
@@ -223,6 +242,26 @@
           <q-badge v-if="isModel" color="secondary" :label="worksetTextCount" />
         </q-item-section>
       </q-item>
+
+      <template v-if="isNotEmptyWorksetCurrent">
+        <q-item
+          @click="doShowWorksetNote(worksetNameSelected)"
+          clickable
+          >
+          <q-item-section avatar>
+            <q-icon
+              color="primary"
+              name="mdi-information-outline"
+              />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="label-break om-text-descr-selected">{{ worksetNameSelected }}</q-item-label>
+            <q-item-label caption class="label-break">{{ descrWorksetCurrent }}</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-separator />
+      </template>
+
 
       <q-item v-if="!serverConfig.IsReadonly"
         clickable
@@ -266,7 +305,7 @@
         </q-item-section>
       </q-item>
 
-      <q-item
+      <q-item v-if="serverConfig.IsJobControl"
         clickable
         :disable="!serverConfig.IsJobControl"
         to="/service-state"
@@ -277,6 +316,34 @@
         <q-item-section>
           <q-item-label>{{ $t('Service Status') }}</q-item-label>
           <q-item-label caption>{{ $t('Service status and model(s) run queue') }}</q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <q-item v-if="!!serverConfig.IsAdminAll"
+        clickable
+        :disable="!serverConfig.IsJobControl"
+        to="/admin-state"
+        >
+        <q-item-section avatar>
+          <q-icon name="mdi-server-security" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>{{ $t('Admin Status') }}</q-item-label>
+          <q-item-label caption>{{ $t('Admin status and model(s) run') }}</q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <q-item
+        clickable
+        :disable="!serverConfig?.ModelLib?.IsCopy"
+        to="/model-lib"
+        >
+        <q-item-section avatar>
+          <q-icon name="mdi-folder-network-outline" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>{{ $t('Models Library') }}</q-item-label>
+          <q-item-label caption>{{ $t('Shared Models Library') }}</q-item-label>
         </q-item-section>
       </q-item>
 
@@ -300,20 +367,6 @@
         </q-item-section>
       </q-item>
 
-      <q-item v-if="!!serverConfig.IsAdminAll"
-        clickable
-        :disable="!serverConfig.IsJobControl"
-        to="/admin-state"
-        >
-        <q-item-section avatar>
-          <q-icon name="mdi-server-security" />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label>{{ $t('Admin Status') }}</q-item-label>
-          <q-item-label caption>{{ $t('Admin status and model(s) run') }}</q-item-label>
-        </q-item-section>
-      </q-item>
-
     </q-list>
   </q-drawer>
 
@@ -331,6 +384,8 @@
   </q-page-container>
 
   <model-info-dialog :show-tickle="modelInfoTickle" :digest="modelDigest"></model-info-dialog>
+  <run-info-dialog :show-tickle="runInfoTickle" :model-digest="modelDigest" :run-digest="runInfoDigest"></run-info-dialog>
+  <workset-info-dialog :show-tickle="worksetInfoTickle" :model-digest="modelDigest" :workset-name="worksetInfoName"></workset-info-dialog>
 
   <template v-if="isRedirect">
     <refresh-model
@@ -401,6 +456,12 @@
     </upload-user-views>
   </template>
 
+  <refresh-run-status-all v-if="modelDigest !== ''"
+    :model-digest="modelDigest"
+    :refresh-tickle="refreshTickle"
+    >
+  </refresh-run-status-all>
+
   <q-inner-loading :showing="loadConfigWait || loadModelWait || loadRunListWait || loadRunWait || loadWsListWait || loadWsWait || loadUserViewsWait || uploadUserViewsWait">
     <q-spinner-gears size="xl" color="primary" />
   </q-inner-loading>
@@ -415,5 +476,8 @@
     text-decoration: none;
     color: white;
     // display: inline-block;
+  }
+  .label-break {
+    overflow-wrap: break-word;
   }
 </style>

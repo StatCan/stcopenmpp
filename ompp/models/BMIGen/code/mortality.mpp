@@ -1,0 +1,71 @@
+﻿//LABEL(mortality, EN) Mortality
+
+/* NOTE(mortality, EN)
+	This file sets the limits of the simulation (maximum calendar year, maximum age) and
+	contains the function that ends a person's life.
+
+	Mortality comes from the MPoRT V2 engine (see Mortality_MPoRT_V2.mpp), plus the deterministic exits at
+	max_life and max_year defined here.
+*/
+
+parameters {
+    //EN Year simulation ends
+    int max_year;
+
+    //EN Minimum number of years of life
+    int min_life;
+
+    //EN Maximum number of years of life
+    int max_life;
+};
+
+parameter_group pg_mortality { //EN Mortality parameters
+    max_year,
+    min_life,
+    max_life,
+    pg_mortality_mport_v2
+};
+
+actor person
+{
+    event time_max_life_event, max_life_event;
+    event time_max_year_event, max_year_event;
+    void check_finish(logical this_is_really_the_end);
+};
+
+TIME person::time_max_life_event()
+{
+    return (date_of_birth + double(max_life));
+}
+
+void person::max_life_event()
+{
+    alive_deterministic_max_life = FALSE;
+    check_finish(TRUE);
+
+    hook_max_life_event();
+}
+
+TIME person::time_max_year_event()
+{
+    return max_year;
+}
+
+void person::max_year_event()
+{
+    alive_deterministic_max_year = FALSE;
+    check_finish(TRUE);
+
+    hook_max_year_event();
+}
+
+void person::check_finish(logical this_is_really_the_end)
+{
+    if (this_is_really_the_end && (lifespan_age >= min_life || time == max_year))
+    {
+        alive = FALSE;
+        finish();
+    }
+
+    hook_check_finish();
+}

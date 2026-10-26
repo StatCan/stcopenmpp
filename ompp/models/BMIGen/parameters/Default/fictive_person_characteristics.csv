@@ -1,0 +1,11 @@
+﻿sub_id,Value,Dim1,param_value
+0,Value,Five_year_age_group,-1
+0,Value,Sex,-1
+0,Value,Province,-1
+0,Value,Recent_immigrant_last_9_years,-1
+0,Value,Education,-1
+0,Value,Income,-1
+0,Value,Alcohol_drinks_per_week_dpw,-1
+0,Value,Body_mass_index_in_kg_m_2,-1
+0,Value,Height_in_meters,-1
+0,Value,Survey_weight,-1

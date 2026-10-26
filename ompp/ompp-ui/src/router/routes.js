@@ -91,10 +91,11 @@ const routes = [
         component: () => import('pages/UpDownList.vue'),
         props: true
       },
-      { path: 'service-state', component: () => import('pages/ServiceState.vue') },
       { path: 'settings', component: () => import('pages/SessionSettings.vue') },
-      { path: 'disk-use', component: () => import('pages/DiskUse.vue') },
+      { path: 'service-state', component: () => import('pages/ServiceState.vue') },
       { path: 'admin-state', component: () => import('pages/AdminState.vue') },
+      { path: 'model-lib', component: () => import('pages/ModelLib.vue') },
+      { path: 'disk-use', component: () => import('pages/DiskUse.vue') },
       { path: 'license', component: () => import('pages/LicensePage.vue') },
       { path: 'none', component: NotFound404 }
     ]

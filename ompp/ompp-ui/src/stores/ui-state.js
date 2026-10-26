@@ -4,6 +4,17 @@ import { defineStore, acceptHMRUpdate } from 'pinia'
 import * as Mdf from '../model-common'
 import { useModelStore } from './model'
 
+const MAX_TAB_STATES = 200 // max number of cached tab page states
+const MAX_SCROLL_POS = 300 // max number of saved scroll positions
+
+// delete oldest (first inserted) object properties if number of properties exceeds the limit
+const limitSize = (obj, max) => {
+  const keys = Object.keys(obj)
+  for (let k = 0; k < keys.length - max; k++) {
+    delete obj[keys[k]]
+  }
+}
+
 export const useUiStateStore = defineStore('ui-state', {
   state: () => ({
     uiLang: '',
@@ -21,7 +32,9 @@ export const useUiStateStore = defineStore('ui-state', {
     paramViews: {},
     tableViews: {},
     mdViews: {},
-    modelView: {}
+    modelView: {},
+    tabStates: {}, // cached state of tab pages by route path: filters, form inputs, expanded sections
+    scrollPos: {} // page scroll positions by route path
   }),
 
   getters: {
@@ -104,6 +117,22 @@ export const useUiStateStore = defineStore('ui-state', {
       return this.mdViews?.[key]?.view ? Mdf.deepClone(this.mdViews[key].view) : undefined
     },
 
+    // return copy of cached tab page state by key, usually key is a route path
+    tabState (key) {
+      return (typeof key === typeof 'string' && this.tabStates?.[key]) ? Mdf.deepClone(this.tabStates[key]) : undefined
+    },
+
+    // return saved page scroll position by key (route path), zero if not found
+    scrollPosition (key) {
+      const y = (typeof key === typeof 'string') ? this.scrollPos?.[key] : 0
+      return (typeof y === typeof 1 && y > 0) ? y : 0
+    },
+
+    // return path of last active tab by model digest
+    activeTab (modelDigest) {
+      return (typeof modelDigest === typeof 'string' && typeof this.modelView?.[modelDigest]?.activeTab === typeof 'string') ? this.modelView[modelDigest].activeTab : ''
+    },
+
     // retrun tree expanded keys by model name and tree kind,  for example: table-tree
     treeExpandedKeys (modelName, treeKind) {
       if (!modelName && !treeKind) return []
@@ -163,6 +192,38 @@ export const useUiStateStore = defineStore('ui-state', {
 
       const expKeys = (!!expandedKeys && Array.isArray(expandedKeys)) ? Array.from(expandedKeys) : []
       this.uiTreeExpandedKeys[modelName + '*:*' + treeKind] = expKeys
+    },
+
+    // insert or replace cached state of tab page by key, usually key is a route path
+    dispatchTabState (key, state) {
+      if (typeof key !== typeof 'string' || !key) return
+      if (this.tabStates[key]) delete this.tabStates[key] // re-insert to keep most recent entries at the end
+      this.tabStates[key] = Mdf.deepClone(state)
+      limitSize(this.tabStates, MAX_TAB_STATES)
+    },
+
+    // delete cached state of tab page by key
+    dispatchTabStateDelete (key) {
+      if (typeof key === typeof 'string' && this.tabStates?.[key]) delete this.tabStates[key]
+    },
+
+    // save page scroll position by key (route path)
+    dispatchScrollPos (key, y) {
+      if (typeof key !== typeof 'string' || !key || typeof y !== typeof 1) return
+      if (this.scrollPos[key] !== undefined) delete this.scrollPos[key]
+      if (y > 0) {
+        this.scrollPos[key] = Math.round(y)
+        limitSize(this.scrollPos, MAX_SCROLL_POS)
+      }
+    },
+
+    // save path of last active tab by model digest
+    dispatchActiveTab (modelView) {
+      const mDgst = (typeof modelView?.digest === typeof 'string') ? modelView.digest : ''
+      if (!mDgst || typeof modelView?.path !== typeof 'string') return
+
+      if (!this.modelView[mDgst]) this.modelView[mDgst] = Mdf.emptyModelView() // create model view state if not exist
+      if (this.modelView[mDgst].activeTab !== modelView.path) this.modelView[mDgst].activeTab = modelView.path
     },
 
     // update or clear selected run digest
@@ -243,8 +304,8 @@ export const useUiStateStore = defineStore('ui-state', {
 
     // delete parameter views, table views and model tab list by model digest
     dispatchViewDeleteByModel (modelDigest) {
-      this.paramViewDeleteByModel(modelDigest)
-      this.tableViewDeleteByModel(modelDigest)
+      this.dispatchParamViewDeleteByModel(modelDigest)
+      this.dispatchTableViewDeleteByModel(modelDigest)
 
       // clear model view
       const mDgst = (typeof modelDigest === typeof 'string') ? modelDigest : ''

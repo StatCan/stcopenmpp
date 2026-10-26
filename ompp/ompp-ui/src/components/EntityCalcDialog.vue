@@ -10,6 +10,13 @@
         :label="$t('Apply')"
         outline rounded v-close-popup
         />
+      <q-btn
+        @click="onClear()"
+        :disable="!calcList.length"
+        icon="mdi-card-bulleted-off-outline"
+        :label="$t('Clear')"
+        outline rounded v-close-popup
+        />
       <q-space />
       <q-btn icon="mdi-close" :label="$t('Cancel')" outline rounded v-close-popup />
     </q-bar>
@@ -189,6 +196,12 @@ export default {
     // send updated version of calculted enums
     onApply () {
       this.$emit('calc-list-apply', this.calcList)
+    },
+
+    // clear all calculations by sending empty calculations array to parent page
+    onClear () {
+      this.calcList = []
+      this.$emit('calc-list-apply', [])
     },
 
     // delete row from calculations list

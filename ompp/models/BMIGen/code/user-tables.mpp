@@ -1,0 +1,48 @@
+﻿//LABEL(user-tables, EN) UserTables created by analysing output in other Tables
+/* NOTE(user-tables, EN)
+	UserTables (derived tables) computed after the simulation.
+*/
+
+table_group tg_user_tables { //EN Derived tables
+    ut_presim_view
+};
+
+void UserTables()
+{
+    SetTableValue("ut_presim_view.a0", mg_num_records_on_start_pop_file, 0);
+    SetTableValue("ut_presim_view.c0", mg_num_cases_raw[c_start_pop], 0);
+    SetTableValue("ut_presim_view.c1", mg_num_cases_raw[c_new_birth], 0);
+    SetTableValue("ut_presim_view.c2", mg_num_cases_raw[c_new_immig], 0);
+    SetTableValue("ut_presim_view.e0", mg_num_cases[c_start_pop], 0);
+    SetTableValue("ut_presim_view.e1", mg_num_cases[c_new_birth], 0);
+    SetTableValue("ut_presim_view.e2", mg_num_cases[c_new_immig], 0);
+    SetTableValue("ut_presim_view.e4", mg_new_immig_adjust_factor, 0);
+    SetTableValue("ut_presim_view.e5", mg_new_birth_adjust_factor, 0);
+    SetTableValue("ut_presim_view.e6", mg_new_birth_adjust_factor_unduplicate, 0);
+    SetTableValue("ut_presim_view.e7", mg_new_birth_adjust_factor_reduce_aim, 0);
+    SetTableValue("ut_presim_view.e8", (double) GetAllCases(), 0);
+    SetTableValue("ut_presim_view.e9", (double) GetPopulation(), 0);
+    SetTableValue("ut_presim_view.e10", ((double) GetPopulation()) / GetAllCases(), 0);
+}
+
+user_table ut_presim_view //EN Some PreSimulation calculation
+{
+    {
+        a0,  //EN Number of in scope records in StartPop db
+        c0,  //EN mg_num_cases_raw[c_start_pop]    Weights of in scope records in StartPop db
+        c1,  //EN mg_num_cases_raw[c_new_birth]    New Births (subsequent years)
+        c2,  //EN mg_num_cases_raw[c_new_immig]    New Immigrants (subsequent years)
+        e0,  //EN mg_num_cases[c_start_pop]       Weights of in scope records in StartPop db
+        e1,  //EN mg_num_cases[c_new_birth]       New Births (subsequent years)
+        e2,  //EN mg_num_cases[c_new_immig]       New Immigrants (subsequent years)
+        e4,  //EN mg_new_immig_adjust_factor     decimals=9
+        e5,  //EN mg_new_birth_adjust_factor     decimals=9
+        e6,  //EN mg_new_birth_adjust_factor_unduplicate  decimals=9
+        e7,  //EN mg_new_birth_adjust_factor_reduce_aim    decimals=9
+        e8,  //EN Number of cases                   decimals=9
+        e9,  //EN Number of Canadians               decimals=9
+        e10  //EN Number of Canadians per case      decimals=9
+    }
+    *
+    dummy_row_or_column_t
+};

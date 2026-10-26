@@ -26,7 +26,7 @@ RUN apt-get install -y g++ && \
   apt-get install -y xz-utils
 
 # Download and install Go
-RUN curl -L "https://go.dev/dl/go1.26.1.linux-amd64.tar.gz" \
+RUN curl -L "https://go.dev/dl/go1.26.8.linux-amd64.tar.gz" \
   --output /tmp/go_setup.tar.gz && \
   tar -xzf /tmp/go_setup.tar.gz -C /tmp && \
   mv /tmp/go / && \
@@ -40,7 +40,7 @@ RUN apt-get install -y unixodbc unixodbc-dev
 RUN apt-get autoclean
 
 # Download and install Node.js
-RUN curl -L "https://nodejs.org/dist/v24.14.1/node-v24.14.1-linux-x64.tar.xz" \
+RUN curl -L "https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz" \
   --output /tmp/node.tar.xz && \
   mkdir /node && \
   tar -xJf /tmp/node.tar.xz -C /node --strip-components=1 && \

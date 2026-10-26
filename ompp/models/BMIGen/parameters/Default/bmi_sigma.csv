@@ -1,0 +1,9 @@
+﻿sub_id,BMI_Auto_regressive_model,Sex,param_value
+0,Auto_regressive_model_of_order_1,Female,0.07005
+0,Auto_regressive_model_of_order_1,Male,0.05646
+0,Auto_regressive_model_of_order_2,Female,0.06676
+0,Auto_regressive_model_of_order_2,Male,0.05337
+0,Auto_regressive_model_of_order_3,Female,0.06618
+0,Auto_regressive_model_of_order_3,Male,0.05272
+0,Auto_regressive_model_of_order_4,Female,0.06645
+0,Auto_regressive_model_of_order_4,Male,0.05242

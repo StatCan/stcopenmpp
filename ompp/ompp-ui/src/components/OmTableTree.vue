@@ -295,6 +295,8 @@ Expected array of tree items as:
 
 <script>
 import { openURL } from 'quasar'
+import { useUiStateStore } from '../stores/ui-state'
+import { getCacheSettings } from 'src/cache/cache-settings'
 
 export default {
   name: 'OmTableTree',
@@ -361,7 +363,10 @@ export default {
       this.isTreeExpand = this.isExpand
       this.doRefresh()
     },
-    treeFilter () { this.updateTreeWalk() }
+    treeFilter () {
+      this.updateTreeWalk()
+      this.saveFilter()
+    }
   },
 
   emits: [
@@ -383,11 +388,44 @@ export default {
   methods: {
     onLink (link, name) { openURL(link) },
 
+    // cache key of tree filter: route path, parent component and tree kind
+    filterKey () {
+      // add and remove trees of the same kind can be on the same page, for example list of selected tables and list of all tables
+      const kind = (this.isAdd || this.isAddGroup ? 'add' : '') + (this.isRemove || this.isRemoveGroup ? 'rm' : '')
+      return 'tree-filter:' + (this.$route?.path || '') + '|' + (this.$parent?.$options?.name || '') + '|' + (this.filterPlaceholder || '') + '|' + kind
+    },
+    // save tree filter in tab state cache
+    saveFilter () {
+      try {
+        if (!getCacheSettings().isStateCache) return
+        const uiStore = useUiStateStore()
+        const key = this.filterKey()
+        if (this.treeFilter) {
+          uiStore.dispatchTabState(key, { treeFilter: this.treeFilter })
+        } else {
+          uiStore.dispatchTabStateDelete(key)
+        }
+      } catch (e) {
+        console.warn('Unable to save tree filter', e)
+      }
+    },
+    // return cached tree filter or empty string
+    cachedFilter () {
+      try {
+        if (!getCacheSettings().isStateCache) return ''
+        const f = useUiStateStore().tabState(this.filterKey())?.treeFilter
+        return (typeof f === typeof 'string') ? f : ''
+      } catch (e) {
+        return ''
+      }
+    },
+
     // update view on tree data change
     doRefresh () {
-      this.treeFilter = ''
+      this.treeFilter = this.cachedFilter()
       this.treeWalk.isAnyFound = false
       this.treeWalk.keysFound = {}
+      if (this.treeFilter) this.$nextTick(() => this.updateTreeWalk()) // apply restored filter after tree data updated
 
       // restore expanded state
       if (this?.treeStore?.expandPull) {

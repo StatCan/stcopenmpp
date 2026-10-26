@@ -1,0 +1,11 @@
+﻿sub_id,Sex,Age_group,Risk_factors,param_value
+0,Female,"(-∞,19)",Body_Mass_Index,true
+0,Female,"[19,40)",Body_Mass_Index,true
+0,Female,"[40,50)",Body_Mass_Index,true
+0,Female,"[50,60)",Body_Mass_Index,true
+0,Female,"[60,∞)",Body_Mass_Index,true
+0,Male,"(-∞,19)",Body_Mass_Index,true
+0,Male,"[19,40)",Body_Mass_Index,true
+0,Male,"[40,50)",Body_Mass_Index,true
+0,Male,"[50,60)",Body_Mass_Index,true
+0,Male,"[60,∞)",Body_Mass_Index,true

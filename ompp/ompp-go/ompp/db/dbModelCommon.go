@@ -120,7 +120,7 @@ func (modelDef *ModelMeta) TypeByKey(typeId int) (int, bool) {
 	return k, (k >= 0 && k < n && modelDef.Type[k].TypeId == typeId)
 }
 
-// return double type index, it sia type of output value table and calculated value
+// return double type index, it is a type of output value table and calculated value
 func (modelDef *ModelMeta) TypeOfDouble() (int, bool) {
 
 	for k := range modelDef.Type {
